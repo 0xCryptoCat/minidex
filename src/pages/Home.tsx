@@ -1,3 +1,6 @@
+import SearchPage from '../features/search/SearchPage';
+
 export default function Home() {
-  return <div style={{ padding: '1rem' }}>Home/Search Page</div>;
+  return <SearchPage />;
 }
+

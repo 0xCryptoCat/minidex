@@ -4,6 +4,7 @@ import type { PoolSummary, TokenMeta } from '../../lib/types';
 import { pairs } from '../../lib/api';
 import PoolSwitcher from './PoolSwitcher';
 import ChartOnlyView from './ChartOnlyView';
+import DetailView from './DetailView';
 
 // Views for chart page
 const views = ['chart', 'depth', 'trades', 'detail'] as const;
@@ -73,6 +74,9 @@ export default function ChartPage() {
             onXDomainChange={setXDomain}
           />
         </div>
+      )}
+      {view === 'detail' && currentPair && chain && address && (
+        <DetailView chain={chain} address={address} pairId={currentPair} />
       )}
     </div>
   );

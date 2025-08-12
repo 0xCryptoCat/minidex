@@ -200,4 +200,25 @@ ETHERSCAN_KEY="..."    # optional, for explorer.ts
 
 ---
 
-Do you want me to also prepare a **`/src/lib/types.ts` schema outline** so the coder starts with all shared types locked in before implementation? That will make every function and component contract consistent from day one.
+## 📚 Documentation Index
+
+The following reference files live under `/docs` and provide deeper context:
+
+- [Preparation Checklist](docs/PREPARATION.md)
+- [Project Factsheet](docs/FACTSHEET.md)
+- [API Contracts](docs/api-contracts.md)
+- [Provider Mappings](docs/providers.md)
+- [Polling & Caching Policy](docs/polling.md)
+- [Timeframes & Bucketing Rules](docs/timeframes.md)
+- [Chart UX Spec](docs/chart-ux.md)
+- [Routing & URL Contract](docs/routing.md)
+- [Telemetry Plan](docs/telemetry.md)
+- [Performance Budgets](docs/perf.md)
+- [Security Guardrails](docs/security.md)
+- [Deploy Notes](docs/deploy.md)
+- [Operational Playbook](docs/ops.md)
+- [Theme Tokens](docs/theme.md)
+- [Accessibility Checklist](docs/a11y.md)
+- [V2 Hooks](docs/v2-hooks.md)
+
+These docs pair with `/src/lib/types.ts`, `/src/lib/chains.json`, `/src/copy/en.json`, and the sample payloads in `/fixtures` to bootstrap implementation.

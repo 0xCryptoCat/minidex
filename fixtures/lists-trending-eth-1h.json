@@ -1,0 +1,32 @@
+{
+  "_note": "Trending list with promoted item",
+  "chain": "ethereum",
+  "type": "trending",
+  "window": "1h",
+  "items": [
+    {
+      "pairId": "uniswap_v2_abc_weth",
+      "chain": "ethereum",
+      "token": { "address": "0xabc...", "symbol": "ABC", "name": "Token ABC" },
+      "priceUsd": 1.1,
+      "liqUsd": 50000,
+      "volWindowUsd": 12000,
+      "priceChangePct": 5.0,
+      "tradesWindow": 150,
+      "score": 0.9
+    },
+    {
+      "pairId": "uniswap_v2_xyz_weth",
+      "chain": "ethereum",
+      "token": { "address": "0xxyz...", "symbol": "XYZ", "name": "Token XYZ" },
+      "priceUsd": 0.5,
+      "liqUsd": 30000,
+      "volWindowUsd": 8000,
+      "priceChangePct": 2.0,
+      "tradesWindow": 80,
+      "score": 0.7,
+      "promoted": true
+    }
+  ],
+  "provider": "gt"
+}

@@ -1,0 +1,11 @@
+{
+  "_note": "Dexscreener 1m candles",
+  "pairId": "sushiswap_v2_abc_weth",
+  "tf": "1m",
+  "candles": [
+    { "t": 1712345600, "o": 0.9, "h": 1.1, "l": 0.85, "c": 1.0, "v": 900 },
+    { "t": 1712345660, "o": 1.0, "h": 1.05, "l": 0.95, "c": 0.98, "v": 700 }
+  ],
+  "provider": "ds",
+  "rollupHint": "none"
+}

@@ -1,0 +1,9 @@
+[
+  { "slug": "ethereum", "name": "Ethereum", "shortName": "ETH" },
+  { "slug": "arbitrum", "name": "Arbitrum One", "shortName": "ARB" },
+  { "slug": "polygon", "name": "Polygon", "shortName": "POL" },
+  { "slug": "bsc", "name": "BNB Chain", "shortName": "BNB" },
+  { "slug": "base", "name": "Base", "shortName": "BASE" },
+  { "slug": "optimism", "name": "Optimism", "shortName": "OP" },
+  { "slug": "avalanche", "name": "Avalanche", "shortName": "AVAX" }
+]

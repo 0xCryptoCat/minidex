@@ -1,0 +1,31 @@
+{
+  "_note": "Dexscreener search fallback",
+  "query": "0xabc...",
+  "results": [
+    {
+      "chain": "ethereum",
+      "token": {
+        "address": "0xabc...",
+        "symbol": "ABC",
+        "name": "Token ABC"
+      },
+      "core": {
+        "priceUsd": 1.22,
+        "liqUsd": 45000,
+        "vol24hUsd": 110000,
+        "priceChange24hPct": 9.8
+      },
+      "pools": [
+        {
+          "pairId": "sushiswap_v2_abc_weth",
+          "dex": "sushiswap",
+          "version": "v2",
+          "base": "ABC",
+          "quote": "WETH",
+          "chain": "ethereum"
+        }
+      ],
+      "provider": "ds"
+    }
+  ]
+}

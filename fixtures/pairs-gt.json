@@ -1,0 +1,27 @@
+{
+  "_note": "GT pairs for token with v2 and v3 pools",
+  "token": {
+    "address": "0xabc...",
+    "symbol": "ABC",
+    "name": "Token ABC"
+  },
+  "pools": [
+    {
+      "pairId": "uniswap_v2_abc_weth",
+      "dex": "uniswap",
+      "version": "v2",
+      "base": "ABC",
+      "quote": "WETH",
+      "chain": "ethereum"
+    },
+    {
+      "pairId": "uniswap_v3_abc_usdc",
+      "dex": "uniswap",
+      "version": "v3",
+      "base": "ABC",
+      "quote": "USDC",
+      "chain": "ethereum"
+    }
+  ],
+  "provider": "gt"
+}

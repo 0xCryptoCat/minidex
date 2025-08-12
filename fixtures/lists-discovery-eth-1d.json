@@ -1,0 +1,19 @@
+{
+  "_note": "Discovery list sample",
+  "chain": "ethereum",
+  "type": "discovery",
+  "window": "1d",
+  "items": [
+    {
+      "pairId": "uniswap_v2_new_weth",
+      "chain": "ethereum",
+      "token": { "address": "0xnew...", "symbol": "NEW", "name": "New Token" },
+      "priceUsd": 0.02,
+      "liqUsd": 10000,
+      "volWindowUsd": 50000,
+      "priceChangePct": 120.0,
+      "tradesWindow": 600
+    }
+  ],
+  "provider": "gt"
+}

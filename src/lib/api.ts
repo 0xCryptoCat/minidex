@@ -1,5 +1,14 @@
-import type { SearchResponse, ApiError, PairsResponse } from './types';
-import { getSearchCache, setSearchCache, getPairsCache, setPairsCache } from './cache';
+import type { SearchResponse, ApiError, PairsResponse, OHLCResponse, TradesResponse, Timeframe } from './types';
+import {
+  getSearchCache,
+  setSearchCache,
+  getPairsCache,
+  setPairsCache,
+  getOHLCCache,
+  setOHLCCache,
+  getTradesCache,
+  setTradesCache,
+} from './cache';
 
 const BASE = '/.netlify/functions';
 
@@ -35,5 +44,50 @@ export async function pairs(
   const data = await res.json();
   if (res.ok) setPairsCache(key, data);
   return data;
+}
+
+export async function ohlc(
+  pairId: string,
+  tf: Timeframe,
+  provider?: string
+): Promise<OHLCResponse> {
+  const key = `${pairId}:${tf}`;
+  const cached = getOHLCCache(key);
+  if (cached) return cached;
+
+  const url = new URL(`${BASE}/ohlc`, window.location.origin);
+  url.searchParams.set('pairId', pairId);
+  url.searchParams.set('tf', tf);
+  if (provider) url.searchParams.set('provider', provider);
+
+  const res = await fetch(url.toString());
+  const data = await res.json();
+  if (!res.ok) {
+    const err: any = new Error('api error');
+    err.status = res.status;
+    throw err;
+  }
+  setOHLCCache(key, data);
+  return data as OHLCResponse;
+}
+
+export async function trades(pairId: string, provider?: string): Promise<TradesResponse> {
+  const key = pairId;
+  const cached = getTradesCache(key);
+  if (cached) return cached;
+
+  const url = new URL(`${BASE}/trades`, window.location.origin);
+  url.searchParams.set('pairId', pairId);
+  if (provider) url.searchParams.set('provider', provider);
+
+  const res = await fetch(url.toString());
+  const data = await res.json();
+  if (!res.ok) {
+    const err: any = new Error('api error');
+    err.status = res.status;
+    throw err;
+  }
+  setTradesCache(key, data);
+  return data as TradesResponse;
 }
 

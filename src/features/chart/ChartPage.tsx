@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type { PoolSummary, TokenMeta } from '../../lib/types';
 import { pairs } from '../../lib/api';
 import PoolSwitcher from './PoolSwitcher';
+import PriceChart from './PriceChart';
 
 // Views for chart page
 const views = ['chart', 'depth', 'trades', 'detail'] as const;
@@ -28,12 +29,13 @@ export default function ChartPage() {
         setCurrentPair(data.pools[0].pairId);
       }
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [chain, address]);
 
   function handlePoolSwitch(id: string) {
     setCurrentPair(id);
-    // keep xDomain untouched to preserve view intent
     setXDomain((d) => d);
     if (chain && address) {
       navigate(`/t/${chain}/${address}/${id}`, { replace: true });
@@ -61,12 +63,9 @@ export default function ChartPage() {
       {view !== 'detail' && (
         <PoolSwitcher pools={pools} current={currentPair} onSwitch={handlePoolSwitch} />
       )}
-      <div style={{ marginTop: '1rem' }}>
-        Current pair: {currentPair || '-'} | View: {view}
-      </div>
-      {xDomain && (
-        <div style={{ marginTop: '0.5rem', fontSize: '0.75rem' }}>
-          xDomain: {xDomain[0]} - {xDomain[1]}
+      {view === 'chart' && currentPair && (
+        <div style={{ marginTop: '1rem' }}>
+          <PriceChart pairId={currentPair} tf="1m" xDomain={xDomain} onXDomainChange={setXDomain} />
         </div>
       )}
     </div>

@@ -1,10 +1,79 @@
-/* Global styles placeholder */
-/* TODO: define CSS variables and reset rules */
+@import '../app/theme.css';
 
-:root {
-  /* TODO: color tokens */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
-  /* TODO: base typography and background */
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  background: var(--color-bg-muted);
+  z-index: 10;
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  font-size: 1.25rem;
+}
+
+.search-pill {
+  flex: 1;
+  margin-left: 0.5rem;
+  background: var(--color-surface);
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+}
+
+main {
+  padding-top: 48px;
+}
+
+main.with-tabs {
+  padding-bottom: 56px;
+}
+
+.bottom-tabs {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  background: var(--color-bg-muted);
+  border-top: 1px solid var(--color-surface);
+  height: 56px;
+}
+
+.bottom-tabs a {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+
+.bottom-tabs a.active {
+  color: var(--color-accent);
 }

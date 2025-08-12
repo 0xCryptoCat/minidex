@@ -77,3 +77,25 @@ main.with-tabs {
 .bottom-tabs a.active {
   color: var(--color-accent);
 }
+
+.bottom-tabs a:focus-visible {
+  outline: 2px solid var(--color-accent);
+}
+
+.view-tabs {
+  margin-bottom: 1rem;
+}
+
+.view-tab {
+  margin-right: 0.5rem;
+  min-height: 44px;
+  padding: 0 0.5rem;
+}
+
+.view-tab[aria-selected='true'] {
+  font-weight: bold;
+}
+
+.view-tab:focus-visible {
+  outline: 2px solid var(--color-accent);
+}

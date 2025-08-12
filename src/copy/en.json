@@ -1,6 +1,9 @@
 {
   "search_placeholder": "Token address",
   "no_results": "No results found",
+  "no_pools": "No pools available",
+  "loading": "Loading...",
   "error_generic": "Something went wrong",
-  "error_invalid_address": "Invalid address"
+  "error_invalid_address": "Invalid address",
+  "error_rate_limit": "Too many requests, please slow down"
 }

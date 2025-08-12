@@ -1,9 +1,9 @@
 [
-  { "slug": "ethereum", "name": "Ethereum", "shortName": "ETH" },
-  { "slug": "arbitrum", "name": "Arbitrum One", "shortName": "ARB" },
-  { "slug": "polygon", "name": "Polygon", "shortName": "POL" },
-  { "slug": "bsc", "name": "BNB Chain", "shortName": "BNB" },
-  { "slug": "base", "name": "Base", "shortName": "BASE" },
-  { "slug": "optimism", "name": "Optimism", "shortName": "OP" },
-  { "slug": "avalanche", "name": "Avalanche", "shortName": "AVAX" }
+  { "slug": "ethereum", "name": "Ethereum", "shortName": "ETH", "explorerTx": "https://etherscan.io/tx/{tx}" },
+  { "slug": "arbitrum", "name": "Arbitrum One", "shortName": "ARB", "explorerTx": "https://arbiscan.io/tx/{tx}" },
+  { "slug": "polygon", "name": "Polygon", "shortName": "POL", "explorerTx": "https://polygonscan.com/tx/{tx}" },
+  { "slug": "bsc", "name": "BNB Chain", "shortName": "BNB", "explorerTx": "https://bscscan.com/tx/{tx}" },
+  { "slug": "base", "name": "Base", "shortName": "BASE", "explorerTx": "https://basescan.org/tx/{tx}" },
+  { "slug": "optimism", "name": "Optimism", "shortName": "OP", "explorerTx": "https://optimistic.etherscan.io/tx/{tx}" },
+  { "slug": "avalanche", "name": "Avalanche", "shortName": "AVAX", "explorerTx": "https://snowtrace.io/tx/{tx}" }
 ]

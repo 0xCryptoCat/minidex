@@ -1,24 +1,36 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { createChart, type IChartApi, type UTCTimestamp } from 'lightweight-charts';
 import type { Timeframe, Candle } from '../../lib/types';
 import { ohlc, trades } from '../../lib/api';
 import { createPoller } from '../../lib/polling';
 import { rollupCandles } from '../../lib/time';
+import type { TradeMarkerCluster } from '../trades/TradeMarkers';
+import chains from '../../lib/chains.json';
 
 interface Props {
   pairId: string;
   tf: Timeframe;
   xDomain: [number, number] | null;
   onXDomainChange?: (d: [number, number]) => void;
+  markers?: TradeMarkerCluster[];
+  chain?: string;
 }
 
-export default function PriceChart({ pairId, tf, xDomain, onXDomainChange }: Props) {
+export default function PriceChart({ pairId, tf, xDomain, onXDomainChange, markers = [], chain }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<any>(null);
   const volumeSeriesRef = useRef<any>(null);
+  const markersMapRef = useRef<Map<number, TradeMarkerCluster[]>>(new Map());
+  const [hoveredMarkers, setHoveredMarkers] = useState<TradeMarkerCluster[] | null>(null);
   const [provider, setProvider] = useState<string>('');
   const [degraded, setDegraded] = useState(false);
+
+  const explorerTemplate = useMemo(() => {
+    if (!chain) return undefined;
+    const entry: any = (chains as any[]).find((c) => c.slug === chain);
+    return entry?.explorerTx as string | undefined;
+  }, [chain]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -48,17 +60,48 @@ export default function PriceChart({ pairId, tf, xDomain, onXDomainChange }: Pro
         }
       });
     }
+
+    const crosshairHandler = (param: any) => {
+      if (param.time === undefined) {
+        setHoveredMarkers(null);
+        return;
+      }
+      const arr = markersMapRef.current.get(param.time as number);
+      setHoveredMarkers(arr || null);
+    };
+    chart.subscribeCrosshairMove(crosshairHandler);
+
     return () => {
       window.removeEventListener('resize', handleResize);
+      chart.unsubscribeCrosshairMove(crosshairHandler);
       chart.remove();
     };
-  }, []);
+  }, [onXDomainChange]);
 
   useEffect(() => {
     if (xDomain && chartRef.current) {
       chartRef.current.timeScale().setVisibleRange({ from: xDomain[0] as any, to: xDomain[1] as any });
     }
   }, [xDomain]);
+
+  useEffect(() => {
+    markersMapRef.current.clear();
+    markers.forEach((m) => {
+      const arr = markersMapRef.current.get(m.ts) || [];
+      arr.push(m);
+      markersMapRef.current.set(m.ts, arr);
+    });
+    if (candleSeriesRef.current) {
+      const formatted = markers.map((m) => ({
+        time: m.ts as UTCTimestamp,
+        position: m.side === 'buy' ? 'belowBar' : 'aboveBar',
+        color: m.side === 'buy' ? '#32cd32' : '#ff00ff',
+        shape: m.side === 'buy' ? 'arrowUp' : 'arrowDown',
+        text: m.clusterSize && m.clusterSize > 1 ? String(m.clusterSize) : undefined,
+      }));
+      candleSeriesRef.current.setMarkers(formatted);
+    }
+  }, [markers]);
 
   useEffect(() => {
     if (!pairId) return;
@@ -126,6 +169,40 @@ export default function PriceChart({ pairId, tf, xDomain, onXDomainChange }: Pro
         </div>
       )}
       <div ref={containerRef} style={{ height: 300 }} />
+      {hoveredMarkers && hoveredMarkers.length > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            left: 4,
+            top: 4,
+            background: 'rgba(0,0,0,0.7)',
+            color: '#fff',
+            padding: '4px',
+            fontSize: '12px',
+            zIndex: 2,
+          }}
+        >
+          {hoveredMarkers.map((m, i) => {
+            const link = explorerTemplate && m.txHash ? explorerTemplate.replace('{tx}', m.txHash) : undefined;
+            return (
+              <div key={i} style={{ marginBottom: 4 }}>
+                <div style={{ color: m.side === 'buy' ? 'lime' : 'magenta' }}>
+                  {m.side} {m.size?.toFixed(2)} @ ${m.price.toFixed(4)}
+                  {m.clusterSize && m.clusterSize > 1 ? ` (${m.clusterSize})` : ''}
+                </div>
+                {m.walletShort && m.clusterSize === 1 && <div>{m.walletShort}</div>}
+                {link && m.clusterSize === 1 && (
+                  <div>
+                    <a href={link} target="_blank" rel="noreferrer" style={{ color: '#4ea3ff' }}>
+                      tx
+                    </a>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
       {provider && (
         <div
           style={{

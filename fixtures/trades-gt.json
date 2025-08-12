@@ -1,0 +1,9 @@
+{
+  "_note": "GT trade history sample",
+  "pairId": "uniswap_v2_abc_weth",
+  "trades": [
+    { "ts": 1712345600, "side": "buy", "price": 1.1, "amountBase": 500, "txHash": "0x111" },
+    { "ts": 1712345620, "side": "sell", "price": 1.0, "amountBase": 200, "txHash": "0x222" }
+  ],
+  "provider": "gt"
+}

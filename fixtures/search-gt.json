@@ -1,0 +1,42 @@
+{
+  "_note": "GT search result with multiple pools",
+  "query": "0xabc...",
+  "results": [
+    {
+      "chain": "ethereum",
+      "token": {
+        "address": "0xabc...",
+        "symbol": "ABC",
+        "name": "Token ABC",
+        "icon": "https://example.com/abc.png"
+      },
+      "core": {
+        "priceUsd": 1.23,
+        "fdvUsd": 1000000,
+        "liqUsd": 50000,
+        "vol24hUsd": 120000,
+        "priceChange1hPct": 2.5,
+        "priceChange24hPct": 10.1
+      },
+      "pools": [
+        {
+          "pairId": "uniswap_v2_abc_weth",
+          "dex": "uniswap",
+          "version": "v2",
+          "base": "ABC",
+          "quote": "WETH",
+          "chain": "ethereum"
+        },
+        {
+          "pairId": "uniswap_v3_abc_usdc",
+          "dex": "uniswap",
+          "version": "v3",
+          "base": "ABC",
+          "quote": "USDC",
+          "chain": "ethereum"
+        }
+      ],
+      "provider": "gt"
+    }
+  ]
+}

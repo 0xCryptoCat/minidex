@@ -1,0 +1,19 @@
+{
+  "_note": "Leaderboard list sample",
+  "chain": "ethereum",
+  "type": "leaderboard",
+  "window": "1d",
+  "items": [
+    {
+      "pairId": "uniswap_v2_abc_weth",
+      "chain": "ethereum",
+      "token": { "address": "0xabc...", "symbol": "ABC", "name": "Token ABC" },
+      "priceUsd": 1.1,
+      "liqUsd": 50000,
+      "volWindowUsd": 240000,
+      "priceChangePct": 12.0,
+      "tradesWindow": 1000
+    }
+  ],
+  "provider": "gt"
+}

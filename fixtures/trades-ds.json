@@ -1,0 +1,9 @@
+{
+  "_note": "Dexscreener trade history sample",
+  "pairId": "sushiswap_v2_abc_weth",
+  "trades": [
+    { "ts": 1712345605, "side": "buy", "price": 1.02, "amountBase": 300, "txHash": "0x333" },
+    { "ts": 1712345650, "side": "sell", "price": 0.99, "amountBase": 150, "txHash": "0x444" }
+  ],
+  "provider": "ds"
+}

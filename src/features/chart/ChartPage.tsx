@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type { PoolSummary, TokenMeta } from '../../lib/types';
 import { pairs } from '../../lib/api';
 import PoolSwitcher from './PoolSwitcher';
-import PriceChart from './PriceChart';
+import ChartOnlyView from './ChartOnlyView';
 
 // Views for chart page
 const views = ['chart', 'depth', 'trades', 'detail'] as const;
@@ -63,9 +63,15 @@ export default function ChartPage() {
       {view !== 'detail' && (
         <PoolSwitcher pools={pools} current={currentPair} onSwitch={handlePoolSwitch} />
       )}
-      {view === 'chart' && currentPair && (
+      {view === 'chart' && currentPair && chain && (
         <div style={{ marginTop: '1rem' }}>
-          <PriceChart pairId={currentPair} tf="1m" xDomain={xDomain} onXDomainChange={setXDomain} />
+          <ChartOnlyView
+            pairId={currentPair}
+            chain={chain}
+            tf="1m"
+            xDomain={xDomain}
+            onXDomainChange={setXDomain}
+          />
         </div>
       )}
     </div>

@@ -1,0 +1,203 @@
+Here’s a **DEV.README** you can drop at the repo root — it ties together all the prompts, explains the scope, and gives an onboarding path for a dev or agentic coder to build the MVP exactly as intended.
+
+---
+
+# DEV.README — DEX Chart Mini-App MVP
+
+## 📌 Overview
+
+This is a **Telegram Mini App–friendly, mobile-first DEX chart viewer** inspired by tools like DEXTools/DEXScreener, but **lightweight**, **serverless**, and deployable on **Netlify Free tier**.
+
+* **Goal:** Quick-glance multi-chain token charts, recent trades, basic finance metrics.
+* **Scope:** MVP — no heavy historical data, no DB, no payments. Monetization hooks stubbed for later.
+* **Data Sources:**
+
+  * **Primary**: \[GeckoTerminal public API]
+  * **Fallback**: \[DEXScreener public API]
+  * **Optional**: Etherscan-style APIs for TX explorer previews.
+
+---
+
+## 📂 Repo Structure
+
+```
+/src
+  /app           # routing, shell, theming
+  /components    # reusable UI primitives
+  /features      # feature-based modules
+    /search
+    /chart
+    /trades
+    /lists
+    /pool-switcher
+    /metrics
+  /lib           # shared logic, utils, caching
+  /styles        # global styles, theme tokens
+/netlify/functions
+  search.ts
+  pairs.ts
+  ohlc.ts
+  trades.ts
+  lists.ts
+  explorer.ts (optional)
+/public          # static assets, manifest, icons
+```
+
+---
+
+## 🎯 MVP Feature Set
+
+### 1. Search (address first-class)
+
+* Search by **token address**.
+* Return cross-chain matches with: icon, name, price, FDV/MC, liquidity, 24h volume, % changes, pool count.
+* **No preloading** of token pages during search.
+
+### 2. Chart Page
+
+* URL format: `/t/:chain/:address/:pairId?`
+* **4 Views** (bottom-tab toggle):
+
+  1. **Detail** (finance KPIs + basic pair info + project links)
+  2. **Chart-only** (edge-to-edge; header + bottom tabs visible)
+  3. **Chart + TXs** (adjustable vertical split; virtualized trades list)
+  4. **TXs-only** (full-width virtualized table with fixed header)
+* **Pool switcher** (top pill bar, visible in views 2–4) to change between pools (e.g., Uni v2/v3) without page reload and keeping x-axis aligned.
+* **Markers**: Optional toggle to show buy/sell trades as magenta/lime markers on chart.
+* **Metrics Panel**: Optional uPlot mini-charts for token metrics (rolling volume, liquidity, ATR-lite, z-score returns, trade counts).
+
+### 3. Lists Pages (optional but in MVP)
+
+* `/lists/:chain/:type`
+* Types: trending, discovery, leaderboard.
+* Window: 1h, 1d, 1w.
+* Powered by `/api/lists` endpoint; 60s cache; supports `"promoted":true` flags.
+
+---
+
+## 📡 Data Fetching & Caching
+
+* **Primary provider:** GeckoTerminal.
+* **Fallback provider:** Dexscreener (if GT fails or stale).
+* **Serverless functions**: Normalize responses, cache (30–60s), hide keys, apply fallbacks.
+* **Client session cache**:
+
+  * In-memory + `sessionStorage` mirror; optional IndexedDB fallback.
+  * Incrementally stacks data during session to avoid re-fetching.
+* **Polling cadence**:
+
+  * OHLC (active chart): 5s
+  * Trades (active chart): 3s
+  * Detail KPIs: 15s
+  * Lists: 60s
+* **Pause polling** when `document.hidden`; resume with immediate fetch.
+
+---
+
+## 🛠 Stack & Libraries
+
+* **React + Vite + TypeScript**
+* **State:** Zustand (minimal global store)
+* **Charts:**
+
+  * Price/Volume: Lightweight-Charts (Option A)
+  * Metrics: uPlot (Option B, ultra-fast mini-charts)
+* **UI:** TailwindCSS or CSS Modules
+* **Serverless:** Netlify Functions + Edge Functions (for cached lists)
+* **Telegram Mini App:** `@twa-dev/sdk` or direct `Telegram.WebApp`
+
+---
+
+## 🎨 Styling
+
+* Dark palette: black / dark-gray / gray backgrounds.
+* Neon highlights: lime (`#a3ff12`) for buys/positive, magenta (`#ff2ed1`) for sells/negative, cyan for focus/accents.
+* iOS-inspired minimal design, large touch targets, subtle animations.
+
+---
+
+## 🔑 Environment Variables
+
+Store in `.env.local` for local dev, Netlify **Environment Variables** for prod.
+
+```
+GT_API_BASE="https://api.geckoterminal.com/api/v2"
+DS_API_BASE="https://api.dexscreener.com/latest"
+ETHERSCAN_KEY="..."    # optional, for explorer.ts
+```
+
+**Never** expose these directly to client — always via Netlify Functions.
+
+---
+
+## 🧩 Development Workflow
+
+1. **Clone & Install**:
+
+   ```sh
+   git clone <repo>
+   cd <repo>
+   npm install
+   ```
+2. **Set up env**:
+
+   * Copy `.env.local.example` to `.env.local` and fill values.
+3. **Run locally**:
+
+   ```sh
+   npm run dev
+   ```
+4. **Deploy to Netlify**:
+
+   * Connect repo.
+   * Add env vars in Netlify dashboard.
+   * Build command: `npm run build`
+   * Publish directory: `dist`
+5. **Function Testing**:
+
+   * Each function in `/netlify/functions` can be hit locally via `/.netlify/functions/<name>`.
+
+---
+
+## 📜 Function Specs (summary)
+
+| Function      | Purpose                                  |
+| ------------- | ---------------------------------------- |
+| `search.ts`   | Address-based cross-chain search         |
+| `pairs.ts`    | Enumerate pools for a token              |
+| `ohlc.ts`     | Candlesticks + volume for pool/timeframe |
+| `trades.ts`   | Recent trades for pool                   |
+| `lists.ts`    | Trending/discovery/leaderboard synthesis |
+| `explorer.ts` | (Optional) TX explorer proxy             |
+
+---
+
+## ✅ Acceptance Criteria
+
+* Initial load under **80KB** JS (gzipped).
+* Search returns results <500ms (warm cache).
+* Chart views switch instantly, pool switch keeps x-axis.
+* Polling respects cadence and pauses when tab hidden.
+* Trades markers toggle instantly, derived from cached trades.
+* Lists pages load under 1s (warm cache).
+* No API keys exposed.
+* Fully functional in Telegram Mini App WebView.
+
+---
+
+## 📅 Build Order (Recommended)
+
+1. Scaffold (Vite + React + Zustand + theme)
+2. `/api/search` + Search UI
+3. `/api/pairs` + Pool Switcher
+4. `/api/ohlc` + `/api/trades` + Price Chart
+5. View toggles (Detail, Chart-only, Chart+TXs, TXs-only)
+6. Trade markers toggle
+7. Metrics panel (uPlot mini-charts)
+8. `/api/lists` + Lists pages
+9. Styling polish + perf pass
+10. Deploy to Netlify + env config
+
+---
+
+Do you want me to also prepare a **`/src/lib/types.ts` schema outline** so the coder starts with all shared types locked in before implementation? That will make every function and component contract consistent from day one.

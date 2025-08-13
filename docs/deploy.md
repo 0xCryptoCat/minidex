@@ -4,11 +4,15 @@
 - Build command: `npm run build`
 - Publish directory: `dist`
 - Functions directory: `/netlify/functions`
-- Configure environment variables: `GT_API_BASE`, `DS_API_BASE`, optional `ETHERSCAN_KEY`.
+- SPA fallback: `_redirects` with `/* /index.html 200`
+- Set env vars in project settings: `GT_API_BASE`, `DS_API_BASE`, optional `ETHERSCAN_KEY`
+- Copy bundle sizes from build logs after deploy
 
 ## Smoke Checks
-1. Search for known token and open chart.
-2. Switch pools without page reload.
-3. Toggle trade markers and metrics panel.
-4. Visit lists page and verify items.
-5. Confirm all responses include cache headers.
+1. Functions respond at `/.netlify/functions/*` with cache headers.
+2. Search for known token and open chart.
+3. Switch pools without page reload.
+4. Toggle trade markers and metrics panel.
+5. Visit lists page and verify provider badges.
+6. Deep links work via SPA redirect.
+7. Force DS provider (`?provider=ds`) to simulate GT outage and see backoff banner.

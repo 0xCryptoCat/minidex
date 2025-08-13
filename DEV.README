@@ -2,11 +2,11 @@ Here’s a **DEV.README** you can drop at the repo root — it ties together all
 
 ---
 
-# DEV.README — DEX Chart Mini-App MVP
+# DEV.README — SmallDex MVP
 
 ## 📌 Overview
 
-This is a **Telegram Mini App–friendly, mobile-first DEX chart viewer** inspired by tools like DEXTools/DEXScreener, but **lightweight**, **serverless**, and deployable on **Netlify Free tier**.
+SmallDex is a **Telegram Mini App–friendly, mobile-first DEX chart viewer** inspired by tools like DEXTools/DEXScreener, but **lightweight**, **serverless**, and deployable on **Netlify Free tier**.
 
 * **Goal:** Quick-glance multi-chain token charts, recent trades, basic finance metrics.
 * **Scope:** MVP — no heavy historical data, no DB, no payments. Monetization hooks stubbed for later.

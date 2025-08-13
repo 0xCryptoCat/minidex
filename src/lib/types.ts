@@ -40,6 +40,7 @@ export interface PoolSummary {
   base: string;            // base symbol (e.g., "ABC")
   quote: string;           // quote symbol (e.g., "WETH")
   chain: ChainSlug;
+  poolAddress?: Address;   // contract address for GeckoTerminal
 }
 
 /* ---------- /api/search ---------- */

@@ -68,20 +68,23 @@ export async function pairs(
   return data;
 }
 
-export async function ohlc(
-  pairId: string,
-  tf: Timeframe,
-  chain: string,
-  provider?: string
-): Promise<OHLCResponse> {
-  const key = `${chain}:${pairId}:${tf}`;
+export async function ohlc(params: {
+  pairId: string;
+  chain: string;
+  poolAddress?: string;
+  tf: Timeframe;
+  provider?: string;
+}): Promise<OHLCResponse> {
+  const { pairId, chain, poolAddress, tf, provider } = params;
+  const key = `${chain}:${pairId}:${poolAddress || ''}:${tf}`;
   const cached = getOHLCCache(key);
   if (cached) return cached;
 
   const url = new URL(`${BASE}/ohlc`, window.location.origin);
   url.searchParams.set('pairId', pairId);
-  url.searchParams.set('tf', tf);
   url.searchParams.set('chain', chain);
+  if (poolAddress) url.searchParams.set('poolAddress', poolAddress);
+  url.searchParams.set('tf', tf);
   if (provider) url.searchParams.set('provider', provider);
 
   const res = await fetch(url.toString());
@@ -98,18 +101,21 @@ export async function ohlc(
   return data as OHLCResponse;
 }
 
-export async function trades(
-  pairId: string,
-  chain: string,
-  provider?: string
-): Promise<TradesResponse> {
-  const key = `${chain}:${pairId}`;
+export async function trades(params: {
+  pairId: string;
+  chain: string;
+  poolAddress?: string;
+  provider?: string;
+}): Promise<TradesResponse> {
+  const { pairId, chain, poolAddress, provider } = params;
+  const key = `${chain}:${pairId}:${poolAddress || ''}`;
   const cached = getTradesCache(key);
   if (cached) return cached;
 
   const url = new URL(`${BASE}/trades`, window.location.origin);
   url.searchParams.set('pairId', pairId);
   url.searchParams.set('chain', chain);
+  if (poolAddress) url.searchParams.set('poolAddress', poolAddress);
   if (provider) url.searchParams.set('provider', provider);
 
   const res = await fetch(url.toString());

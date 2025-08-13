@@ -49,9 +49,14 @@ export function computeTradeMarkers(trades: Trade[], limit = MAX_MARKERS): Trade
 export function getTradeMarkers(
   pairId: string,
   chain?: string,
+  poolAddress?: string,
   limit = MAX_MARKERS
 ): TradeMarkerCluster[] {
-  const key = chain ? `${chain}:${pairId}` : pairId;
+  const parts = [] as string[];
+  if (chain) parts.push(chain);
+  parts.push(pairId);
+  if (poolAddress) parts.push(poolAddress);
+  const key = parts.join(':');
   const cached = getTradesCache(key);
   if (!cached) return [];
   return computeTradeMarkers(cached.trades, limit);

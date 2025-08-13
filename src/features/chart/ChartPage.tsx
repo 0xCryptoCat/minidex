@@ -6,6 +6,7 @@ import PoolSwitcher from './PoolSwitcher';
 import ChartOnlyView from './ChartOnlyView';
 import DetailView from './DetailView';
 import copy from '../../copy/en.json';
+import chains from '../../lib/chains.json';
 
 // Views for chart page
 type View = 'chart' | 'depth' | 'trades' | 'detail';
@@ -15,16 +16,28 @@ export default function ChartPage() {
   const navigate = useNavigate();
   const [token, setToken] = useState<TokenMeta | null>(null);
   const [pools, setPools] = useState<PoolSummary[]>([]);
-  const [currentPair, setCurrentPair] = useState<string | undefined>(pairId);
+  const [currentPool, setCurrentPool] = useState<PoolSummary | null>(null);
   const [searchParams] = useSearchParams();
   const view = (searchParams.get('view') as View) || 'chart';
   const [xDomain, setXDomain] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [noData, setNoData] = useState(false);
+  const [unsupported, setUnsupported] = useState(false);
 
   useEffect(() => {
-    if (!chain || !address) return;
+    if (!chain || !address) {
+      setNoData(true);
+      return;
+    }
     let cancelled = false;
+    const supported = (chains as any[]).some((c) => c.slug === chain);
+    if (!supported) {
+      setUnsupported(true);
+      setLoading(false);
+      return;
+    }
+    setUnsupported(false);
     setLoading(true);
     setError(null);
     pairs(chain, address)
@@ -36,9 +49,9 @@ export default function ChartPage() {
         }
         setToken(data.token);
         setPools(data.pools);
-        if (!currentPair && data.pools.length > 0) {
-          setCurrentPair(data.pools[0].pairId);
-        }
+        const sel = data.pools.find((p) => p.pairId === pairId) || data.pools[0];
+        setCurrentPool(sel || null);
+        setNoData(!sel || !sel.poolAddress);
       })
       .catch(() => {
         if (!cancelled) setError('network');
@@ -51,12 +64,13 @@ export default function ChartPage() {
     };
   }, [chain, address]);
 
-  function handlePoolSwitch(id: string) {
-    setCurrentPair(id);
+  function handlePoolSwitch(p: PoolSummary) {
+    setCurrentPool(p);
     setXDomain((d) => d);
-    if (chain && address) {
-      navigate(`/t/${chain}/${address}/${id}`, { replace: true });
+    if (address) {
+      navigate(`/t/${p.chain}/${address}/${p.pairId}`, { replace: true });
     }
+    setNoData(!p.poolAddress);
   }
 
   return (
@@ -69,34 +83,47 @@ export default function ChartPage() {
 
       {loading && <div>{copy.loading}</div>}
 
+      {unsupported && (
+        <div style={{ color: 'red' }}>This network is unsupported yet</div>
+      )}
+
       {!loading && error && (
         <div style={{ color: 'red' }}>
           {error === 'rate_limit' ? copy.error_rate_limit : copy.error_generic}
         </div>
       )}
 
-      {!loading && !error && pools.length === 0 && <div>{copy.no_pools}</div>}
+      {!loading && !error && !unsupported && pools.length === 0 && (
+        <div>{copy.no_pools}</div>
+      )}
 
-      {!loading && !error && pools.length > 0 && (
+      {!loading && !error && !unsupported && pools.length > 0 && (
         <>
           {view !== 'detail' && pools.length > 1 && (
-            <PoolSwitcher pools={pools} current={currentPair} onSwitch={handlePoolSwitch} />
+            <PoolSwitcher
+              pools={pools}
+              current={currentPool?.pairId}
+              onSwitch={handlePoolSwitch}
+            />
           )}
 
-          {view === 'chart' && currentPair && chain && (
+          {view === 'chart' && currentPool && currentPool.poolAddress && (
             <div style={{ marginTop: '1rem' }}>
               <ChartOnlyView
-                pairId={currentPair}
-                chain={chain}
+                pairId={currentPool.pairId}
+                chain={currentPool.chain}
+                poolAddress={currentPool.poolAddress}
                 tf="1m"
                 xDomain={xDomain}
                 onXDomainChange={setXDomain}
               />
             </div>
           )}
-          {view === 'detail' && currentPair && chain && address && (
-            <DetailView chain={chain} address={address} pairId={currentPair} />
+          {view === 'detail' && currentPool && address && (
+            <DetailView chain={currentPool.chain} address={address} pairId={currentPool.pairId} />
           )}
+
+          {noData && <div>No data</div>}
         </>
       )}
     </div>

@@ -22,7 +22,8 @@
           "version": "v2",
           "base": "ABC",
           "quote": "WETH",
-          "chain": "ethereum"
+          "chain": "ethereum",
+          "poolAddress": "0xpool1"
         }
       ],
       "provider": "ds"

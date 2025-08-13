@@ -99,11 +99,12 @@ export const handler: Handler = async (event) => {
       };
 
       const pools: PoolSummary[] = ds.pairs.map((p: any) => ({
-        pairId: p.pairAddress,
+        pairId: p.pairId || p.pairAddress,
         dex: p.dexId,
         base: p.baseToken?.symbol,
         quote: p.quoteToken?.symbol,
         chain: mapChainId(p.chainId),
+        poolAddress: p.pairAddress || p.liquidityPoolAddress,
       }));
 
       const bodyRes: PairsResponse = { token, pools, provider: 'ds' };
@@ -128,6 +129,7 @@ export const handler: Handler = async (event) => {
             base: attr.base_token?.symbol,
             quote: attr.quote_token?.symbol,
             chain: chain as string,
+            poolAddress: attr.address || inc.id,
           });
         }
       }

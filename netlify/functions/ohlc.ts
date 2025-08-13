@@ -41,6 +41,7 @@ export const handler: Handler = async (event) => {
   const pairId = event.queryStringParameters?.pairId;
   const tf = event.queryStringParameters?.tf as Timeframe | undefined;
   const chain = event.queryStringParameters?.chain;
+  const poolAddress = event.queryStringParameters?.poolAddress;
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
 
   if (!isValidPair(pairId) || !isValidTf(tf) || !chain) {
@@ -134,32 +135,40 @@ export const handler: Handler = async (event) => {
     }
   }
 
-  if (candles.length === 0 && forceProvider !== 'ds') {
+  if (candles.length === 0 && forceProvider !== 'ds' && chain && poolAddress) {
     try {
-      const gt = await fetchJson(`${GT_API_BASE}/networks/${chain}/pools/${pairId}/ohlcv/${tf}`);
-      const list = Array.isArray(gt?.data?.attributes?.ohlcv_list)
-        ? gt.data.attributes.ohlcv_list
-        : Array.isArray(gt?.data)
-        ? gt.data
-        : Array.isArray(gt?.candles)
-        ? gt.candles
-        : [];
-      candles = list.map((c: any) => ({
-        t: Number(c[0] ?? c.t ?? c.timestamp),
-        o: Number(c[1] ?? c.o ?? c.open),
-        h: Number(c[2] ?? c.h ?? c.high),
-        l: Number(c[3] ?? c.l ?? c.low),
-        c: Number(c[4] ?? c.c ?? c.close),
-        v:
-          c[5] !== undefined
-            ? Number(c[5])
-            : c.v !== undefined
-            ? Number(c.v)
-            : undefined,
-      }));
-      if (candles.length > 0) provider = 'gt';
+      const gtUrl = `${GT_API_BASE}/networks/${chain}/pools/${poolAddress}/ohlcv/${tf}`;
+      const gtResp = await fetch(gtUrl, { headers: { 'Content-Type': 'application/json' } });
+      if (gtResp.ok) {
+        const gtData = await gtResp.json();
+        const list = gtData.data?.attributes?.ohlcv || gtData.data?.attributes?.ohlcv_list || [];
+        const mapped = Array.isArray(list)
+          ? list
+          : Array.isArray(gtData.data)
+          ? gtData.data
+          : Array.isArray(gtData.candles)
+          ? gtData.candles
+          : [];
+        const candlesGt = mapped.map((c: any) => ({
+          t: Number(c[0] ?? c.t ?? c.timestamp),
+          o: Number(c[1] ?? c.o ?? c.open),
+          h: Number(c[2] ?? c.h ?? c.high),
+          l: Number(c[3] ?? c.l ?? c.low),
+          c: Number(c[4] ?? c.c ?? c.close),
+          v:
+            c[5] !== undefined
+              ? Number(c[5])
+              : c.v !== undefined
+              ? Number(c.v)
+              : undefined,
+        }));
+        if (candlesGt.length > 0) {
+          const bodyRes: OHLCResponse = { pairId, tf, candles: candlesGt, provider: 'gt' };
+          return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+        }
+      }
     } catch {
-      // still empty
+      // ignore
     }
   }
 

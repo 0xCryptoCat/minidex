@@ -196,11 +196,12 @@ export const handler: Handler = async (event) => {
           core,
           pools: [
             {
-              pairId: pair.pairAddress,
+              pairId: pair.pairId || pair.pairAddress,
               dex: pair.dexId,
               base: pair.baseToken?.symbol,
               quote: pair.quoteToken?.symbol,
               chain,
+              poolAddress: pair.pairAddress || pair.liquidityPoolAddress,
             },
           ],
           provider: 'ds',

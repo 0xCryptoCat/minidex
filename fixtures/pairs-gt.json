@@ -12,7 +12,8 @@
       "version": "v2",
       "base": "ABC",
       "quote": "WETH",
-      "chain": "ethereum"
+      "chain": "ethereum",
+      "poolAddress": "0xpool1"
     },
     {
       "pairId": "uniswap_v3_abc_usdc",
@@ -20,7 +21,8 @@
       "version": "v3",
       "base": "ABC",
       "quote": "USDC",
-      "chain": "ethereum"
+      "chain": "ethereum",
+      "poolAddress": "0xpool2"
     }
   ],
   "provider": "gt"

@@ -2,6 +2,9 @@
 
 Defines request and response shapes for Netlify Functions. See `/src/lib/types.ts` for TypeScript interfaces.
 
+During development the functions may return data from local fixtures when `USE_FIXTURES=true`.
+In production they fetch live data from Dexscreener first and fall back to GeckoTerminal on failure.
+
 ## `/api/search`
 - **Method:** GET
 - **Query params:** `address` (token address, required)

@@ -6,11 +6,12 @@ import SearchResultItem, { SearchResultSkeleton } from './SearchResultItem';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[] | null>(null);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [provider, setProvider] = useState<Provider | ''>('');
   const [backoff, setBackoff] = useState(0);
+  const [hasSearched, setHasSearched] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -31,24 +32,27 @@ export default function SearchPage() {
   async function handleSearch(e: React.FormEvent | React.MouseEvent) {
     e.preventDefault();
     if (!isValid(query)) {
-      setResults(null);
+      setResults([]);
       setProvider('');
       setError('invalid_address');
+      setHasSearched(false);
       return;
     }
     setLoading(true);
     setError(null);
     setProvider('');
+    setHasSearched(true);
     const data = await search(query);
     setLoading(false);
     if ('error' in data) {
-      setResults(null);
+      setResults([]);
       setError(data.error);
       setProvider(data.provider !== 'none' ? data.provider : '');
       if (data.error === 'rate_limit') setBackoff(5);
     } else {
-      setResults(data.results);
-      setProvider(data.results[0]?.provider || '');
+      setResults(Array.isArray(data.results) ? data.results : []);
+      const first = Array.isArray(data.results) && data.results.length > 0 ? data.results[0] : undefined;
+      setProvider(first?.provider || '');
     }
   }
 
@@ -96,7 +100,7 @@ export default function SearchPage() {
           )}
         </div>
       )}
-      {provider && (
+      {provider && results.length > 0 && (
         <div style={{ marginBottom: '0.5rem' }}>
           <span
             aria-label={`data provider ${provider}`}
@@ -106,7 +110,7 @@ export default function SearchPage() {
           </span>
         </div>
       )}
-      {(loading || (results && results.length > 0)) && (
+      {(loading || results.length > 0) && (
         <div style={{ border: '1px solid #ccc' }}>
           <div
             style={{
@@ -131,13 +135,12 @@ export default function SearchPage() {
           </div>
           {loading && Array.from({ length: 5 }).map((_, i) => <SearchResultSkeleton key={i} />)}
           {!loading &&
-            results &&
             results.map((r) => (
               <SearchResultItem key={r.token.address + r.chain} result={r} />
             ))}
         </div>
       )}
-      {!loading && results && results.length === 0 && <div>{copy.no_results}</div>}
+      {!loading && hasSearched && results.length === 0 && !error && <div>{copy.no_results}</div>}
     </div>
   );
 }

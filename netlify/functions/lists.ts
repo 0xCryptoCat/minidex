@@ -18,6 +18,8 @@ const USE_FIXTURES = process.env.USE_FIXTURES === 'true';
 const GT_API_BASE = process.env.GT_API_BASE || '';
 const GT_API_KEY = process.env.GT_API_KEY || '';
 const DS_API_BASE = process.env.DS_API_BASE || '';
+const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
+const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
 
 function isValidType(t?: string): t is ListType {
   return t === 'trending' || t === 'discovery' || t === 'leaderboard';
@@ -120,7 +122,7 @@ export const handler: Handler = async (event) => {
   }
 
   const items: ListItem[] = [];
-  let provider: 'gt' | 'ds' | 'none' = 'none';
+  let provider: 'gt' | 'ds' | 'cg' | 'none' = 'none';
 
   if (GT_API_BASE && GT_API_KEY) {
     try {
@@ -176,6 +178,59 @@ export const handler: Handler = async (event) => {
       }
     } catch {
       // noop, will fall back to DS
+    }
+  }
+
+  if (items.length === 0 && CG_API_BASE && CG_API_KEY) {
+    try {
+      const cgUrl = `${CG_API_BASE}/trending/${chain}?window=${window}`;
+      const cg = await fetchJson(cgUrl, {
+        headers: { 'x-cg-pro-api-key': CG_API_KEY },
+      });
+      const dataArray = Array.isArray(cg?.data) ? cg.data : [];
+      dataArray.forEach((d: any) => {
+        const attr = d.attributes || d;
+        const token = attr.base_token || attr.token || {};
+        const volMap = attr.volume_usd || attr.volume || {};
+        const priceChangeMap = attr.price_change_percentage || attr.priceChangePct || {};
+        const txMap = attr.transaction_count || attr.txns || {};
+        const windowKey = window === '1h' ? 'h1' : window === '1d' ? 'h24' : 'h7';
+        const volWindow = volMap[windowKey];
+        const priceChange = priceChangeMap[windowKey];
+        const tradesWindow = txMap[windowKey];
+        items.push({
+          pairId: d.id || attr.pool_id || attr.address || token.address,
+          chain: chain!,
+          token: {
+            address: token.address,
+            symbol: token.symbol,
+            name: token.name,
+          },
+          priceUsd:
+            attr.base_token_price_usd !== undefined
+              ? Number(attr.base_token_price_usd)
+              : attr.price_usd !== undefined
+              ? Number(attr.price_usd)
+              : undefined,
+          liqUsd:
+            attr.liquidity_usd !== undefined ? Number(attr.liquidity_usd) : undefined,
+          volWindowUsd: volWindow !== undefined ? Number(volWindow) : undefined,
+          priceChangePct: priceChange !== undefined ? Number(priceChange) : undefined,
+          tradesWindow: tradesWindow !== undefined ? Number(tradesWindow) : undefined,
+          createdAt:
+            attr.pool_created_at
+              ? Math.floor(new Date(attr.pool_created_at).getTime() / 1000)
+              : attr.created_at
+              ? Math.floor(new Date(attr.created_at).getTime() / 1000)
+              : undefined,
+        });
+      });
+      if (items.length > 0) {
+        rank(items);
+        provider = 'cg';
+      }
+    } catch {
+      // ignore, fall through
     }
   }
 

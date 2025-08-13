@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { CoreFinance, PoolSummary, TokenMeta, Provider } from '../../lib/types';
-import { search, pairs } from '../../lib/api';
-import { getSearchCache, getPairsCache } from '../../lib/cache';
+import { search, pairs, token as fetchToken } from '../../lib/api';
+import { getSearchCache, getPairsCache, getTokenCache } from '../../lib/cache';
 import { createPoller } from '../../lib/polling';
 
 interface Props {
@@ -24,6 +24,7 @@ export default function DetailView({ chain, address, pairId }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+    const tokenKey = `${chain}:${address}`;
 
     function loadFromCache() {
       const pairsKey = `${chain}:${address}`;
@@ -34,7 +35,11 @@ export default function DetailView({ chain, address, pairId }: Props) {
         setProvider(pairsData.provider);
       }
       const searchData = getSearchCache(address);
-      if (searchData) {
+      const tokenData = getTokenCache(tokenKey);
+      if (tokenData) {
+        setCore(tokenData.core);
+        setProvider(tokenData.provider);
+      } else if (searchData) {
         const result = searchData.results.find((r) => r.chain === chain);
         if (result) {
           setCore(result.core);
@@ -61,19 +66,31 @@ export default function DetailView({ chain, address, pairId }: Props) {
         setProvider(p.provider);
       }
 
-      let s = getSearchCache(address);
-      if (!s) {
-        const res = await search(address);
+      let t = getTokenCache(tokenKey);
+      if (!t) {
+        const res = await fetchToken(chain, address);
         if (!cancelled && !('error' in res)) {
-          s = res;
+          t = res;
         }
       }
-      if (s && !cancelled) {
-        const result = s.results.find((r) => r.chain === chain);
-        if (result) {
-          setCore(result.core);
-          setLinks((result as any).links || null);
-          setProvider(result.provider);
+      if (t && !cancelled) {
+        setCore(t.core);
+        setProvider(t.provider);
+      } else {
+        let s = getSearchCache(address);
+        if (!s) {
+          const res = await search(address);
+          if (!cancelled && !('error' in res)) {
+            s = res;
+          }
+        }
+        if (s && !cancelled) {
+          const result = s.results.find((r) => r.chain === chain);
+          if (result) {
+            setCore(result.core);
+            setLinks((result as any).links || null);
+            setProvider(result.provider);
+          }
         }
       }
     }
@@ -81,18 +98,14 @@ export default function DetailView({ chain, address, pairId }: Props) {
     ensureData();
 
     const poller = createPoller(async () => {
-      const res = await search(address);
+      const res = await fetchToken(chain, address);
       if ('error' in res) {
         const err: any = new Error('api error');
         err.status = 500;
         throw err;
       }
-      const result = res.results.find((r) => r.chain === chain);
-      if (result) {
-        setCore(result.core);
-        setLinks((result as any).links || null);
-        setProvider(result.provider);
-      }
+      setCore(res.core);
+      setProvider(res.provider);
     }, 15000, {
       onError: () => setDegraded(true),
       onRecover: () => setDegraded(false),

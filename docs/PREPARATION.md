@@ -138,6 +138,7 @@ Each file should have a short README note (top comment) describing what it tests
 **Purpose:** Clear env contract and deploy repeatability.
 
 * Keys: `GT_API_BASE`, `DS_API_BASE`, optional `ETHERSCAN_KEY`.
+* CoinGecko: `COINGECKO_API_BASE`, `COINGECKO_API_KEY` — Pro on-chain API (10K calls/mo, 30 req/min). Endpoints consumed: `token-data`, `tokens-data`, `pool-ohlcv`, `pool-trades`, `trending`. Handle `400`/`401`/`429` codes with graceful fallback.
 * Local vs Netlify env guidance.
 * Never expose secrets client-side; all calls through functions.
 

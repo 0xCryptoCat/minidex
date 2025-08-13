@@ -7,12 +7,15 @@ import type {
   OHLCResponse,
   CacheTradesEntry,
   TradesResponse,
+  CacheTokenEntry,
+  TokenResponse,
 } from './types';
 
 const searchCache = new Map<string, CacheSearchEntry>();
 const pairsCache = new Map<string, CachePairsEntry>();
 const ohlcCache = new Map<string, CacheOHLCEntry>();
 const tradesCache = new Map<string, CacheTradesEntry>();
+const tokenCache = new Map<string, CacheTokenEntry>();
 
 const TTL_SECONDS = 30;
 const MAX_ENTRIES = 50;
@@ -93,5 +96,13 @@ export function getTradesCache(key: string): TradesResponse | undefined {
 }
 export function setTradesCache(key: string, response: TradesResponse) {
   setMapEntry(tradesCache, `trades:${key}`, response);
+}
+
+// Token metrics
+export function getTokenCache(key: string): TokenResponse | undefined {
+  return getMapEntry(tokenCache, `token:${key}`);
+}
+export function setTokenCache(key: string, response: TokenResponse) {
+  setMapEntry(tokenCache, `token:${key}`, response);
 }
 

@@ -46,8 +46,13 @@ export function computeTradeMarkers(trades: Trade[], limit = MAX_MARKERS): Trade
   return markers.slice(-limit);
 }
 
-export function getTradeMarkers(pairId: string, limit = MAX_MARKERS): TradeMarkerCluster[] {
-  const cached = getTradesCache(pairId);
+export function getTradeMarkers(
+  pairId: string,
+  chain?: string,
+  limit = MAX_MARKERS
+): TradeMarkerCluster[] {
+  const key = chain ? `${chain}:${pairId}` : pairId;
+  const cached = getTradesCache(key);
   if (!cached) return [];
   return computeTradeMarkers(cached.trades, limit);
 }

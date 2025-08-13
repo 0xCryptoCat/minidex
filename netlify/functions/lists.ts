@@ -27,9 +27,6 @@ function isValidType(t?: string): t is ListType {
 function isValidWindow(w?: string): w is Window {
   return w === '1h' || w === '1d' || w === '1w';
 }
-function isValidChain(c?: string): c is string {
-  return !!c;
-}
 
 async function readFixture(path: string): Promise<ListsResponse> {
   const url = new URL(path, import.meta.url);
@@ -93,7 +90,7 @@ export const handler: Handler = async (event) => {
   const limitParam = event.queryStringParameters?.limit;
   const limit = limitParam ? parseInt(limitParam, 10) : undefined;
 
-  if (!isValidChain(chain) || !isValidType(type) || !isValidWindow(window)) {
+  if (!isValidType(type) || !isValidWindow(window)) {
     const body: ApiError = { error: 'invalid_request', provider: 'none' };
     return { statusCode: 400, body: JSON.stringify(body) };
   }
@@ -102,6 +99,11 @@ export const handler: Handler = async (event) => {
     'Content-Type': 'application/json',
     'Cache-Control': 'public, max-age=60, stale-while-revalidate=60',
   };
+
+  if (!chain) {
+    const bodyRes: ListsResponse = { chain: '', type: type!, window: window!, items: [], provider: 'none' };
+    return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+  }
 
   const key = `${type}:${chain}:${window}`;
   if (USE_FIXTURES) {
@@ -124,12 +126,13 @@ export const handler: Handler = async (event) => {
   const items: ListItem[] = [];
   let provider: 'gt' | 'ds' | 'cg' | 'none' = 'none';
 
-  if (GT_API_BASE && GT_API_KEY) {
+  if (GT_API_BASE) {
     try {
       const gtUrl = `${GT_API_BASE}/networks/${chain}/${type}?window=${window}${
         limit ? `&limit=${limit}` : ''
       }`;
-      const gt = await fetchJson(gtUrl, { headers: { 'X-API-KEY': GT_API_KEY } });
+      const init = GT_API_KEY ? { headers: { 'X-API-KEY': GT_API_KEY } } : undefined;
+      const gt = await fetchJson(gtUrl, init);
       const dataArray = Array.isArray(gt?.data)
         ? gt.data
         : Array.isArray(gt?.items)

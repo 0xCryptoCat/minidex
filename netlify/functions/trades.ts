@@ -35,9 +35,10 @@ async function fetchJson(url: string): Promise<any> {
 
 export const handler: Handler = async (event) => {
   const pairId = event.queryStringParameters?.pairId;
+  const chain = event.queryStringParameters?.chain;
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
 
-  if (!isValidPair(pairId)) {
+  if (!isValidPair(pairId) || !chain) {
     const body: ApiError = { error: 'invalid_request', provider: 'none' };
     return { statusCode: 400, body: JSON.stringify(body) };
   }
@@ -149,7 +150,7 @@ export const handler: Handler = async (event) => {
 
   if (trades.length === 0 && forceProvider !== 'ds') {
     try {
-      const gt = await fetchJson(`${GT_API_BASE}/pools/${pairId}/trades`);
+      const gt = await fetchJson(`${GT_API_BASE}/networks/${chain}/pools/${pairId}/trades`);
       const list = Array.isArray(gt?.data)
         ? gt.data
         : Array.isArray(gt?.trades)

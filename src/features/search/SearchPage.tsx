@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { SearchResult } from '../../lib/types';
 import { search } from '../../lib/api';
 import copy from '../../copy/en.json';
@@ -9,6 +9,11 @@ export default function SearchPage() {
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +33,8 @@ export default function SearchPage() {
     <div style={{ padding: '1rem' }}>
       <form onSubmit={handleSearch} style={{ marginBottom: '1rem' }}>
         <input
+          id="search-input"
+          ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={copy.search_placeholder}

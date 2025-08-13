@@ -14,6 +14,7 @@ SmallDex is a **Telegram Mini App–friendly, mobile-first DEX chart viewer** in
 
   * **Primary**: \[GeckoTerminal public API]
   * **Fallback**: \[DEXScreener public API]
+  * **Optional**: \[CoinGecko on-chain API] (Pro — 10K calls/mo, 30 req/min; auth via `x-cg-pro-api-key` header or `x_cg_pro_api_key` query)
   * **Optional**: Etherscan-style APIs for TX explorer previews.
 
 ---
@@ -124,6 +125,8 @@ Store in `.env.local` for local dev, Netlify **Environment Variables** for prod.
 GT_API_BASE="https://api.geckoterminal.com/api/v2"
 DS_API_BASE="https://api.dexscreener.com/latest"
 GT_API_KEY=""              # required for GeckoTerminal lists
+COINGECKO_API_BASE="https://api.coingecko.com/api/v3/onchain/dex" # CoinGecko Pro (10K calls/mo, 30 req/min)
+COINGECKO_API_KEY=""        # send via x-cg-pro-api-key header or x_cg_pro_api_key query
 ETHERSCAN_KEY="..."    # optional, for explorer.ts
 ```
 

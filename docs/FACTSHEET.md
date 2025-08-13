@@ -1,6 +1,6 @@
 # Project Factsheet
 
-**Name:** DEX Chart Mini-App
+**Name:** SmallDex
 
 **Mission:** Mobile-first chart viewer for Telegram WebApp and mobile web, using GeckoTerminal with Dexscreener fallback.
 

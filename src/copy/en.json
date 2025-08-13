@@ -5,5 +5,7 @@
   "loading": "Loading...",
   "error_generic": "Something went wrong",
   "error_invalid_address": "Invalid address",
-  "error_rate_limit": "Too many requests, please slow down"
+  "error_rate_limit": "Too many requests, please slow down",
+  "error_upstream": "Network error, please try again",
+  "retry": "Retry"
 }

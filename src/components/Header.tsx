@@ -71,6 +71,15 @@ export default function Header() {
           <ul>
             <li>
               <a
+                href="https://github.com/smol-ai/minidex"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Source Code
+              </a>
+            </li>
+            <li>
+              <a
                 href="https://github.com/smol-ai/minidex#readme"
                 target="_blank"
                 rel="noopener noreferrer"

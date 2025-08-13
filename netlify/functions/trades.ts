@@ -1,5 +1,5 @@
 import type { Handler } from '@netlify/functions';
-import type { TradesResponse, ApiError, Provider } from '../../src/lib/types';
+import type { TradesResponse, ApiError, Provider, Trade } from '../../src/lib/types';
 import fs from 'fs/promises';
 
 const GT_FIXTURE = '../../fixtures/trades-gt.json';
@@ -68,10 +68,32 @@ export const handler: Handler = async (event) => {
   try {
     if (forceProvider !== 'gt') {
       const ds = await fetchJson(`${DS_API_BASE}/dex/pairs/${pairId}/trades`);
-      if (!ds || Object.keys(ds).length === 0) throw new Error('empty');
-      ds.provider = 'ds';
-      ds.pairId = pairId;
-      return { statusCode: 200, headers, body: JSON.stringify(ds) };
+      if (!ds || !Array.isArray(ds.trades)) throw new Error('empty');
+      const trades: Trade[] = ds.trades.map((t: any) => ({
+        ts: Number(t.ts ?? t.time ?? t.blockTimestamp ?? t[0]),
+        side: (t.side || t.type || t.tradeType || '').toLowerCase() === 'sell' ? 'sell' : 'buy',
+        price: Number(t.priceUsd ?? t.price_usd ?? t.price ?? t[1] ?? 0),
+        amountBase:
+          t.amountBase !== undefined
+            ? Number(t.amountBase)
+            : t.baseAmount !== undefined
+            ? Number(t.baseAmount)
+            : t.amount0 !== undefined
+            ? Number(t.amount0)
+            : undefined,
+        amountQuote:
+          t.amountQuote !== undefined
+            ? Number(t.amountQuote)
+            : t.quoteAmount !== undefined
+            ? Number(t.quoteAmount)
+            : t.amount1 !== undefined
+            ? Number(t.amount1)
+            : undefined,
+        txHash: t.txHash || t.tx_hash || t.transactionHash,
+        wallet: t.wallet || t.maker || t.trader,
+      }));
+      const bodyRes: TradesResponse = { pairId, trades, provider: 'ds' };
+      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
     }
     throw new Error('force gt');
   } catch {
@@ -81,10 +103,36 @@ export const handler: Handler = async (event) => {
     }
     try {
       const gt = await fetchJson(`${GT_API_BASE}/pools/${pairId}/trades`);
-      if (!gt || Object.keys(gt).length === 0) throw new Error('empty');
-      gt.provider = 'gt';
-      gt.pairId = pairId;
-      return { statusCode: 200, headers, body: JSON.stringify(gt) };
+      const list = gt.data || gt.trades || [];
+      if (!Array.isArray(list)) throw new Error('empty');
+      const trades: Trade[] = list.map((d: any) => {
+        const t = d.attributes || d;
+        return {
+          ts: Number(t.timestamp ?? t.ts ?? t.time ?? t[0]),
+          side: (t.trade_type || t.side || t.type || '').toLowerCase() === 'sell' ? 'sell' : 'buy',
+          price: Number(t.price_usd ?? t.priceUsd ?? t.price ?? t[1] ?? 0),
+          amountBase:
+            t.amount_base !== undefined
+              ? Number(t.amount_base)
+              : t.token_amount_in !== undefined
+              ? Number(t.token_amount_in)
+              : t.baseAmount !== undefined
+              ? Number(t.baseAmount)
+              : undefined,
+          amountQuote:
+            t.amount_quote !== undefined
+              ? Number(t.amount_quote)
+              : t.token_amount_out !== undefined
+              ? Number(t.token_amount_out)
+              : t.quoteAmount !== undefined
+              ? Number(t.quoteAmount)
+              : undefined,
+          txHash: t.tx_hash || t.txHash,
+          wallet: t.address || t.wallet || t.trader,
+        };
+      });
+      const bodyRes: TradesResponse = { pairId, trades, provider: 'gt' };
+      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
     } catch {
       const body: ApiError = { error: 'upstream_error', provider: 'none' };
       return { statusCode: 500, headers, body: JSON.stringify(body) };

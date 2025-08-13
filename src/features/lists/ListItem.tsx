@@ -23,12 +23,15 @@ export default function ListItem({ item, rank, provider }: Props) {
   function handleClick() {
     navigate(`/t/${item.chain}/${item.token.address}/${item.pairId}`);
   }
+  const ageDays = item.createdAt
+    ? Math.floor((Date.now() / 1000 - item.createdAt) / 86400)
+    : undefined;
   return (
     <div
       onClick={handleClick}
       style={{
         display: 'grid',
-        gridTemplateColumns: '40px 1fr 80px 80px 80px 80px 80px 60px',
+        gridTemplateColumns: '40px 1fr 60px 80px 80px 80px 80px 60px',
         gap: '0.5rem',
         padding: '0.5rem',
         cursor: 'pointer',
@@ -41,11 +44,11 @@ export default function ListItem({ item, rank, provider }: Props) {
         <strong>{item.token.symbol}</strong>
         <span style={{ fontSize: '0.75rem', color: '#666' }}>{pair}</span>
       </div>
+      <div>{ageDays !== undefined ? `${ageDays}d` : '-'}</div>
       <div>{item.priceUsd !== undefined ? `$${item.priceUsd.toFixed(4)}` : '-'}</div>
       <div>{item.liqUsd !== undefined ? `$${item.liqUsd.toLocaleString()}` : '-'}</div>
       <div>{item.volWindowUsd !== undefined ? `$${item.volWindowUsd.toLocaleString()}` : '-'}</div>
       <div>{item.priceChangePct !== undefined ? `${item.priceChangePct.toFixed(2)}%` : '-'}</div>
-      <div>{item.score !== undefined ? item.score.toFixed(2) : '-'}</div>
       <div style={{ justifySelf: 'end' }}>
         <span style={{ fontSize: '0.75rem', border: '1px solid #999', padding: '0 0.25rem' }}>{provider}</span>
       </div>
@@ -58,7 +61,7 @@ export function ListItemSkeleton() {
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: '40px 1fr 80px 80px 80px 80px 80px 60px',
+        gridTemplateColumns: '40px 1fr 60px 80px 80px 80px 80px 60px',
         gap: '0.5rem',
         padding: '0.5rem',
         borderBottom: '1px solid #eee',

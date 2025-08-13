@@ -101,6 +101,8 @@ main.with-tabs {
 
 .bottom-tabs a.active {
   color: var(--color-accent);
+  font-weight: bold;
+  border-top: 2px solid var(--color-accent);
 }
 
 .bottom-tabs a:focus-visible {
@@ -141,13 +143,25 @@ button:focus-visible {
   padding: 0.5rem;
   border-bottom: 1px solid #eee;
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .search-results-table th {
   position: sticky;
   top: 0;
-  background: #fff;
+  background: var(--color-bg-muted);
+  color: var(--color-text);
   font-weight: bold;
+}
+
+.search-results-table tbody tr:nth-child(odd) {
+  background: var(--color-bg);
+}
+
+.search-results-table tbody tr:nth-child(even) {
+  background: var(--color-bg-muted);
 }
 
 .provider-badge {

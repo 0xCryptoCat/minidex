@@ -112,6 +112,7 @@ export interface ListItem {
   volWindowUsd?: number;
   priceChangePct?: number;
   tradesWindow?: number;
+  createdAt?: UnixSeconds;   // pool or token creation timestamp
   score?: number;            // normalized 0..1 for sorting in “trending”
   promoted?: boolean;        // monetization flag (styling only in MVP)
 }

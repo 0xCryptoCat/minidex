@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import type { SearchResult, Provider } from '../../lib/types';
-import { search } from '../../lib/api';
+import type { SearchResult, Provider, ListItem as TrendingItem } from '../../lib/types';
+import { search, lists } from '../../lib/api';
 import copy from '../../copy/en.json';
 import SearchResultItem, { SearchResultSkeleton } from './SearchResultItem';
+import ListItem, { ListItemSkeleton } from '../lists/ListItem';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
@@ -12,6 +13,9 @@ export default function SearchPage() {
   const [provider, setProvider] = useState<Provider | ''>('');
   const [backoff, setBackoff] = useState(0);
   const [hasSearched, setHasSearched] = useState(false);
+  const [trending, setTrending] = useState<TrendingItem[]>([]);
+  const [trendingProvider, setTrendingProvider] = useState<Provider>('gt');
+  const [trendingLoading, setTrendingLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -56,6 +60,24 @@ export default function SearchPage() {
     }
   }
 
+  async function fetchTrending() {
+    setTrendingLoading(true);
+    const data = await lists({ chain: 'ethereum', type: 'trending', window: '1d', limit: 10 });
+    setTrendingLoading(false);
+    if ('error' in data) {
+      setTrending([]);
+    } else {
+      setTrending(data.items);
+      setTrendingProvider(data.provider);
+    }
+  }
+
+  useEffect(() => {
+    if ((!hasSearched && !error) || (hasSearched && results.length === 0 && !loading && !error)) {
+      if (trending.length === 0 && !trendingLoading) fetchTrending();
+    }
+  }, [hasSearched, results, loading, error]);
+
   return (
     <div style={{ padding: '1rem' }}>
       <form onSubmit={handleSearch} style={{ marginBottom: '0.5rem' }}>
@@ -81,15 +103,7 @@ export default function SearchPage() {
         </div>
       )}
       {error && error !== 'invalid_address' && (
-        <div style={{
-          background: '#fee',
-          color: '#900',
-          padding: '0.5rem',
-          marginBottom: '0.5rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
+        <div className="error-banner">
           <span>
             {error === 'rate_limit'
               ? `${copy.error_rate_limit}${backoff > 0 ? ` (${backoff})` : ''}`
@@ -100,47 +114,69 @@ export default function SearchPage() {
           )}
         </div>
       )}
-      {provider && results.length > 0 && (
-        <div style={{ marginBottom: '0.5rem' }}>
-          <span
-            aria-label={`data provider ${provider}`}
-            style={{ fontSize: '0.75rem', border: '1px solid #999', padding: '0 0.25rem' }}
-          >
-            {provider}
-          </span>
-        </div>
+      {results.length > 0 && (
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {copy.results}
+          {provider && (
+            <span className="provider-badge" aria-label={`data provider ${provider}`}>
+              {provider}
+            </span>
+          )}
+        </h2>
       )}
       {(loading || results.length > 0) && (
-        <div style={{ border: '1px solid #ccc' }}>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '40px 1fr 80px 80px 80px 80px 80px 60px',
-              gap: '0.5rem',
-              padding: '0.5rem',
-              fontWeight: 'bold',
-              position: 'sticky',
-              top: 0,
-              background: '#fff'
-            }}
-          >
-            <div></div>
-            <div>Token</div>
-            <div>Chain</div>
-            <div>Price</div>
-            <div>Liq</div>
-            <div>Vol24h</div>
-            <div>%</div>
-            <div>Pools</div>
-          </div>
-          {loading && Array.from({ length: 5 }).map((_, i) => <SearchResultSkeleton key={i} />)}
-          {!loading &&
-            results.map((r) => (
-              <SearchResultItem key={r.token.address + r.chain} result={r} />
-            ))}
-        </div>
+        <table className="search-results-table">
+          <colgroup>
+            <col style={{ width: '40px' }} />
+            <col />
+            <col style={{ width: '80px' }} />
+            <col style={{ width: '80px' }} />
+            <col style={{ width: '80px' }} />
+            <col style={{ width: '80px' }} />
+            <col style={{ width: '80px' }} />
+            <col style={{ width: '60px' }} />
+          </colgroup>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Token</th>
+              <th>Chain</th>
+              <th>Price</th>
+              <th>Liq</th>
+              <th>Vol24h</th>
+              <th>%</th>
+              <th>Pools</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading
+              ? Array.from({ length: 5 }).map((_, i) => <SearchResultSkeleton key={i} />)
+              : results.map((r) => (
+                  <SearchResultItem key={r.token.address + r.chain} result={r} />
+                ))}
+          </tbody>
+        </table>
       )}
-      {!loading && hasSearched && results.length === 0 && !error && <div>{copy.no_results}</div>}
+      {!loading && hasSearched && results.length === 0 && !error && (
+        <div className="no-results">{copy.no_results}</div>
+      )}
+      {!error && (!hasSearched || (hasSearched && results.length === 0 && !loading)) && (
+        <section className="trending-section">
+          <h2>{copy.trending_tokens}</h2>
+          <div style={{ border: '1px solid #ccc' }}>
+            {trendingLoading
+              ? Array.from({ length: 5 }).map((_, i) => <ListItemSkeleton key={i} />)
+              : trending.slice(0, 10).map((item, idx) => (
+                  <ListItem
+                    key={item.pairId}
+                    item={item}
+                    rank={idx + 1}
+                    provider={trendingProvider}
+                  />
+                ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

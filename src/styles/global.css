@@ -124,3 +124,53 @@ main.with-tabs {
 .view-tab:focus-visible {
   outline: 2px solid var(--color-accent);
 }
+
+input:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--color-accent);
+}
+
+.search-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.search-results-table th,
+.search-results-table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.search-results-table th {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  font-weight: bold;
+}
+
+.provider-badge {
+  font-size: 0.75rem;
+  border: 1px solid #999;
+  padding: 0 0.25rem;
+}
+
+.error-banner {
+  background: #fee;
+  color: #900;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.no-results {
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+.trending-section {
+  margin-top: 1rem;
+}

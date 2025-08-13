@@ -77,8 +77,8 @@ SmallDex is a **Telegram Mini App–friendly, mobile-first DEX chart viewer** in
 
 ## 📡 Data Fetching & Caching
 
-* **Primary provider:** GeckoTerminal.
-* **Fallback provider:** Dexscreener (if GT fails or stale).
+* **Primary provider:** GeckoTerminal (requires `GT_API_KEY` for lists).
+* **Fallback provider:** Dexscreener (if GT fails or stale; used when no GT key).
 * **Serverless functions**: Normalize responses, cache (30–60s), hide keys, apply fallbacks.
 * **Client session cache**:
 
@@ -123,6 +123,7 @@ Store in `.env.local` for local dev, Netlify **Environment Variables** for prod.
 ```
 GT_API_BASE="https://api.geckoterminal.com/api/v2"
 DS_API_BASE="https://api.dexscreener.com/latest"
+GT_API_KEY=""              # required for GeckoTerminal lists
 ETHERSCAN_KEY="..."    # optional, for explorer.ts
 ```
 

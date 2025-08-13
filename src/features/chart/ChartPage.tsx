@@ -79,7 +79,7 @@ export default function ChartPage() {
 
       {!loading && !error && pools.length > 0 && (
         <>
-          {view !== 'detail' && (
+          {view !== 'detail' && pools.length > 1 && (
             <PoolSwitcher pools={pools} current={currentPair} onSwitch={handlePoolSwitch} />
           )}
 

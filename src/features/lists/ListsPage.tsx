@@ -11,7 +11,7 @@ export default function ListsPage() {
   const { chain, type } = useParams<{ chain: string; type: string }>();
   const [windowSel, setWindowSel] = useState<Window>('1h');
   const [items, setItems] = useState<Item[]>([]);
-  const [provider, setProvider] = useState<Provider | undefined>();
+  const [provider, setProvider] = useState<(Provider | 'none') | undefined>();
   const [sortKey, setSortKey] = useState<keyof Item | 'rank'>('rank');
   const [sortAsc, setSortAsc] = useState(false);
 
@@ -68,6 +68,11 @@ export default function ListsPage() {
     <div style={{ padding: '1rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ marginBottom: '0.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
         <strong style={{ textTransform: 'capitalize' }}>{type}</strong>
+        {provider && (
+          <span className="provider-badge" aria-label={`data provider ${provider}`}>
+            {provider}
+          </span>
+        )}
         <select value={windowSel} onChange={(e) => setWindowSel(e.target.value as Window)}>
           {windows.map((w) => (
             <option key={w} value={w}>{w}</option>
@@ -78,7 +83,7 @@ export default function ListsPage() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '40px 1fr 80px 80px 80px 80px 80px 60px',
+            gridTemplateColumns: '40px 1fr 80px 80px 80px 80px 80px',
             gap: '0.5rem',
             padding: '0.5rem',
             fontWeight: 'bold',
@@ -107,14 +112,13 @@ export default function ListsPage() {
           <div style={{ cursor: 'pointer' }} onClick={() => handleSort('score')}>
             Score {sortKey === 'score' ? (sortAsc ? '▲' : '▼') : ''}
           </div>
-          <div></div>
         </div>
         <div style={{ flex: 1 }}>
           <VirtualList
             items={sorted}
             itemHeight={56}
             render={(item, idx) => (
-              <ListItem key={item.pairId} item={item} rank={idx + 1} provider={provider || 'gt'} />
+              <ListItem key={item.pairId} item={item} rank={idx + 1} />
             )}
           />
         </div>

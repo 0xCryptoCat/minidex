@@ -122,7 +122,7 @@ export interface ListsResponse {
   type: ListType;
   window: Window;
   items: ListItem[];
-  provider: Provider;
+  provider: Provider | 'none';
 }
 
 /* ---------- /api/explorer (optional) ---------- */

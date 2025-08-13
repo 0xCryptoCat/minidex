@@ -65,11 +65,14 @@ export const handler: Handler = async (event) => {
     }
   }
 
-  try {
-    if (forceProvider !== 'gt') {
+  let trades: Trade[] = [];
+  let provider: Provider = 'none';
+
+  if (forceProvider !== 'gt') {
+    try {
       const ds = await fetchJson(`${DS_API_BASE}/dex/pairs/${pairId}/trades`);
       const dsList = Array.isArray(ds?.trades) ? ds.trades : [];
-      const trades: Trade[] = dsList.map((t: any) => ({
+      trades = dsList.map((t: any) => ({
         ts: Number(t.ts ?? t.time ?? t.blockTimestamp ?? t[0]),
         side: (t.side || t.type || t.tradeType || '').toLowerCase() === 'sell' ? 'sell' : 'buy',
         price: Number(t.priceUsd ?? t.price_usd ?? t.price ?? t[1] ?? 0),
@@ -92,15 +95,13 @@ export const handler: Handler = async (event) => {
         txHash: t.txHash || t.tx_hash || t.transactionHash,
         wallet: t.wallet || t.maker || t.trader,
       }));
-      const bodyRes: TradesResponse = { pairId, trades, provider: 'ds' };
-      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+      if (trades.length > 0) provider = 'ds';
+    } catch {
+      // ignore and fall through to GT
     }
-    throw new Error('force gt');
-  } catch {
-    if (forceProvider === 'ds') {
-      const body: ApiError = { error: 'upstream_error', provider: 'none' };
-      return { statusCode: 500, headers, body: JSON.stringify(body) };
-    }
+  }
+
+  if (trades.length === 0 && forceProvider !== 'ds') {
     try {
       const gt = await fetchJson(`${GT_API_BASE}/pools/${pairId}/trades`);
       const list = Array.isArray(gt?.data)
@@ -108,7 +109,7 @@ export const handler: Handler = async (event) => {
         : Array.isArray(gt?.trades)
         ? gt.trades
         : [];
-      const trades: Trade[] = list.map((d: any) => {
+      trades = list.map((d: any) => {
         const t = d.attributes || d;
         return {
           ts: Number(t.timestamp ?? t.ts ?? t.time ?? t[0]),
@@ -134,12 +135,13 @@ export const handler: Handler = async (event) => {
           wallet: t.address || t.wallet || t.trader,
         };
       });
-      const bodyRes: TradesResponse = { pairId, trades, provider: 'gt' };
-      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+      if (trades.length > 0) provider = 'gt';
     } catch {
-      const body: ApiError = { error: 'upstream_error', provider: 'none' };
-      return { statusCode: 500, headers, body: JSON.stringify(body) };
+      // still empty
     }
   }
+
+  const bodyRes: TradesResponse = { pairId, trades, provider };
+  return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
 };
 

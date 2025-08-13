@@ -14,10 +14,13 @@ interface Props {
 export default function ChartOnlyView({ pairId, chain, tf, xDomain, onXDomainChange }: Props) {
   const [showMarkers, setShowMarkers] = useState(false);
   const [markers, setMarkers] = useState<TradeMarkerCluster[]>([]);
+  const [noTrades, setNoTrades] = useState(false);
 
   useEffect(() => {
     if (showMarkers) {
-      setMarkers(getTradeMarkers(pairId));
+      const m = getTradeMarkers(pairId);
+      setMarkers(m);
+      setNoTrades(m.length === 0);
     }
   }, [pairId, showMarkers]);
 
@@ -40,6 +43,7 @@ export default function ChartOnlyView({ pairId, chain, tf, xDomain, onXDomainCha
           <input type="checkbox" checked={showMarkers} onChange={handleToggle} /> trades
         </label>
       </div>
+      {showMarkers && noTrades && <div style={{ marginBottom: '0.5rem' }}>No trades</div>}
       <PriceChart
         pairId={pairId}
         tf={tf}

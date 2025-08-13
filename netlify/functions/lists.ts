@@ -16,6 +16,8 @@ const FIXTURES: Record<string, string> = {
 
 const USE_FIXTURES = process.env.USE_FIXTURES === 'true';
 const GT_API_BASE = process.env.GT_API_BASE || '';
+const GT_API_KEY = process.env.GT_API_KEY || '';
+const DS_API_BASE = process.env.DS_API_BASE || '';
 
 function isValidType(t?: string): t is ListType {
   return t === 'trending' || t === 'discovery' || t === 'leaderboard';
@@ -33,17 +35,29 @@ async function readFixture(path: string): Promise<ListsResponse> {
   return JSON.parse(data) as ListsResponse;
 }
 
-async function fetchJson(url: string): Promise<any> {
+async function fetchJson(url: string, init?: RequestInit): Promise<any> {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), 3000);
   try {
-    const res = await fetch(url, { signal: controller.signal });
+    const res = await fetch(url, { signal: controller.signal, ...(init || {}) });
     if (!res.ok) throw new Error('status');
     return await res.json();
   } finally {
     clearTimeout(id);
   }
 }
+
+// Static popular tokens per chain used to approximate trending when GT is
+// unavailable. Addresses are checksummed.
+const DS_POPULAR: Record<string, string[]> = {
+  ethereum: [
+    '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH
+    '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', // USDC
+    '0xdAC17F958D2ee523a2206206994597C13D831ec7', // USDT
+    '0x6B175474E89094C44Da98b954EedeAC495271d0F', // DAI
+    '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', // WBTC
+  ],
+};
 
 function rank(items: ListItem[]): void {
   let maxVol = 0;
@@ -105,58 +119,121 @@ export const handler: Handler = async (event) => {
     }
   }
 
-  try {
-    const gtUrl = `${GT_API_BASE}/networks/${chain}/${type}?window=${window}${limit ? `&limit=${limit}` : ''}`;
-    const gt = await fetchJson(gtUrl);
-    const dataArray = Array.isArray(gt?.data)
-      ? gt.data
-      : Array.isArray(gt?.items)
-      ? gt.items
-      : [];
+  const items: ListItem[] = [];
+  let provider: 'gt' | 'ds' | 'none' = 'none';
 
-    const items: ListItem[] = dataArray.map((d: any) => {
-      const attr = d.attributes || {};
-      const token = attr.base_token || attr.token || {};
-      const volMap = attr.volume_usd || attr.volume || {};
-      const priceChangeMap = attr.price_change_percentage || attr.priceChangePct || {};
-      const txMap = attr.transaction_count || attr.txns || {};
-      const windowKey = window === '1h' ? 'h1' : window === '1d' ? 'h24' : 'h7';
-      const volWindow = volMap[windowKey];
-      const priceChange = priceChangeMap[windowKey];
-      const tradesWindow = txMap[windowKey];
-      const createdAt = attr.pool_created_at
-        ? Math.floor(new Date(attr.pool_created_at).getTime() / 1000)
-        : attr.created_at
-        ? Math.floor(new Date(attr.created_at).getTime() / 1000)
-        : undefined;
-      return {
-        pairId: d.id || attr.pool_id || attr.address,
-        chain: chain as string,
-        token: {
-          address: token.address,
-          symbol: token.symbol,
-          name: token.name,
-        },
-        priceUsd:
-          attr.base_token_price_usd !== undefined
-            ? Number(attr.base_token_price_usd)
-            : attr.price_usd !== undefined
-            ? Number(attr.price_usd)
-            : undefined,
-        liqUsd: attr.liquidity_usd !== undefined ? Number(attr.liquidity_usd) : undefined,
-        volWindowUsd: volWindow !== undefined ? Number(volWindow) : undefined,
-        priceChangePct: priceChange !== undefined ? Number(priceChange) : undefined,
-        tradesWindow: tradesWindow !== undefined ? Number(tradesWindow) : undefined,
-        createdAt,
-      } as ListItem;
-    });
+  if (GT_API_BASE && GT_API_KEY) {
+    try {
+      const gtUrl = `${GT_API_BASE}/networks/${chain}/${type}?window=${window}${
+        limit ? `&limit=${limit}` : ''
+      }`;
+      const gt = await fetchJson(gtUrl, { headers: { 'X-API-KEY': GT_API_KEY } });
+      const dataArray = Array.isArray(gt?.data)
+        ? gt.data
+        : Array.isArray(gt?.items)
+        ? gt.items
+        : [];
 
-    rank(items);
-    const limited = limit !== undefined ? items.slice(0, limit) : items;
-    const bodyRes: ListsResponse = { chain, type, window, items: limited, provider: 'gt' };
-    return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
-  } catch {
-    const body: ApiError = { error: 'upstream_error', provider: 'none' };
-    return { statusCode: 500, headers, body: JSON.stringify(body) };
+      dataArray.forEach((d: any) => {
+        const attr = d.attributes || {};
+        const token = attr.base_token || attr.token || {};
+        const volMap = attr.volume_usd || attr.volume || {};
+        const priceChangeMap = attr.price_change_percentage || attr.priceChangePct || {};
+        const txMap = attr.transaction_count || attr.txns || {};
+        const windowKey = window === '1h' ? 'h1' : window === '1d' ? 'h24' : 'h7';
+        const volWindow = volMap[windowKey];
+        const priceChange = priceChangeMap[windowKey];
+        const tradesWindow = txMap[windowKey];
+        const createdAt = attr.pool_created_at
+          ? Math.floor(new Date(attr.pool_created_at).getTime() / 1000)
+          : attr.created_at
+          ? Math.floor(new Date(attr.created_at).getTime() / 1000)
+          : undefined;
+        items.push({
+          pairId: d.id || attr.pool_id || attr.address,
+          chain: chain as string,
+          token: {
+            address: token.address,
+            symbol: token.symbol,
+            name: token.name,
+          },
+          priceUsd:
+            attr.base_token_price_usd !== undefined
+              ? Number(attr.base_token_price_usd)
+              : attr.price_usd !== undefined
+              ? Number(attr.price_usd)
+              : undefined,
+          liqUsd: attr.liquidity_usd !== undefined ? Number(attr.liquidity_usd) : undefined,
+          volWindowUsd: volWindow !== undefined ? Number(volWindow) : undefined,
+          priceChangePct: priceChange !== undefined ? Number(priceChange) : undefined,
+          tradesWindow: tradesWindow !== undefined ? Number(tradesWindow) : undefined,
+          createdAt,
+        });
+      });
+      if (items.length > 0) {
+        rank(items);
+        provider = 'gt';
+      }
+    } catch {
+      // noop, will fall back to DS
+    }
   }
+
+  if (items.length === 0 && DS_API_BASE) {
+    const addresses = DS_POPULAR[chain] || [];
+    for (const addr of addresses.slice(0, limit ?? addresses.length)) {
+      try {
+        const ds = await fetchJson(`${DS_API_BASE}/dex/tokens/${addr}`);
+        const first = Array.isArray(ds.pairs) ? ds.pairs[0] : undefined;
+        if (!first) continue;
+        items.push({
+          pairId: first.pairAddress || first.id || addr,
+          chain: chain!,
+          token: {
+            address: addr,
+            symbol: (ds.token && ds.token.symbol) || first.baseToken?.symbol,
+            name: (ds.token && ds.token.name) || first.baseToken?.name,
+          },
+          priceUsd:
+            first.priceUsd !== undefined
+              ? Number(first.priceUsd)
+              : first.price_usd !== undefined
+              ? Number(first.price_usd)
+              : undefined,
+          liqUsd:
+            first.liquidity?.usd !== undefined
+              ? Number(first.liquidity.usd)
+              : first.liquidityUsd !== undefined
+              ? Number(first.liquidityUsd)
+              : undefined,
+          volWindowUsd:
+            first.volume?.h24 !== undefined
+              ? Number(first.volume.h24)
+              : first.vol24hUsd !== undefined
+              ? Number(first.vol24hUsd)
+              : undefined,
+          priceChangePct:
+            first.priceChange?.h24 !== undefined
+              ? Number(first.priceChange.h24)
+              : first.priceChange24hPct !== undefined
+              ? Number(first.priceChange24hPct)
+              : undefined,
+          createdAt:
+            first.pairCreatedAt !== undefined
+              ? Math.floor(new Date(first.pairCreatedAt).getTime() / 1000)
+              : undefined,
+        });
+      } catch {
+        // ignore individual failures
+      }
+    }
+    if (items.length > 0) {
+      rank(items);
+      provider = 'ds';
+    }
+  }
+
+  const limited = limit !== undefined ? items.slice(0, limit) : items;
+  const bodyRes: ListsResponse = { chain, type, window, items: limited, provider };
+  return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
 };

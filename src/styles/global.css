@@ -96,13 +96,13 @@ main.with-tabs {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-text-muted);
+  color: #666;
 }
 
 .bottom-tabs a.active {
-  color: var(--color-accent);
+  color: #39ff14;
   font-weight: bold;
-  border-top: 2px solid var(--color-accent);
+  border-top: 2px solid #39ff14;
 }
 
 .bottom-tabs a:focus-visible {
@@ -140,7 +140,7 @@ button:focus-visible {
 
 .search-results-table th,
 .search-results-table td {
-  padding: 0.5rem;
+  padding: 0.75rem;
   border-bottom: 1px solid #eee;
   text-align: left;
   overflow: hidden;

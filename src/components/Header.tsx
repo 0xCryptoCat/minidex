@@ -70,6 +70,15 @@ export default function Header() {
         <nav id="main-menu" ref={menuRef} className="menu-sheet" aria-label="Main menu">
           <ul>
             <li>
+              <a
+                href="https://github.com/smol-ai/minidex#readme"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Docs
+              </a>
+            </li>
+            <li>
               <button type="button" onClick={() => setMenuOpen(false)}>
                 Close
               </button>

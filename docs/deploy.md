@@ -5,7 +5,8 @@
 - Publish directory: `dist`
 - Functions directory: `/netlify/functions`
 - SPA fallback: `_redirects` with `/* /index.html 200`
-- Set env vars in project settings: `GT_API_BASE`, `DS_API_BASE`, optional `ETHERSCAN_KEY`
+- Set env vars in project settings: `GT_API_BASE`, `DS_API_BASE`, `COINGECKO_API_BASE`, `COINGECKO_API_KEY`, optional `ETHERSCAN_KEY`
+- CoinGecko Pro key: 10K calls/month, 30 req/min (pass via `x-cg-pro-api-key` header or `x_cg_pro_api_key` query)
 - Copy bundle sizes from build logs after deploy
 
 ## Smoke Checks

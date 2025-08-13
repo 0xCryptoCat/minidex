@@ -8,6 +8,8 @@ const DS_FIXTURE = '../../fixtures/ohlc-ds-1m.json';
 const USE_FIXTURES = process.env.USE_FIXTURES === 'true';
 const DS_API_BASE = process.env.DS_API_BASE || '';
 const GT_API_BASE = process.env.GT_API_BASE || '';
+const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
+const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
 
 function isValidPair(id?: string): id is string {
   return !!id;
@@ -77,7 +79,41 @@ export const handler: Handler = async (event) => {
   }
 
   let candles: any[] = [];
-  let provider: Provider = 'none';
+  let provider: Provider | 'none' = 'none';
+
+  if (forceProvider === 'cg' || (!forceProvider && CG_API_BASE && CG_API_KEY)) {
+    try {
+      const isAddr = /^0x[0-9a-fA-F]{40}$/.test(pairId);
+      const cgUrl = `${CG_API_BASE}/${isAddr ? 'pool-ohlcv' : 'token-ohlcv'}/${pairId}?interval=${tf}`;
+      const res = await fetch(cgUrl, {
+        headers: { 'x-cg-pro-api-key': CG_API_KEY },
+      });
+      if (res.ok) {
+        const cg = await res.json();
+        const list = Array.isArray(cg?.data)
+          ? cg.data
+          : Array.isArray(cg?.candles)
+          ? cg.candles
+          : Array.isArray(cg)
+          ? cg
+          : [];
+        candles = list.map((c: any) => ({
+          t: Number(c[0] ?? c.timestamp),
+          o: Number(c[1] ?? c.open),
+          h: Number(c[2] ?? c.high),
+          l: Number(c[3] ?? c.low),
+          c: Number(c[4] ?? c.close),
+          v: c[5] !== undefined ? Number(c[5]) : c.volume !== undefined ? Number(c.volume) : undefined,
+        }));
+        if (candles.length > 0) {
+          const bodyRes: OHLCResponse = { pairId, tf, candles, provider: 'cg' };
+          return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+        }
+      }
+    } catch {
+      // ignore and fall through to DS
+    }
+  }
 
   if (forceProvider !== 'gt') {
     try {

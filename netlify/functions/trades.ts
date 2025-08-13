@@ -8,6 +8,8 @@ const DS_FIXTURE = '../../fixtures/trades-ds.json';
 const USE_FIXTURES = process.env.USE_FIXTURES === 'true';
 const DS_API_BASE = process.env.DS_API_BASE || '';
 const GT_API_BASE = process.env.GT_API_BASE || '';
+const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
+const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
 
 function isValidPair(id?: string): id is string {
   return !!id;
@@ -66,7 +68,51 @@ export const handler: Handler = async (event) => {
   }
 
   let trades: Trade[] = [];
-  let provider: Provider = 'none';
+  let provider: Provider | 'none' = 'none';
+
+  if (forceProvider === 'cg' || (!forceProvider && CG_API_BASE && CG_API_KEY)) {
+    try {
+      const cgUrl = `${CG_API_BASE}/pool-trades/${pairId}`;
+      const res = await fetch(cgUrl, {
+        headers: { 'x-cg-pro-api-key': CG_API_KEY },
+      });
+      if (res.ok) {
+        const cg = await res.json();
+        const list = Array.isArray(cg?.data)
+          ? cg.data
+          : Array.isArray(cg?.trades)
+          ? cg.trades
+          : Array.isArray(cg)
+          ? cg
+          : [];
+        trades = list.map((t: any) => ({
+          ts: Number(t.timestamp ?? t.ts ?? t.time ?? t[0]),
+          side: (t.trade_type || t.side || t.type || '').toLowerCase() === 'sell' ? 'sell' : 'buy',
+          price: Number(t.price_usd ?? t.priceUsd ?? t.price ?? t[1] ?? 0),
+          amountBase:
+            t.amount_base !== undefined
+              ? Number(t.amount_base)
+              : t.amount_base_token !== undefined
+              ? Number(t.amount_base_token)
+              : undefined,
+          amountQuote:
+            t.amount_quote !== undefined
+              ? Number(t.amount_quote)
+              : t.amount_quote_token !== undefined
+              ? Number(t.amount_quote_token)
+              : undefined,
+          txHash: t.tx_hash || t.txHash,
+          wallet: t.wallet || t.address,
+        }));
+        if (trades.length > 0) {
+          const bodyRes: TradesResponse = { pairId, trades, provider: 'cg' };
+          return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+        }
+      }
+    } catch {
+      // ignore and fall through to DS
+    }
+  }
 
   if (forceProvider !== 'gt') {
     try {

@@ -14,7 +14,7 @@ export default function SearchPage() {
   const [backoff, setBackoff] = useState(0);
   const [hasSearched, setHasSearched] = useState(false);
   const [trending, setTrending] = useState<TrendingItem[]>([]);
-  const [trendingProvider, setTrendingProvider] = useState<Provider>('gt');
+  const [trendingProvider, setTrendingProvider] = useState<Provider | 'none'>('gt');
   const [trendingLoading, setTrendingLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -160,7 +160,12 @@ export default function SearchPage() {
       )}
       {!error && (!hasSearched || (hasSearched && results.length === 0 && !loading)) && (
         <section className="trending-section">
-          <h2>{copy.trending_tokens}</h2>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {copy.trending_tokens}
+            <span className="provider-badge" aria-label={`data provider ${trendingProvider}`}>
+              {trendingProvider}
+            </span>
+          </h2>
           <div style={{ border: '1px solid #ccc' }}>
             {trendingLoading
               ? Array.from({ length: 5 }).map((_, i) => <ListItemSkeleton key={i} />)
@@ -173,12 +178,7 @@ export default function SearchPage() {
                   <div key={c} style={{ paddingBottom: '0.5rem' }}>
                     <h3 style={{ margin: '0.5rem' }}>{c}</h3>
                     {items.map((item, idx) => (
-                      <ListItem
-                        key={item.pairId}
-                        item={item}
-                        rank={idx + 1}
-                        provider={trendingProvider}
-                      />
+                      <ListItem key={item.pairId} item={item} rank={idx + 1} />
                     ))}
                   </div>
                 ))}

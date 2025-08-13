@@ -1,10 +1,9 @@
 import { useNavigate } from 'react-router-dom';
-import type { ListItem as Item, Provider } from '../../lib/types';
+import type { ListItem as Item } from '../../lib/types';
 
 interface Props {
   item: Item;
   rank: number;
-  provider: Provider;
 }
 
 function pairFromId(pairId: string): string {
@@ -17,7 +16,7 @@ function pairFromId(pairId: string): string {
   return pairId;
 }
 
-export default function ListItem({ item, rank, provider }: Props) {
+export default function ListItem({ item, rank }: Props) {
   const navigate = useNavigate();
   const pair = pairFromId(item.pairId);
   function handleClick() {
@@ -27,16 +26,16 @@ export default function ListItem({ item, rank, provider }: Props) {
     ? Math.floor((Date.now() / 1000 - item.createdAt) / 86400)
     : undefined;
   return (
-    <div
-      onClick={handleClick}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '40px 1fr 60px 80px 80px 80px 80px 60px',
-        gap: '0.5rem',
-        padding: '0.5rem',
-        cursor: 'pointer',
-        borderBottom: '1px solid #eee',
-        background: item.promoted ? '#fffbe6' : undefined,
+      <div
+        onClick={handleClick}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '40px 1fr 60px 80px 80px 80px 80px',
+          gap: '0.5rem',
+          padding: '0.5rem',
+          cursor: 'pointer',
+          borderBottom: '1px solid #eee',
+          background: item.promoted ? '#fffbe6' : undefined,
       }}
     >
       <div>{rank}</div>
@@ -49,9 +48,6 @@ export default function ListItem({ item, rank, provider }: Props) {
       <div>{item.liqUsd !== undefined ? `$${item.liqUsd.toLocaleString()}` : '-'}</div>
       <div>{item.volWindowUsd !== undefined ? `$${item.volWindowUsd.toLocaleString()}` : '-'}</div>
       <div>{item.priceChangePct !== undefined ? `${item.priceChangePct.toFixed(2)}%` : '-'}</div>
-      <div style={{ justifySelf: 'end' }}>
-        <span style={{ fontSize: '0.75rem', border: '1px solid #999', padding: '0 0.25rem' }}>{provider}</span>
-      </div>
     </div>
   );
 }
@@ -61,13 +57,13 @@ export function ListItemSkeleton() {
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: '40px 1fr 60px 80px 80px 80px 80px 60px',
+        gridTemplateColumns: '40px 1fr 60px 80px 80px 80px 80px',
         gap: '0.5rem',
         padding: '0.5rem',
         borderBottom: '1px solid #eee',
       }}
     >
-      {Array.from({ length: 8 }).map((_, i) => (
+      {Array.from({ length: 7 }).map((_, i) => (
         <div
           key={i}
           style={{ height: 16, background: '#eee', borderRadius: 4 }}

@@ -25,6 +25,7 @@ export default function PriceChart({ pairId, tf, xDomain, onXDomainChange, marke
   const [hoveredMarkers, setHoveredMarkers] = useState<TradeMarkerCluster[] | null>(null);
   const [provider, setProvider] = useState<string>('');
   const [degraded, setDegraded] = useState(false);
+  const [hasData, setHasData] = useState(true);
 
   const explorerTemplate = useMemo(() => {
     if (!chain) return undefined;
@@ -132,9 +133,11 @@ export default function PriceChart({ pairId, tf, xDomain, onXDomainChange, marke
         }));
         candleSeriesRef.current?.setData(c);
         volumeSeriesRef.current?.setData(v);
+        setHasData(true);
       } else {
         candleSeriesRef.current?.setData([]);
         volumeSeriesRef.current?.setData([]);
+        setHasData(false);
       }
       setProvider(data.provider);
     }, 5000, {
@@ -181,6 +184,24 @@ export default function PriceChart({ pairId, tf, xDomain, onXDomainChange, marke
         </div>
       )}
       <div ref={containerRef} style={{ height: 300 }} />
+      {!hasData && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#666',
+            pointerEvents: 'none',
+          }}
+        >
+          No chart data available
+        </div>
+      )}
       {hoveredMarkers && hoveredMarkers.length > 0 && (
         <div
           style={{

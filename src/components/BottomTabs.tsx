@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 
 const tabs = [
   { view: 'chart', label: 'Chart' },
-  { view: 'depth', label: 'Chart+TXs' },
+  { view: 'depth', label: 'Chart + Trades' },
   { view: 'trades', label: 'Trades' },
   { view: 'detail', label: 'Detail' },
 ];

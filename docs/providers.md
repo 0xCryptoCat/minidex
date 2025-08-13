@@ -11,6 +11,7 @@ Normalized field mapping for data providers.
 - Fallback when DS is unavailable or stale.
 - Offers richer metadata such as token icons and FDV.
 - Uses its own `pairId` as stable pool identifier.
+- Lists endpoints require `GT_API_KEY`; when unavailable the app falls back to Dexscreener.
 
 ## Notes
 - All client requests go through Netlify Functions.

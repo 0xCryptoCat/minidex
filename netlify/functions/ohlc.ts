@@ -76,11 +76,14 @@ export const handler: Handler = async (event) => {
     }
   }
 
-  try {
-    if (forceProvider !== 'gt') {
+  let candles: any[] = [];
+  let provider: Provider = 'none';
+
+  if (forceProvider !== 'gt') {
+    try {
       const ds = await fetchJson(`${DS_API_BASE}/dex/pairs/${pairId}/candles?timeframe=${tf}`);
       const dsList = Array.isArray(ds?.candles) ? ds.candles : [];
-      const candles = dsList.map((c: any) => ({
+      candles = dsList.map((c: any) => ({
         t: Number(c.t ?? c.timestamp ?? c[0]),
         o: Number(c.o ?? c.open ?? c[1]),
         h: Number(c.h ?? c.high ?? c[2]),
@@ -88,15 +91,13 @@ export const handler: Handler = async (event) => {
         c: Number(c.c ?? c.close ?? c[4]),
         v: c.v !== undefined ? Number(c.v) : c[5] !== undefined ? Number(c[5]) : undefined,
       }));
-      const bodyRes: OHLCResponse = { pairId, tf, candles, provider: 'ds' };
-      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+      if (candles.length > 0) provider = 'ds';
+    } catch {
+      // ignore and fall through to GT
     }
-    throw new Error('force gt');
-  } catch {
-    if (forceProvider === 'ds') {
-      const body: ApiError = { error: 'upstream_error', provider: 'none' };
-      return { statusCode: 500, headers, body: JSON.stringify(body) };
-    }
+  }
+
+  if (candles.length === 0 && forceProvider !== 'ds') {
     try {
       const gt = await fetchJson(`${GT_API_BASE}/pools/${pairId}/ohlcv/${tf}`);
       const list = Array.isArray(gt?.data?.attributes?.ohlcv_list)
@@ -106,7 +107,7 @@ export const handler: Handler = async (event) => {
         : Array.isArray(gt?.candles)
         ? gt.candles
         : [];
-      const candles = list.map((c: any) => ({
+      candles = list.map((c: any) => ({
         t: Number(c[0] ?? c.t ?? c.timestamp),
         o: Number(c[1] ?? c.o ?? c.open),
         h: Number(c[2] ?? c.h ?? c.high),
@@ -119,12 +120,13 @@ export const handler: Handler = async (event) => {
             ? Number(c.v)
             : undefined,
       }));
-      const bodyRes: OHLCResponse = { pairId, tf, candles, provider: 'gt' };
-      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+      if (candles.length > 0) provider = 'gt';
     } catch {
-      const body: ApiError = { error: 'upstream_error', provider: 'none' };
-      return { statusCode: 500, headers, body: JSON.stringify(body) };
+      // still empty
     }
   }
+
+  const bodyRes: OHLCResponse = { pairId, tf, candles, provider };
+  return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
 };
 

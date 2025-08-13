@@ -31,6 +31,22 @@ async function fetchJson(url: string): Promise<any> {
   }
 }
 
+// Map numeric chain IDs from Dexscreener to chain slugs used in the app.
+const CHAIN_ID_MAP: Record<string, string> = {
+  '1': 'ethereum',
+  '56': 'bsc',
+  '137': 'polygon',
+  '10': 'optimism',
+  '42161': 'arbitrum',
+  '43114': 'avalanche',
+  '8453': 'base',
+};
+
+function mapChainId(id: unknown): string {
+  const key = typeof id === 'number' ? String(id) : (id as string | undefined);
+  return (key && CHAIN_ID_MAP[key]) || (key ?? 'unknown');
+}
+
 export const handler: Handler = async (event) => {
   const query =
     event.queryStringParameters?.query ||
@@ -70,10 +86,73 @@ export const handler: Handler = async (event) => {
   try {
     if (forceProvider !== 'gt') {
       const ds = await fetchJson(`${DS_API_BASE}/dex/tokens/${query}`);
-      if (!ds || Object.keys(ds).length === 0) throw new Error('empty');
-      ds.provider = 'ds';
-      ds.query = query;
-      return { statusCode: 200, headers, body: JSON.stringify(ds) };
+      if (!ds || !Array.isArray(ds.pairs) || ds.pairs.length === 0) {
+        throw new Error('empty');
+      }
+
+      const tokenMeta = ds.token || ds.pairs[0]?.baseToken || {};
+      const results = ds.pairs.map((pair: any) => {
+        const chain = mapChainId(pair.chainId);
+        const core = {
+          priceUsd:
+            pair.priceUsd !== undefined ? Number(pair.priceUsd) : undefined,
+          fdvUsd:
+            pair.fdv !== undefined
+              ? Number(pair.fdv)
+              : tokenMeta.fdv !== undefined
+              ? Number(tokenMeta.fdv)
+              : undefined,
+          mcUsd:
+            tokenMeta.mcap !== undefined
+              ? Number(tokenMeta.mcap)
+              : tokenMeta.marketCap !== undefined
+              ? Number(tokenMeta.marketCap)
+              : undefined,
+          liqUsd:
+            pair.liquidity?.usd !== undefined
+              ? Number(pair.liquidity.usd)
+              : undefined,
+          vol24hUsd:
+            pair.volume?.h24 !== undefined
+              ? Number(pair.volume.h24)
+              : undefined,
+          priceChange1hPct:
+            pair.priceChange?.h1 !== undefined
+              ? Number(pair.priceChange.h1)
+              : undefined,
+          priceChange24hPct:
+            pair.priceChange?.h24 !== undefined
+              ? Number(pair.priceChange.h24)
+              : undefined,
+        };
+        return {
+          chain,
+          token: {
+            address: tokenMeta.address || pair.baseToken?.address || query,
+            symbol: tokenMeta.symbol || pair.baseToken?.symbol || '',
+            name: tokenMeta.name || pair.baseToken?.name || '',
+            icon:
+              tokenMeta.icon ||
+              tokenMeta.imageUrl ||
+              pair.info?.imageUrl ||
+              undefined,
+          },
+          core,
+          pools: [
+            {
+              pairId: pair.pairAddress,
+              dex: pair.dexId,
+              base: pair.baseToken?.symbol,
+              quote: pair.quoteToken?.symbol,
+              chain,
+            },
+          ],
+          provider: 'ds',
+        };
+      });
+
+      const bodyRes: SearchResponse = { query, results };
+      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
     }
     throw new Error('force gt');
   } catch {

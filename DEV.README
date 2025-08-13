@@ -130,6 +130,10 @@ COINGECKO_API_KEY=""        # send via x-cg-pro-api-key header or x_cg_pro_api_k
 ETHERSCAN_KEY="..."    # optional, for explorer.ts
 ```
 
+* Sign up at [pro.coingecko.com](https://pro.coingecko.com/), create an API key, and place it above.
+* Endpoints used: `token-data`, `tokens-data`, `pool-ohlcv`, `pool-trades`, `trending`.
+* Limits: **10K calls/month**, **30 req/min**. Handle `400` (bad request), `401` (invalid key), and `429` (rate limit) by falling back to secondary providers.
+
 **Never** expose these directly to client — always via Netlify Functions.
 
 ---

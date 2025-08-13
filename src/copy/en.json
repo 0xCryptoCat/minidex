@@ -9,5 +9,6 @@
   "error_upstream": "Network error, please try again",
   "retry": "Retry",
   "results": "Results",
-  "trending_tokens": "Trending tokens last 24 h"
+  "trending_tokens": "Trending tokens last 24 h",
+  "provider_cg": "Data provided by CoinGecko"
 }

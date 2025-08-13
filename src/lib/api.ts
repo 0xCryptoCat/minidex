@@ -8,6 +8,7 @@ import type {
   ListsResponse,
   ListType,
   Window,
+  TokenResponse,
 } from './types';
 import {
   getSearchCache,
@@ -18,6 +19,8 @@ import {
   setOHLCCache,
   getTradesCache,
   setTradesCache,
+  getTokenCache,
+  setTokenCache,
 } from './cache';
 
 const BASE = '/.netlify/functions';
@@ -114,6 +117,31 @@ export async function trades(pairId: string, provider?: string): Promise<TradesR
   }
   setTradesCache(key, data);
   return data as TradesResponse;
+}
+
+export async function token(
+  chain: string,
+  address: string
+): Promise<TokenResponse | ApiError> {
+  const key = `${chain}:${address}`;
+  const cached = getTokenCache(key);
+  if (cached) return cached;
+
+  const url = new URL(`${BASE}/token`, window.location.origin);
+  url.searchParams.set('chain', chain);
+  url.searchParams.set('address', address);
+
+  try {
+    const res = await fetch(url.toString());
+    const data = await res.json();
+    if (!res.ok) {
+      return data.error ? data : { error: 'upstream_error', provider: 'none' };
+    }
+    setTokenCache(key, data);
+    return data as TokenResponse;
+  } catch {
+    return { error: 'upstream_error', provider: 'none' };
+  }
 }
 
 export async function lists(

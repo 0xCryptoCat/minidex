@@ -125,6 +125,14 @@ export interface ListsResponse {
   provider: Provider | 'none';
 }
 
+/* ---------- /api/token ---------- */
+export interface TokenResponse {
+  chain: ChainSlug;
+  address: Address;
+  core: CoreFinance;
+  provider: Provider;
+}
+
 /* ---------- /api/explorer (optional) ---------- */
 export interface ExplorerTxPreview {
   chain: ChainSlug;
@@ -150,6 +158,7 @@ export interface CacheSearchEntry { response: SearchResponse; ts: UnixSeconds; }
 export interface CachePairsEntry { response: PairsResponse; ts: UnixSeconds; }
 export interface CacheOHLCEntry  { response: OHLCResponse; ts: UnixSeconds; }
 export interface CacheTradesEntry { response: TradesResponse; ts: UnixSeconds; }
+export interface CacheTokenEntry { response: TokenResponse; ts: UnixSeconds; }
 
 /* ---------- Marker + metric types (UI) ---------- */
 export interface TradeMarker {

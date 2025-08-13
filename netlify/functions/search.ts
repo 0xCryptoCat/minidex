@@ -1,5 +1,11 @@
 import type { Handler } from '@netlify/functions';
-import type { SearchResponse, ApiError, Provider } from '../../src/lib/types';
+import type {
+  SearchResponse,
+  ApiError,
+  Provider,
+  TokenMeta,
+  SearchResult,
+} from '../../src/lib/types';
 import fs from 'fs/promises';
 
 const GT_FIXTURE = '../../fixtures/search-gt.json';
@@ -8,9 +14,15 @@ const DS_FIXTURE = '../../fixtures/search-ds.json';
 const USE_FIXTURES = process.env.USE_FIXTURES === 'true';
 const DS_API_BASE = process.env.DS_API_BASE || '';
 const GT_API_BASE = process.env.GT_API_BASE || '';
+const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
+const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
 
 function isValidAddress(addr?: string): addr is string {
   return !!addr && /^0x[a-fA-F0-9]{40}$/.test(addr);
+}
+
+function isValidChain(chain?: string): chain is string {
+  return !!chain;
 }
 
 async function readFixture(path: string): Promise<SearchResponse> {
@@ -52,6 +64,7 @@ export const handler: Handler = async (event) => {
     event.queryStringParameters?.query ||
     event.queryStringParameters?.address; // accept legacy "address" param
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
+  const chain = event.queryStringParameters?.chain;
 
   if (!isValidAddress(query)) {
     const body: ApiError = { error: 'invalid_address', provider: 'none' };
@@ -84,6 +97,49 @@ export const handler: Handler = async (event) => {
   }
 
   try {
+    if (forceProvider === 'cg') {
+      if (!isValidChain(chain) || !CG_API_BASE || !CG_API_KEY) {
+        throw new Error('force gt');
+      }
+      const cgUrl = `${CG_API_BASE}/token-data/${chain}/${query}`;
+      const res = await fetch(cgUrl, { headers: { 'x-cg-pro-api-key': CG_API_KEY } });
+      if (!res.ok) throw new Error('status');
+      const cg = await res.json();
+      const attr = cg?.data?.attributes || cg?.data || cg;
+      const priceChange = attr?.price_change_percentage || {};
+      const token: TokenMeta = {
+        address: query,
+        symbol: attr.symbol || '',
+        name: attr.name || '',
+        icon: attr.image_url || undefined,
+      };
+      const core = {
+        priceUsd: attr.price_usd !== undefined ? Number(attr.price_usd) : undefined,
+        fdvUsd:
+          attr.fully_diluted_valuation_usd !== undefined
+            ? Number(attr.fully_diluted_valuation_usd)
+            : undefined,
+        mcUsd:
+          attr.market_cap_usd !== undefined ? Number(attr.market_cap_usd) : undefined,
+        liqUsd:
+          attr.liquidity_usd !== undefined ? Number(attr.liquidity_usd) : undefined,
+        vol24hUsd:
+          attr.volume_24h_usd !== undefined ? Number(attr.volume_24h_usd) : undefined,
+        priceChange1hPct:
+          priceChange.h1 !== undefined ? Number(priceChange.h1) : undefined,
+        priceChange24hPct:
+          priceChange.h24 !== undefined ? Number(priceChange.h24) : undefined,
+      };
+      const results: SearchResult[] = [{
+        chain: chain!,
+        token,
+        core,
+        pools: [],
+        provider: 'cg',
+      }];
+      const bodyRes: SearchResponse = { query, results };
+      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+    }
     if (forceProvider !== 'gt') {
       const ds = await fetchJson(`${DS_API_BASE}/dex/tokens/${query}`);
       if (!ds || !Array.isArray(ds.pairs) || ds.pairs.length === 0) {
@@ -167,6 +223,54 @@ export const handler: Handler = async (event) => {
       gt.query = query;
       return { statusCode: 200, headers, body: JSON.stringify(gt) };
     } catch {
+      if (CG_API_BASE && CG_API_KEY && isValidChain(chain)) {
+        try {
+          const cgUrl = `${CG_API_BASE}/token-data/${chain}/${query}`;
+          const res = await fetch(cgUrl, { headers: { 'x-cg-pro-api-key': CG_API_KEY } });
+          if (res.ok) {
+            const cg = await res.json();
+            const attr = cg?.data?.attributes || cg?.data || cg;
+            const priceChange = attr?.price_change_percentage || {};
+            const token: TokenMeta = {
+              address: query,
+              symbol: attr.symbol || '',
+              name: attr.name || '',
+              icon: attr.image_url || undefined,
+            };
+            const core = {
+              priceUsd:
+                attr.price_usd !== undefined ? Number(attr.price_usd) : undefined,
+              fdvUsd:
+                attr.fully_diluted_valuation_usd !== undefined
+                  ? Number(attr.fully_diluted_valuation_usd)
+                  : undefined,
+              mcUsd:
+                attr.market_cap_usd !== undefined
+                  ? Number(attr.market_cap_usd)
+                  : undefined,
+              liqUsd:
+                attr.liquidity_usd !== undefined
+                  ? Number(attr.liquidity_usd)
+                  : undefined,
+              vol24hUsd:
+                attr.volume_24h_usd !== undefined
+                  ? Number(attr.volume_24h_usd)
+                  : undefined,
+              priceChange1hPct:
+                priceChange.h1 !== undefined ? Number(priceChange.h1) : undefined,
+              priceChange24hPct:
+                priceChange.h24 !== undefined ? Number(priceChange.h24) : undefined,
+            };
+            const results: SearchResult[] = [
+              { chain: chain!, token, core, pools: [], provider: 'cg' },
+            ];
+            const bodyRes: SearchResponse = { query, results };
+            return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+          }
+        } catch {
+          // ignore
+        }
+      }
       const body: ApiError = { error: 'upstream_error', provider: 'none' };
       return { statusCode: 500, headers, body: JSON.stringify(body) };
     }

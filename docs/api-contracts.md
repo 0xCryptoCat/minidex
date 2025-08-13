@@ -7,7 +7,8 @@ In production they fetch live data from Dexscreener first and fall back to Gecko
 
 ## `/api/search`
 - **Method:** GET
-- **Query params:** `address` (token address, required)
+- **Query params:** `query` (token address, required)
+- **Notes:** legacy `address` param accepted for backward compatibility.
 - **Response:** `SearchResponse` with array of cross‑chain matches.
 
 ## `/api/pairs`
@@ -17,7 +18,7 @@ In production they fetch live data from Dexscreener first and fall back to Gecko
 
 ## `/api/ohlc`
 - **Method:** GET
-- **Query params:** `pairId`, `tf`
+- **Query params:** `pairId`, `tf` (`1m|5m|15m|1h|4h|1d`)
 - **Response:** `OHLCResponse` containing candles and optional rollup hint.
 
 ## `/api/trades`
@@ -27,7 +28,7 @@ In production they fetch live data from Dexscreener first and fall back to Gecko
 
 ## `/api/lists`
 - **Method:** GET
-- **Query params:** `chain`, `type`, `window`
+- **Query params:** `chain`, `type` (`trending|discovery|leaderboard`), `window` (`1h|1d|1w`), `limit?`
 - **Response:** `ListsResponse` for trending, discovery, or leaderboard items.
 
 ## `/api/explorer` (optional)

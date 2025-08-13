@@ -32,7 +32,9 @@ async function fetchJson(url: string): Promise<any> {
 }
 
 export const handler: Handler = async (event) => {
-  const query = event.queryStringParameters?.query;
+  const query =
+    event.queryStringParameters?.query ||
+    event.queryStringParameters?.address; // accept legacy "address" param
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
 
   if (!isValidAddress(query)) {

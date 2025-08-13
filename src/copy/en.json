@@ -9,5 +9,5 @@
   "error_upstream": "Network error, please try again",
   "retry": "Retry",
   "results": "Results",
-  "trending_tokens": "Trending Tokens"
+  "trending_tokens": "Trending tokens last 24 h"
 }

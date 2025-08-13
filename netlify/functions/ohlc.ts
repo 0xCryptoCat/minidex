@@ -79,8 +79,8 @@ export const handler: Handler = async (event) => {
   try {
     if (forceProvider !== 'gt') {
       const ds = await fetchJson(`${DS_API_BASE}/dex/pairs/${pairId}/candles?timeframe=${tf}`);
-      if (!ds || !Array.isArray(ds.candles)) throw new Error('empty');
-      const candles = ds.candles.map((c: any) => ({
+      const dsList = Array.isArray(ds?.candles) ? ds.candles : [];
+      const candles = dsList.map((c: any) => ({
         t: Number(c.t ?? c.timestamp ?? c[0]),
         o: Number(c.o ?? c.open ?? c[1]),
         h: Number(c.h ?? c.high ?? c[2]),
@@ -99,9 +99,13 @@ export const handler: Handler = async (event) => {
     }
     try {
       const gt = await fetchJson(`${GT_API_BASE}/pools/${pairId}/ohlcv/${tf}`);
-      const list =
-        gt?.data?.attributes?.ohlcv_list || gt?.data || gt?.candles || [];
-      if (!Array.isArray(list) || list.length === 0) throw new Error('empty');
+      const list = Array.isArray(gt?.data?.attributes?.ohlcv_list)
+        ? gt.data.attributes.ohlcv_list
+        : Array.isArray(gt?.data)
+        ? gt.data
+        : Array.isArray(gt?.candles)
+        ? gt.candles
+        : [];
       const candles = list.map((c: any) => ({
         t: Number(c[0] ?? c.t ?? c.timestamp),
         o: Number(c[1] ?? c.o ?? c.open),

@@ -68,8 +68,8 @@ export const handler: Handler = async (event) => {
   try {
     if (forceProvider !== 'gt') {
       const ds = await fetchJson(`${DS_API_BASE}/dex/pairs/${pairId}/trades`);
-      if (!ds || !Array.isArray(ds.trades)) throw new Error('empty');
-      const trades: Trade[] = ds.trades.map((t: any) => ({
+      const dsList = Array.isArray(ds?.trades) ? ds.trades : [];
+      const trades: Trade[] = dsList.map((t: any) => ({
         ts: Number(t.ts ?? t.time ?? t.blockTimestamp ?? t[0]),
         side: (t.side || t.type || t.tradeType || '').toLowerCase() === 'sell' ? 'sell' : 'buy',
         price: Number(t.priceUsd ?? t.price_usd ?? t.price ?? t[1] ?? 0),
@@ -103,8 +103,11 @@ export const handler: Handler = async (event) => {
     }
     try {
       const gt = await fetchJson(`${GT_API_BASE}/pools/${pairId}/trades`);
-      const list = gt.data || gt.trades || [];
-      if (!Array.isArray(list)) throw new Error('empty');
+      const list = Array.isArray(gt?.data)
+        ? gt.data
+        : Array.isArray(gt?.trades)
+        ? gt.trades
+        : [];
       const trades: Trade[] = list.map((d: any) => {
         const t = d.attributes || d;
         return {

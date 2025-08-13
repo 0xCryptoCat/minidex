@@ -86,6 +86,9 @@ export async function ohlc(
     err.status = res.status;
     throw err;
   }
+  if (!Array.isArray((data as any).candles)) {
+    (data as any).candles = [];
+  }
   setOHLCCache(key, data);
   return data as OHLCResponse;
 }
@@ -105,6 +108,9 @@ export async function trades(pairId: string, provider?: string): Promise<TradesR
     const err: any = new Error('api error');
     err.status = res.status;
     throw err;
+  }
+  if (!Array.isArray((data as any).trades)) {
+    (data as any).trades = [];
   }
   setTradesCache(key, data);
   return data as TradesResponse;

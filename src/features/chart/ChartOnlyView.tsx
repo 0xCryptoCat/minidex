@@ -6,29 +6,30 @@ import { getTradeMarkers, type TradeMarkerCluster } from '../trades/TradeMarkers
 interface Props {
   pairId: string;
   chain: string;
+  poolAddress?: string;
   tf: Timeframe;
   xDomain: [number, number] | null;
   onXDomainChange?: (d: [number, number]) => void;
 }
 
-export default function ChartOnlyView({ pairId, chain, tf, xDomain, onXDomainChange }: Props) {
+export default function ChartOnlyView({ pairId, chain, poolAddress, tf, xDomain, onXDomainChange }: Props) {
   const [showMarkers, setShowMarkers] = useState(false);
   const [markers, setMarkers] = useState<TradeMarkerCluster[]>([]);
   const [noTrades, setNoTrades] = useState(false);
 
   useEffect(() => {
     if (showMarkers) {
-      const m = getTradeMarkers(pairId, chain);
+      const m = getTradeMarkers(pairId, chain, poolAddress);
       setMarkers(m);
       setNoTrades(m.length === 0);
     }
-  }, [pairId, chain, showMarkers]);
+  }, [pairId, chain, poolAddress, showMarkers]);
 
   function handleToggle() {
     setShowMarkers((v) => {
       const next = !v;
       if (next) {
-        setMarkers(getTradeMarkers(pairId, chain));
+        setMarkers(getTradeMarkers(pairId, chain, poolAddress));
       } else {
         setMarkers([]);
       }
@@ -51,6 +52,7 @@ export default function ChartOnlyView({ pairId, chain, tf, xDomain, onXDomainCha
         onXDomainChange={onXDomainChange}
         markers={showMarkers ? markers : []}
         chain={chain}
+        poolAddress={poolAddress}
       />
     </div>
   );

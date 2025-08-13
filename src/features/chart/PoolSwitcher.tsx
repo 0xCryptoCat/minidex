@@ -3,7 +3,7 @@ import type { PoolSummary } from '../../lib/types';
 interface Props {
   pools: PoolSummary[];
   current?: string;
-  onSwitch: (pairId: string) => void;
+  onSwitch: (pool: PoolSummary) => void;
 }
 
 export default function PoolSwitcher({ pools, current, onSwitch }: Props) {
@@ -13,7 +13,7 @@ export default function PoolSwitcher({ pools, current, onSwitch }: Props) {
       {pools.map((p) => (
         <button
           key={p.pairId}
-          onClick={() => onSwitch(p.pairId)}
+          onClick={() => onSwitch(p)}
           style={{
             padding: '0.25rem 0.5rem',
             borderRadius: '9999px',

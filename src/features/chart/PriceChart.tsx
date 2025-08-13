@@ -14,9 +14,18 @@ interface Props {
   onXDomainChange?: (d: [number, number]) => void;
   markers?: TradeMarkerCluster[];
   chain?: string;
+  poolAddress?: string;
 }
 
-export default function PriceChart({ pairId, tf, xDomain, onXDomainChange, markers = [], chain }: Props) {
+export default function PriceChart({
+  pairId,
+  tf,
+  xDomain,
+  onXDomainChange,
+  markers = [],
+  chain,
+  poolAddress,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<any>(null);
@@ -109,11 +118,11 @@ export default function PriceChart({ pairId, tf, xDomain, onXDomainChange, marke
   }, [markers]);
 
   useEffect(() => {
-    if (!pairId || !chain) return;
+    if (!pairId || !chain || !poolAddress) return;
     let candles: Candle[] = [];
 
     const poller = createPoller(async () => {
-      const data = await ohlc(pairId, tf, chain);
+      const data = await ohlc({ pairId, tf, chain, poolAddress });
       candles = data.candles;
       if (data.rollupHint === 'client' && data.tf !== tf) {
         candles = rollupCandles(candles, data.tf, tf);
@@ -147,7 +156,7 @@ export default function PriceChart({ pairId, tf, xDomain, onXDomainChange, marke
     poller.start();
 
     const tradesPoller = createPoller(async () => {
-      const tr = await trades(pairId, chain);
+      const tr = await trades({ pairId, chain, poolAddress });
       if (tr && Array.isArray(tr.trades) && tr.trades.length > 0) {
         // noop: data is cached in trades() and used elsewhere
       }
@@ -161,7 +170,7 @@ export default function PriceChart({ pairId, tf, xDomain, onXDomainChange, marke
       poller.stop();
       tradesPoller.stop();
     };
-  }, [pairId, tf, chain]);
+  }, [pairId, tf, chain, poolAddress]);
 
   return (
     <div style={{ position: 'relative' }}>

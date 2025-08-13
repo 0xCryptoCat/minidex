@@ -36,6 +36,7 @@ async function fetchJson(url: string): Promise<any> {
 export const handler: Handler = async (event) => {
   const pairId = event.queryStringParameters?.pairId;
   const chain = event.queryStringParameters?.chain;
+  const poolAddress = event.queryStringParameters?.poolAddress;
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
 
   if (!isValidPair(pairId) || !chain) {
@@ -148,43 +149,27 @@ export const handler: Handler = async (event) => {
     }
   }
 
-  if (trades.length === 0 && forceProvider !== 'ds') {
+  if (trades.length === 0 && forceProvider !== 'ds' && chain && poolAddress) {
     try {
-      const gt = await fetchJson(`${GT_API_BASE}/networks/${chain}/pools/${pairId}/trades`);
-      const list = Array.isArray(gt?.data)
-        ? gt.data
-        : Array.isArray(gt?.trades)
-        ? gt.trades
-        : [];
-      trades = list.map((d: any) => {
-        const t = d.attributes || d;
-        return {
-          ts: Number(t.timestamp ?? t.ts ?? t.time ?? t[0]),
-          side: (t.trade_type || t.side || t.type || '').toLowerCase() === 'sell' ? 'sell' : 'buy',
-          price: Number(t.price_usd ?? t.priceUsd ?? t.price ?? t[1] ?? 0),
-          amountBase:
-            t.amount_base !== undefined
-              ? Number(t.amount_base)
-              : t.token_amount_in !== undefined
-              ? Number(t.token_amount_in)
-              : t.baseAmount !== undefined
-              ? Number(t.baseAmount)
-              : undefined,
-          amountQuote:
-            t.amount_quote !== undefined
-              ? Number(t.amount_quote)
-              : t.token_amount_out !== undefined
-              ? Number(t.token_amount_out)
-              : t.quoteAmount !== undefined
-              ? Number(t.quoteAmount)
-              : undefined,
-          txHash: t.tx_hash || t.txHash,
-          wallet: t.address || t.wallet || t.trader,
-        };
-      });
-      if (trades.length > 0) provider = 'gt';
+      const gtUrl = `${GT_API_BASE}/networks/${chain}/pools/${poolAddress}/trades`;
+      const gtResp = await fetch(gtUrl);
+      if (gtResp.ok) {
+        const gtData = await gtResp.json();
+        const list = Array.isArray(gtData.data) ? gtData.data : [];
+        const tradesGt = list.map((t: any) => ({
+          ts: Math.floor(new Date(t.attributes.timestamp).getTime() / 1000),
+          side: t.attributes.trade_type === 'buy' ? 'buy' : 'sell',
+          price: t.attributes.price_usd,
+          amountBase: parseFloat(t.attributes.amount_base),
+          amountQuote: parseFloat(t.attributes.amount_quote),
+          txHash: t.attributes.tx_hash,
+          wallet: t.attributes.wallet,
+        }));
+        const bodyRes: TradesResponse = { pairId, trades: tradesGt, provider: 'gt' };
+        return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+      }
     } catch {
-      // still empty
+      // ignore
     }
   }
 

@@ -15,7 +15,6 @@ const FIXTURES: Record<string, string> = {
 };
 
 const USE_FIXTURES = process.env.USE_FIXTURES === 'true';
-const DS_API_BASE = process.env.DS_API_BASE || '';
 const GT_API_BASE = process.env.GT_API_BASE || '';
 
 function isValidType(t?: string): t is ListType {
@@ -107,27 +106,54 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    const dsUrl = `${DS_API_BASE}/lists/${type}?chain=${chain}&window=${window}${limit ? `&limit=${limit}` : ''}`;
-    const ds = await fetchJson(dsUrl);
-    if (ds && Object.keys(ds).length) {
-      rank(ds.items || []);
-      if (limit !== undefined) ds.items = ds.items.slice(0, limit);
-      ds.provider = 'ds';
-      return { statusCode: 200, headers, body: JSON.stringify(ds) };
-    }
-    throw new Error('empty');
+    const gtUrl = `${GT_API_BASE}/networks/${chain}/${type}?window=${window}${limit ? `&limit=${limit}` : ''}`;
+    const gt = await fetchJson(gtUrl);
+    const dataArray = gt.data || gt.items || [];
+    if (!Array.isArray(dataArray) || dataArray.length === 0) throw new Error('empty');
+
+    const items: ListItem[] = dataArray.map((d: any) => {
+      const attr = d.attributes || {};
+      const token = attr.base_token || attr.token || {};
+      const volMap = attr.volume_usd || attr.volume || {};
+      const priceChangeMap = attr.price_change_percentage || attr.priceChangePct || {};
+      const txMap = attr.transaction_count || attr.txns || {};
+      const windowKey = window === '1h' ? 'h1' : window === '1d' ? 'h24' : 'h7';
+      const volWindow = volMap[windowKey];
+      const priceChange = priceChangeMap[windowKey];
+      const tradesWindow = txMap[windowKey];
+      const createdAt = attr.pool_created_at
+        ? Math.floor(new Date(attr.pool_created_at).getTime() / 1000)
+        : attr.created_at
+        ? Math.floor(new Date(attr.created_at).getTime() / 1000)
+        : undefined;
+      return {
+        pairId: d.id || attr.pool_id || attr.address,
+        chain: chain as string,
+        token: {
+          address: token.address,
+          symbol: token.symbol,
+          name: token.name,
+        },
+        priceUsd:
+          attr.base_token_price_usd !== undefined
+            ? Number(attr.base_token_price_usd)
+            : attr.price_usd !== undefined
+            ? Number(attr.price_usd)
+            : undefined,
+        liqUsd: attr.liquidity_usd !== undefined ? Number(attr.liquidity_usd) : undefined,
+        volWindowUsd: volWindow !== undefined ? Number(volWindow) : undefined,
+        priceChangePct: priceChange !== undefined ? Number(priceChange) : undefined,
+        tradesWindow: tradesWindow !== undefined ? Number(tradesWindow) : undefined,
+        createdAt,
+      } as ListItem;
+    });
+
+    rank(items);
+    const limited = limit !== undefined ? items.slice(0, limit) : items;
+    const bodyRes: ListsResponse = { chain, type, window, items: limited, provider: 'gt' };
+    return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
   } catch {
-    try {
-      const gtUrl = `${GT_API_BASE}/networks/${chain}/${type}?window=${window}${limit ? `&limit=${limit}` : ''}`;
-      const gt = await fetchJson(gtUrl);
-      if (!gt || Object.keys(gt).length === 0) throw new Error('empty');
-      rank(gt.items || []);
-      if (limit !== undefined) gt.items = gt.items.slice(0, limit);
-      gt.provider = 'gt';
-      return { statusCode: 200, headers, body: JSON.stringify(gt) };
-    } catch {
-      const body: ApiError = { error: 'upstream_error', provider: 'none' };
-      return { statusCode: 500, headers, body: JSON.stringify(body) };
-    }
+    const body: ApiError = { error: 'upstream_error', provider: 'none' };
+    return { statusCode: 500, headers, body: JSON.stringify(body) };
   }
 };

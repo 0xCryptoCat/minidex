@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import type { PoolSummary, TokenMeta } from '../../lib/types';
 import { pairs } from '../../lib/api';
 import PoolSwitcher from './PoolSwitcher';
@@ -10,6 +10,12 @@ import copy from '../../copy/en.json';
 // Views for chart page
 const views = ['chart', 'depth', 'trades', 'detail'] as const;
 type View = typeof views[number];
+const viewLabels: Record<View, string> = {
+  chart: 'Chart',
+  depth: 'Chart + TXs',
+  trades: 'Trades',
+  detail: 'Detail',
+};
 
 export default function ChartPage() {
   const { chain, address, pairId } = useParams<{ chain: string; address: string; pairId?: string }>();
@@ -17,7 +23,8 @@ export default function ChartPage() {
   const [token, setToken] = useState<TokenMeta | null>(null);
   const [pools, setPools] = useState<PoolSummary[]>([]);
   const [currentPair, setCurrentPair] = useState<string | undefined>(pairId);
-  const [view, setView] = useState<View>('chart');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = (searchParams.get('view') as View) || 'chart';
   const [xDomain, setXDomain] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,10 +93,15 @@ export default function ChartPage() {
                 role="tab"
                 aria-selected={view === v}
                 tabIndex={view === v ? 0 : -1}
-                onClick={() => setView(v)}
+                onClick={() => {
+                  setSearchParams((sp) => {
+                    sp.set('view', v);
+                    return sp;
+                  });
+                }}
                 className="view-tab"
               >
-                {v}
+                {viewLabels[v]}
               </button>
             ))}
           </div>
@@ -109,7 +121,6 @@ export default function ChartPage() {
               />
             </div>
           )}
-
           {view === 'detail' && currentPair && chain && address && (
             <DetailView chain={chain} address={address} pairId={currentPair} />
           )}

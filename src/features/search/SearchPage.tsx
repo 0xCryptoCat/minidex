@@ -134,7 +134,6 @@ export default function SearchPage() {
             <col style={{ width: '80px' }} />
             <col style={{ width: '80px' }} />
             <col style={{ width: '80px' }} />
-            <col style={{ width: '60px' }} />
           </colgroup>
           <thead>
             <tr>
@@ -145,7 +144,6 @@ export default function SearchPage() {
               <th>Liq</th>
               <th>Vol24h</th>
               <th>%</th>
-              <th>Pools</th>
             </tr>
           </thead>
           <tbody>
@@ -166,13 +164,23 @@ export default function SearchPage() {
           <div style={{ border: '1px solid #ccc' }}>
             {trendingLoading
               ? Array.from({ length: 5 }).map((_, i) => <ListItemSkeleton key={i} />)
-              : trending.slice(0, 10).map((item, idx) => (
-                  <ListItem
-                    key={item.pairId}
-                    item={item}
-                    rank={idx + 1}
-                    provider={trendingProvider}
-                  />
+              : Object.entries(
+                  trending.reduce((acc: Record<string, TrendingItem[]>, it) => {
+                    (acc[it.chain] = acc[it.chain] || []).push(it);
+                    return acc;
+                  }, {})
+                ).map(([c, items]) => (
+                  <div key={c} style={{ paddingBottom: '0.5rem' }}>
+                    <h3 style={{ margin: '0.5rem' }}>{c}</h3>
+                    {items.map((item, idx) => (
+                      <ListItem
+                        key={item.pairId}
+                        item={item}
+                        rank={idx + 1}
+                        provider={trendingProvider}
+                      />
+                    ))}
+                  </div>
                 ))}
           </div>
         </section>

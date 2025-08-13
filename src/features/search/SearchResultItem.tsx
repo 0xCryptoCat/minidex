@@ -13,7 +13,6 @@ export function SearchResultSkeleton() {
       <td><div style={{ height: 16, background: '#eee', borderRadius: 4 }} /></td>
       <td><div style={{ height: 16, background: '#eee', borderRadius: 4 }} /></td>
       <td><div style={{ height: 16, background: '#eee', borderRadius: 4 }} /></td>
-      <td><div style={{ height: 16, background: '#eee', borderRadius: 4 }} /></td>
     </tr>
   );
 }
@@ -51,7 +50,6 @@ export default function SearchResultItem({ result }: Props) {
       <td>{core.liqUsd !== undefined ? `$${core.liqUsd.toLocaleString()}` : '-'}</td>
       <td>{core.vol24hUsd !== undefined ? `$${core.vol24hUsd.toLocaleString()}` : '-'}</td>
       <td>{core.priceChange24hPct !== undefined ? `${core.priceChange24hPct.toFixed(2)}%` : '-'}</td>
-      <td>{pools.length}</td>
     </tr>
   );
 }

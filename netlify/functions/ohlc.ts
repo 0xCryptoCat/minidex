@@ -79,9 +79,17 @@ export const handler: Handler = async (event) => {
   try {
     if (forceProvider !== 'gt') {
       const ds = await fetchJson(`${DS_API_BASE}/dex/pairs/${pairId}/candles?timeframe=${tf}`);
-      if (!ds || Object.keys(ds).length === 0) throw new Error('empty');
-      ds.provider = 'ds';
-      return { statusCode: 200, headers, body: JSON.stringify(ds) };
+      if (!ds || !Array.isArray(ds.candles)) throw new Error('empty');
+      const candles = ds.candles.map((c: any) => ({
+        t: Number(c.t ?? c.timestamp ?? c[0]),
+        o: Number(c.o ?? c.open ?? c[1]),
+        h: Number(c.h ?? c.high ?? c[2]),
+        l: Number(c.l ?? c.low ?? c[3]),
+        c: Number(c.c ?? c.close ?? c[4]),
+        v: c.v !== undefined ? Number(c.v) : c[5] !== undefined ? Number(c[5]) : undefined,
+      }));
+      const bodyRes: OHLCResponse = { pairId, tf, candles, provider: 'ds' };
+      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
     }
     throw new Error('force gt');
   } catch {
@@ -91,9 +99,24 @@ export const handler: Handler = async (event) => {
     }
     try {
       const gt = await fetchJson(`${GT_API_BASE}/pools/${pairId}/ohlcv/${tf}`);
-      if (!gt || Object.keys(gt).length === 0) throw new Error('empty');
-      gt.provider = 'gt';
-      return { statusCode: 200, headers, body: JSON.stringify(gt) };
+      const list =
+        gt?.data?.attributes?.ohlcv_list || gt?.data || gt?.candles || [];
+      if (!Array.isArray(list) || list.length === 0) throw new Error('empty');
+      const candles = list.map((c: any) => ({
+        t: Number(c[0] ?? c.t ?? c.timestamp),
+        o: Number(c[1] ?? c.o ?? c.open),
+        h: Number(c[2] ?? c.h ?? c.high),
+        l: Number(c[3] ?? c.l ?? c.low),
+        c: Number(c[4] ?? c.c ?? c.close),
+        v:
+          c[5] !== undefined
+            ? Number(c[5])
+            : c.v !== undefined
+            ? Number(c.v)
+            : undefined,
+      }));
+      const bodyRes: OHLCResponse = { pairId, tf, candles, provider: 'gt' };
+      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
     } catch {
       const body: ApiError = { error: 'upstream_error', provider: 'none' };
       return { statusCode: 500, headers, body: JSON.stringify(body) };

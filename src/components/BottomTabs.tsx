@@ -1,16 +1,16 @@
 import { Link, useLocation } from 'react-router-dom';
 
 const tabs = [
-  { view: 'detail', label: 'Detail' },
   { view: 'chart', label: 'Chart' },
-  { view: 'chart-txs', label: 'Chart+TXs' },
-  { view: 'txs', label: 'TXs' },
+  { view: 'depth', label: 'Chart+TXs' },
+  { view: 'trades', label: 'Trades' },
+  { view: 'detail', label: 'Detail' },
 ];
 
 export default function BottomTabs() {
   const location = useLocation();
   const { pathname, search } = location;
-  const currentView = new URLSearchParams(search).get('view') || 'detail';
+  const currentView = new URLSearchParams(search).get('view') || 'chart';
 
   return (
     <nav className="bottom-tabs" role="tablist" aria-label="Views">

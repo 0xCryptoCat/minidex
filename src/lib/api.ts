@@ -19,11 +19,20 @@ export async function search(query: string, provider?: string): Promise<SearchRe
   const url = new URL(`${BASE}/search`, window.location.origin);
   url.searchParams.set('query', query);
   if (provider) url.searchParams.set('provider', provider);
-
-  const res = await fetch(url.toString());
-  const data = await res.json();
-  if (res.ok) setSearchCache(query, data);
-  return data;
+  try {
+    const res = await fetch(url.toString());
+    const data = await res.json();
+    if (!res.ok) {
+      if (res.status === 429) {
+        return { error: 'rate_limit', provider: 'none' };
+      }
+      return data.error ? data : { error: 'upstream_error', provider: 'none' };
+    }
+    setSearchCache(query, data);
+    return data;
+  } catch {
+    return { error: 'upstream_error', provider: 'none' };
+  }
 }
 
 export async function pairs(

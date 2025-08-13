@@ -86,6 +86,10 @@ export default function PriceChart({ pairId, tf, xDomain, onXDomainChange, marke
 
   useEffect(() => {
     markersMapRef.current.clear();
+    if (!markers || markers.length === 0) {
+      candleSeriesRef.current?.setMarkers([]);
+      return;
+    }
     markers.forEach((m) => {
       const arr = markersMapRef.current.get(m.ts) || [];
       arr.push(m);
@@ -113,20 +117,25 @@ export default function PriceChart({ pairId, tf, xDomain, onXDomainChange, marke
       if (data.rollupHint === 'client' && data.tf !== tf) {
         candles = rollupCandles(candles, data.tf, tf);
       }
-      const c = candles.map((cd) => ({
-        time: cd.t as UTCTimestamp,
-        open: cd.o,
-        high: cd.h,
-        low: cd.l,
-        close: cd.c,
-      }));
-      const v = candles.map((cd) => ({
-        time: cd.t as UTCTimestamp,
-        value: cd.v || 0,
-        color: cd.c >= cd.o ? '#26a69a' : '#ef5350',
-      }));
-      candleSeriesRef.current?.setData(c);
-      volumeSeriesRef.current?.setData(v);
+      if (candles.length > 0) {
+        const c = candles.map((cd) => ({
+          time: cd.t as UTCTimestamp,
+          open: cd.o,
+          high: cd.h,
+          low: cd.l,
+          close: cd.c,
+        }));
+        const v = candles.map((cd) => ({
+          time: cd.t as UTCTimestamp,
+          value: cd.v || 0,
+          color: cd.c >= cd.o ? '#26a69a' : '#ef5350',
+        }));
+        candleSeriesRef.current?.setData(c);
+        volumeSeriesRef.current?.setData(v);
+      } else {
+        candleSeriesRef.current?.setData([]);
+        volumeSeriesRef.current?.setData([]);
+      }
       setProvider(data.provider);
     }, 5000, {
       onError: () => setDegraded(true),
@@ -135,7 +144,10 @@ export default function PriceChart({ pairId, tf, xDomain, onXDomainChange, marke
     poller.start();
 
     const tradesPoller = createPoller(async () => {
-      await trades(pairId);
+      const tr = await trades(pairId);
+      if (tr && Array.isArray(tr.trades) && tr.trades.length > 0) {
+        // noop: data is cached in trades() and used elsewhere
+      }
     }, 3000, {
       onError: () => setDegraded(true),
       onRecover: () => setDegraded(false),

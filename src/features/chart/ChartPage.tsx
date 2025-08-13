@@ -8,14 +8,7 @@ import DetailView from './DetailView';
 import copy from '../../copy/en.json';
 
 // Views for chart page
-const views = ['chart', 'depth', 'trades', 'detail'] as const;
-type View = typeof views[number];
-const viewLabels: Record<View, string> = {
-  chart: 'Chart',
-  depth: 'Chart + TXs',
-  trades: 'Trades',
-  detail: 'Detail',
-};
+type View = 'chart' | 'depth' | 'trades' | 'detail';
 
 export default function ChartPage() {
   const { chain, address, pairId } = useParams<{ chain: string; address: string; pairId?: string }>();
@@ -23,7 +16,7 @@ export default function ChartPage() {
   const [token, setToken] = useState<TokenMeta | null>(null);
   const [pools, setPools] = useState<PoolSummary[]>([]);
   const [currentPair, setCurrentPair] = useState<string | undefined>(pairId);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const view = (searchParams.get('view') as View) || 'chart';
   const [xDomain, setXDomain] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,26 +79,6 @@ export default function ChartPage() {
 
       {!loading && !error && pools.length > 0 && (
         <>
-          <div className="view-tabs" role="tablist" aria-label="Chart sections">
-            {views.map((v) => (
-              <button
-                key={v}
-                role="tab"
-                aria-selected={view === v}
-                tabIndex={view === v ? 0 : -1}
-                onClick={() => {
-                  setSearchParams((sp) => {
-                    sp.set('view', v);
-                    return sp;
-                  });
-                }}
-                className="view-tab"
-              >
-                {viewLabels[v]}
-              </button>
-            ))}
-          </div>
-
           {view !== 'detail' && (
             <PoolSwitcher pools={pools} current={currentPair} onSwitch={handlePoolSwitch} />
           )}

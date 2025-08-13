@@ -108,8 +108,11 @@ export const handler: Handler = async (event) => {
   try {
     const gtUrl = `${GT_API_BASE}/networks/${chain}/${type}?window=${window}${limit ? `&limit=${limit}` : ''}`;
     const gt = await fetchJson(gtUrl);
-    const dataArray = gt.data || gt.items || [];
-    if (!Array.isArray(dataArray) || dataArray.length === 0) throw new Error('empty');
+    const dataArray = Array.isArray(gt?.data)
+      ? gt.data
+      : Array.isArray(gt?.items)
+      ? gt.items
+      : [];
 
     const items: ListItem[] = dataArray.map((d: any) => {
       const attr = d.attributes || {};

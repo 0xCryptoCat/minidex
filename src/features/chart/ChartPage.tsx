@@ -66,13 +66,17 @@ export default function ChartPage() {
           <strong>{token.symbol}</strong> {token.name}
         </div>
       )}
+
       {loading && <div>{copy.loading}</div>}
+
       {!loading && error && (
         <div style={{ color: 'red' }}>
           {error === 'rate_limit' ? copy.error_rate_limit : copy.error_generic}
         </div>
       )}
+
       {!loading && !error && pools.length === 0 && <div>{copy.no_pools}</div>}
+
       {!loading && !error && pools.length > 0 && (
         <>
           <div className="view-tabs" role="tablist" aria-label="Chart sections">
@@ -89,9 +93,11 @@ export default function ChartPage() {
               </button>
             ))}
           </div>
+
           {view !== 'detail' && (
             <PoolSwitcher pools={pools} current={currentPair} onSwitch={handlePoolSwitch} />
           )}
+
           {view === 'chart' && currentPair && chain && (
             <div style={{ marginTop: '1rem' }}>
               <ChartOnlyView
@@ -103,6 +109,7 @@ export default function ChartPage() {
               />
             </div>
           )}
+
           {view === 'detail' && currentPair && chain && address && (
             <DetailView chain={chain} address={address} pairId={currentPair} />
           )}

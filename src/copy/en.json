@@ -1,5 +1,5 @@
 {
-  "search_placeholder": "Token address",
+  "search_placeholder": "Enter token address",
   "no_results": "No results found",
   "no_pools": "No pools available",
   "loading": "Loading...",
@@ -7,5 +7,7 @@
   "error_invalid_address": "Invalid address",
   "error_rate_limit": "Too many requests, please slow down",
   "error_upstream": "Network error, please try again",
-  "retry": "Retry"
+  "retry": "Retry",
+  "results": "Results",
+  "trending_tokens": "Trending Tokens"
 }

@@ -52,3 +52,24 @@ export default function ListItem({ item, rank, provider }: Props) {
     </div>
   );
 }
+
+export function ListItemSkeleton() {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '40px 1fr 80px 80px 80px 80px 80px 60px',
+        gap: '0.5rem',
+        padding: '0.5rem',
+        borderBottom: '1px solid #eee',
+      }}
+    >
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div
+          key={i}
+          style={{ height: 16, background: '#eee', borderRadius: 4 }}
+        />
+      ))}
+    </div>
+  );
+}

@@ -1,4 +1,14 @@
-import type { SearchResponse, ApiError, PairsResponse, OHLCResponse, TradesResponse, Timeframe } from './types';
+import type {
+  SearchResponse,
+  ApiError,
+  PairsResponse,
+  OHLCResponse,
+  TradesResponse,
+  Timeframe,
+  ListsResponse,
+  ListType,
+  Window,
+} from './types';
 import {
   getSearchCache,
   setSearchCache,
@@ -98,5 +108,25 @@ export async function trades(pairId: string, provider?: string): Promise<TradesR
   }
   setTradesCache(key, data);
   return data as TradesResponse;
+}
+
+export async function lists(
+  params: { chain: string; type: ListType; window: Window; limit?: number }
+): Promise<ListsResponse | ApiError> {
+  const url = new URL(`${BASE}/lists`, window.location.origin);
+  url.searchParams.set('chain', params.chain);
+  url.searchParams.set('type', params.type);
+  url.searchParams.set('window', params.window);
+  if (params.limit) url.searchParams.set('limit', params.limit.toString());
+  try {
+    const res = await fetch(url.toString());
+    const data = await res.json();
+    if (!res.ok) {
+      return data.error ? data : { error: 'upstream_error', provider: 'none' };
+    }
+    return data as ListsResponse;
+  } catch {
+    return { error: 'upstream_error', provider: 'none' };
+  }
 }
 

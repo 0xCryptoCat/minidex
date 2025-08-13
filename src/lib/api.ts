@@ -71,15 +71,17 @@ export async function pairs(
 export async function ohlc(
   pairId: string,
   tf: Timeframe,
+  chain: string,
   provider?: string
 ): Promise<OHLCResponse> {
-  const key = `${pairId}:${tf}`;
+  const key = `${chain}:${pairId}:${tf}`;
   const cached = getOHLCCache(key);
   if (cached) return cached;
 
   const url = new URL(`${BASE}/ohlc`, window.location.origin);
   url.searchParams.set('pairId', pairId);
   url.searchParams.set('tf', tf);
+  url.searchParams.set('chain', chain);
   if (provider) url.searchParams.set('provider', provider);
 
   const res = await fetch(url.toString());
@@ -96,13 +98,18 @@ export async function ohlc(
   return data as OHLCResponse;
 }
 
-export async function trades(pairId: string, provider?: string): Promise<TradesResponse> {
-  const key = pairId;
+export async function trades(
+  pairId: string,
+  chain: string,
+  provider?: string
+): Promise<TradesResponse> {
+  const key = `${chain}:${pairId}`;
   const cached = getTradesCache(key);
   if (cached) return cached;
 
   const url = new URL(`${BASE}/trades`, window.location.origin);
   url.searchParams.set('pairId', pairId);
+  url.searchParams.set('chain', chain);
   if (provider) url.searchParams.set('provider', provider);
 
   const res = await fetch(url.toString());

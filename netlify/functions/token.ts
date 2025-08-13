@@ -3,6 +3,7 @@ import type { TokenResponse, ApiError } from '../../src/lib/types';
 
 const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
 const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
+const DS_API_BASE = process.env.DS_API_BASE || '';
 
 function isValidChain(chain?: string): chain is string {
   return !!chain;
@@ -47,39 +48,96 @@ export const handler: Handler = async (event) => {
     'Cache-Control': 'public, max-age=30, stale-while-revalidate=60',
   };
 
-  if (!CG_API_BASE || !CG_API_KEY) {
-    const body: ApiError = { error: 'upstream_error', provider: 'none' };
-    return { statusCode: 500, headers, body: JSON.stringify(body) };
+  let core: any = null;
+  let provider: 'cg' | 'ds' | undefined;
+
+  if (CG_API_BASE && CG_API_KEY) {
+    try {
+      const cg = await fetchCgToken(chain, address);
+      const attr = cg?.data?.attributes || cg?.data || cg;
+      const priceChange = attr?.price_change_percentage || {};
+      core = {
+        priceUsd: attr?.price_usd !== undefined ? Number(attr.price_usd) : undefined,
+        mcUsd:
+          attr?.market_cap_usd !== undefined
+            ? Number(attr.market_cap_usd)
+            : undefined,
+        fdvUsd:
+          attr?.fully_diluted_valuation_usd !== undefined
+            ? Number(attr.fully_diluted_valuation_usd)
+            : undefined,
+        liqUsd:
+          attr?.liquidity_usd !== undefined ? Number(attr.liquidity_usd) : undefined,
+        vol24hUsd:
+          attr?.volume_24h_usd !== undefined ? Number(attr.volume_24h_usd) : undefined,
+        priceChange1hPct:
+          priceChange?.h1 !== undefined ? Number(priceChange.h1) : undefined,
+        priceChange24hPct:
+          priceChange?.h24 !== undefined ? Number(priceChange.h24) : undefined,
+      };
+      provider = 'cg';
+    } catch {
+      // ignore and fall back to DS
+    }
   }
 
-  try {
-    const cg = await fetchCgToken(chain, address);
-    const attr = cg?.data?.attributes || cg?.data || cg;
-    const priceChange = attr?.price_change_percentage || {};
-    const core = {
-      priceUsd: attr?.price_usd !== undefined ? Number(attr.price_usd) : undefined,
-      mcUsd:
-        attr?.market_cap_usd !== undefined
-          ? Number(attr.market_cap_usd)
-          : undefined,
-      fdvUsd:
-        attr?.fully_diluted_valuation_usd !== undefined
-          ? Number(attr.fully_diluted_valuation_usd)
-          : undefined,
-      liqUsd:
-        attr?.liquidity_usd !== undefined ? Number(attr.liquidity_usd) : undefined,
-      vol24hUsd:
-        attr?.volume_24h_usd !== undefined ? Number(attr.volume_24h_usd) : undefined,
-      priceChange1hPct:
-        priceChange?.h1 !== undefined ? Number(priceChange.h1) : undefined,
-      priceChange24hPct:
-        priceChange?.h24 !== undefined ? Number(priceChange.h24) : undefined,
-    };
-    const bodyRes: TokenResponse = { chain, address, core, provider: 'cg' };
-    return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
-  } catch {
-    const body: ApiError = { error: 'upstream_error', provider: 'none' };
-    return { statusCode: 500, headers, body: JSON.stringify(body) };
+  if (!core && DS_API_BASE) {
+    try {
+      const res = await fetch(`${DS_API_BASE}/dex/tokens/${address}`);
+      if (res.ok) {
+        const ds = await res.json();
+        const first = Array.isArray(ds.pairs) ? ds.pairs[0] : undefined;
+        if (first) {
+          core = {
+            priceUsd:
+              first.priceUsd !== undefined
+                ? Number(first.priceUsd)
+                : first.price_usd !== undefined
+                ? Number(first.price_usd)
+                : undefined,
+            fdvUsd:
+              first.fdv !== undefined
+                ? Number(first.fdv)
+                : first.fdvUsd !== undefined
+                ? Number(first.fdvUsd)
+                : undefined,
+            liqUsd:
+              first.liquidity?.usd !== undefined
+                ? Number(first.liquidity.usd)
+                : first.liquidityUsd !== undefined
+                ? Number(first.liquidityUsd)
+                : undefined,
+            vol24hUsd:
+              first.volume?.h24 !== undefined
+                ? Number(first.volume.h24)
+                : first.vol24hUsd !== undefined
+                ? Number(first.vol24hUsd)
+                : undefined,
+            priceChange1hPct:
+              first.priceChange?.h1 !== undefined
+                ? Number(first.priceChange.h1)
+                : undefined,
+            priceChange24hPct:
+              first.priceChange?.h24 !== undefined
+                ? Number(first.priceChange.h24)
+                : first.priceChange24hPct !== undefined
+                ? Number(first.priceChange24hPct)
+                : undefined,
+          };
+          provider = 'ds';
+        }
+      }
+    } catch {
+      // ignore
+    }
   }
+
+  if (core) {
+    const bodyRes: TokenResponse = { chain, address, core, provider: provider! };
+    return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+  }
+
+  const body: ApiError = { error: 'upstream_error', provider: 'none' };
+  return { statusCode: 500, headers, body: JSON.stringify(body) };
 };
 

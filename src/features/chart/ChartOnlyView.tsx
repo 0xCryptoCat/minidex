@@ -18,17 +18,17 @@ export default function ChartOnlyView({ pairId, chain, tf, xDomain, onXDomainCha
 
   useEffect(() => {
     if (showMarkers) {
-      const m = getTradeMarkers(pairId);
+      const m = getTradeMarkers(pairId, chain);
       setMarkers(m);
       setNoTrades(m.length === 0);
     }
-  }, [pairId, showMarkers]);
+  }, [pairId, chain, showMarkers]);
 
   function handleToggle() {
     setShowMarkers((v) => {
       const next = !v;
       if (next) {
-        setMarkers(getTradeMarkers(pairId));
+        setMarkers(getTradeMarkers(pairId, chain));
       } else {
         setMarkers([]);
       }

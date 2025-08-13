@@ -40,9 +40,10 @@ async function fetchJson(url: string): Promise<any> {
 export const handler: Handler = async (event) => {
   const pairId = event.queryStringParameters?.pairId;
   const tf = event.queryStringParameters?.tf as Timeframe | undefined;
+  const chain = event.queryStringParameters?.chain;
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
 
-  if (!isValidPair(pairId) || !isValidTf(tf)) {
+  if (!isValidPair(pairId) || !isValidTf(tf) || !chain) {
     const body: ApiError = { error: 'invalid_request', provider: 'none' };
     return { statusCode: 400, body: JSON.stringify(body) };
   }
@@ -135,7 +136,7 @@ export const handler: Handler = async (event) => {
 
   if (candles.length === 0 && forceProvider !== 'ds') {
     try {
-      const gt = await fetchJson(`${GT_API_BASE}/pools/${pairId}/ohlcv/${tf}`);
+      const gt = await fetchJson(`${GT_API_BASE}/networks/${chain}/pools/${pairId}/ohlcv/${tf}`);
       const list = Array.isArray(gt?.data?.attributes?.ohlcv_list)
         ? gt.data.attributes.ohlcv_list
         : Array.isArray(gt?.data)

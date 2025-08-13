@@ -109,11 +109,11 @@ export default function PriceChart({ pairId, tf, xDomain, onXDomainChange, marke
   }, [markers]);
 
   useEffect(() => {
-    if (!pairId) return;
+    if (!pairId || !chain) return;
     let candles: Candle[] = [];
 
     const poller = createPoller(async () => {
-      const data = await ohlc(pairId, tf);
+      const data = await ohlc(pairId, tf, chain);
       candles = data.candles;
       if (data.rollupHint === 'client' && data.tf !== tf) {
         candles = rollupCandles(candles, data.tf, tf);
@@ -147,7 +147,7 @@ export default function PriceChart({ pairId, tf, xDomain, onXDomainChange, marke
     poller.start();
 
     const tradesPoller = createPoller(async () => {
-      const tr = await trades(pairId);
+      const tr = await trades(pairId, chain);
       if (tr && Array.isArray(tr.trades) && tr.trades.length > 0) {
         // noop: data is cached in trades() and used elsewhere
       }
@@ -161,7 +161,7 @@ export default function PriceChart({ pairId, tf, xDomain, onXDomainChange, marke
       poller.stop();
       tradesPoller.stop();
     };
-  }, [pairId, tf]);
+  }, [pairId, tf, chain]);
 
   return (
     <div style={{ position: 'relative' }}>

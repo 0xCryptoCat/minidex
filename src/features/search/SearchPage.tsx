@@ -34,10 +34,14 @@ export default function SearchPage() {
           style={{ width: '100%', padding: '0.5rem' }}
         />
       </form>
-      {loading && <div>Loading...</div>}
+      {loading && <div>{copy.loading}</div>}
       {error && (
         <div style={{ color: 'red' }}>
-          {error === 'invalid_address' ? copy.error_invalid_address : copy.error_generic}
+          {error === 'invalid_address'
+            ? copy.error_invalid_address
+            : error === 'rate_limit'
+            ? copy.error_rate_limit
+            : copy.error_generic}
         </div>
       )}
       {!loading && results && results.length === 0 && <div>{copy.no_results}</div>}

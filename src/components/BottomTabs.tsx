@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const tabs = [
   { view: 'detail', label: 'Detail' },
@@ -10,17 +10,26 @@ const tabs = [
 export default function BottomTabs() {
   const location = useLocation();
   const { pathname, search } = location;
-  const qs = new URLSearchParams(search);
+  const currentView = new URLSearchParams(search).get('view') || 'detail';
 
   return (
-    <nav className="bottom-tabs">
+    <nav className="bottom-tabs" role="tablist" aria-label="Views">
       {tabs.map((tab) => {
+        const qs = new URLSearchParams(search);
         qs.set('view', tab.view);
         const to = `${pathname}?${qs.toString()}`;
+        const isActive = currentView === tab.view;
         return (
-          <NavLink key={tab.view} to={to} className={({ isActive }) => (isActive ? 'active' : '')}>
+          <Link
+            key={tab.view}
+            to={to}
+            role="tab"
+            aria-selected={isActive}
+            tabIndex={isActive ? 0 : -1}
+            className={isActive ? 'active' : ''}
+          >
             {tab.label}
-          </NavLink>
+          </Link>
         );
       })}
     </nav>

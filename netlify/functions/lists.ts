@@ -8,6 +8,10 @@ const FIXTURES: Record<string, string> = {
   'leaderboard:ethereum:1d': '../../fixtures/lists-leaderboard-eth-1d.json',
 };
 
+const USE_FIXTURES = process.env.USE_FIXTURES === 'true';
+const DS_API_BASE = process.env.DS_API_BASE || '';
+const GT_API_BASE = process.env.GT_API_BASE || '';
+
 function isValidType(t?: string): t is ListType {
   return t === 'trending' || t === 'discovery' || t === 'leaderboard';
 }
@@ -19,15 +23,21 @@ function isValidChain(c?: string): c is string {
 }
 
 async function readFixture(path: string): Promise<ListsResponse> {
-  const data = await fs.readFile(path, 'utf8');
+  const url = new URL(path, import.meta.url);
+  const data = await fs.readFile(url, 'utf8');
   return JSON.parse(data) as ListsResponse;
 }
 
-async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
-  return await Promise.race([
-    p,
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
-  ]);
+async function fetchJson(url: string): Promise<any> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), 3000);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error('status');
+    return await res.json();
+  } finally {
+    clearTimeout(id);
+  }
 }
 
 export const handler: Handler = async (event) => {
@@ -48,18 +58,40 @@ export const handler: Handler = async (event) => {
   };
 
   const key = `${type}:${chain}:${window}`;
-  const path = FIXTURES[key];
-  if (!path) {
-    const body: ApiError = { error: 'not_found', provider: 'none' };
-    return { statusCode: 404, headers, body: JSON.stringify(body) };
+  if (USE_FIXTURES) {
+    const path = FIXTURES[key];
+    if (!path) {
+      const body: ApiError = { error: 'not_found', provider: 'none' };
+      return { statusCode: 404, headers, body: JSON.stringify(body) };
+    }
+    try {
+      const data = await readFixture(path);
+      if (limit !== undefined) data.items = data.items.slice(0, limit);
+      return { statusCode: 200, headers, body: JSON.stringify(data) };
+    } catch {
+      const body: ApiError = { error: 'upstream_error', provider: 'none' };
+      return { statusCode: 500, headers, body: JSON.stringify(body) };
+    }
   }
 
   try {
-    const data = await withTimeout(readFixture(path), 3000);
-    if (limit !== undefined) data.items = data.items.slice(0, limit);
-    return { statusCode: 200, headers, body: JSON.stringify(data) };
+    const dsUrl = `${DS_API_BASE}/lists/${type}?chain=${chain}&window=${window}${limit ? `&limit=${limit}` : ''}`;
+    const ds = await fetchJson(dsUrl);
+    if (ds && Object.keys(ds).length) {
+      ds.provider = 'ds';
+      return { statusCode: 200, headers, body: JSON.stringify(ds) };
+    }
+    throw new Error('empty');
   } catch {
-    const body: ApiError = { error: 'upstream_error', provider: 'none' };
-    return { statusCode: 500, headers, body: JSON.stringify(body) };
+    try {
+      const gtUrl = `${GT_API_BASE}/networks/${chain}/${type}?window=${window}${limit ? `&limit=${limit}` : ''}`;
+      const gt = await fetchJson(gtUrl);
+      if (!gt || Object.keys(gt).length === 0) throw new Error('empty');
+      gt.provider = 'gt';
+      return { statusCode: 200, headers, body: JSON.stringify(gt) };
+    } catch {
+      const body: ApiError = { error: 'upstream_error', provider: 'none' };
+      return { statusCode: 500, headers, body: JSON.stringify(body) };
+    }
   }
 };

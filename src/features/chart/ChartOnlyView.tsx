@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Timeframe, Provider } from '../../lib/types';
 import PriceChart from './PriceChart';
 import { getTradeMarkers, type TradeMarkerCluster } from '../trades/TradeMarkers';
 import { ohlc } from '../../lib/api';
 import { getCachedTf, setCachedTf } from '../../lib/tf-cache';
+import { getTradesCache } from '../../lib/cache';
+import { formatFetchMeta, type FetchMeta } from '../../lib/format';
 
 interface Props {
   pairId: string;
@@ -20,6 +22,8 @@ export default function ChartOnlyView({ pairId, chain, poolAddress, address, pro
   const [markers, setMarkers] = useState<TradeMarkerCluster[]>([]);
   const [noTrades, setNoTrades] = useState(false);
   const [tf, setTf] = useState<Timeframe | null>(null);
+  const [meta, setMeta] = useState<FetchMeta | null>(null);
+  const loggedRef = useRef(false);
 
   useEffect(() => {
     const cached = getCachedTf(pairId, provider);
@@ -51,8 +55,22 @@ export default function ChartOnlyView({ pairId, chain, poolAddress, address, pro
       const m = getTradeMarkers(pairId, chain, poolAddress);
       setMarkers(m);
       setNoTrades(m.length === 0);
+      const parts: string[] = [];
+      if (chain) parts.push(chain);
+      parts.push(pairId);
+      if (poolAddress) parts.push(poolAddress);
+      const key = parts.join(':');
+      const cached = getTradesCache(key) as any;
+      setMeta(cached?._meta);
     }
   }, [pairId, chain, poolAddress, showMarkers]);
+
+  useEffect(() => {
+    if (showMarkers && noTrades && meta && !loggedRef.current && (import.meta as any).env?.DEV) {
+      console.log('no-trades meta', meta);
+      loggedRef.current = true;
+    }
+  }, [showMarkers, noTrades, meta]);
 
   function handleToggle() {
     setShowMarkers((v) => {
@@ -77,7 +95,14 @@ export default function ChartOnlyView({ pairId, chain, poolAddress, address, pro
           <input type="checkbox" checked={showMarkers} onChange={handleToggle} /> trades
         </label>
       </div>
-      {showMarkers && noTrades && <div style={{ marginBottom: '0.5rem' }}>No trades</div>}
+      {showMarkers && noTrades && (
+        <div style={{ marginBottom: '0.5rem' }}>
+          <div>No trades</div>
+          {meta && formatFetchMeta(meta) && (
+            <div style={{ fontSize: '0.75rem' }}>{formatFetchMeta(meta)}</div>
+          )}
+        </div>
+      )}
       <PriceChart
         pairId={pairId}
         tf={tf}

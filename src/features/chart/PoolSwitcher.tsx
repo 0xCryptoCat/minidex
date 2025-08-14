@@ -1,5 +1,6 @@
 import type { PoolSummary } from '../../lib/types';
 import { formatCompact } from '../../lib/format';
+import { useState } from 'react';
 
 interface Props {
   pools: PoolSummary[];
@@ -8,9 +9,18 @@ interface Props {
 }
 
 export default function PoolSwitcher({ pools, current, onSwitch }: Props) {
+  const [filter, setFilter] = useState('');
   if (!pools || pools.length === 0) return null;
 
   if (pools.length > 3) {
+    const lower = filter.toLowerCase();
+    let filtered = pools.filter((p) =>
+      `${p.dex} ${p.version || ''} ${p.base}/${p.quote}`.toLowerCase().includes(lower),
+    );
+    if (current && !filtered.some((p) => p.pairId === current)) {
+      const cur = pools.find((p) => p.pairId === current);
+      if (cur) filtered = [cur, ...filtered];
+    }
     return (
       <div
         style={{
@@ -23,6 +33,14 @@ export default function PoolSwitcher({ pools, current, onSwitch }: Props) {
       >
         <label style={{ display: 'flex', flexDirection: 'column', fontSize: '0.875rem' }}>
           Pools
+          {pools.length > 10 && (
+            <input
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Filter"
+              style={{ padding: '0.25rem', marginTop: '0.25rem' }}
+            />
+          )}
           <select
             value={current}
             onChange={(e) => {
@@ -31,7 +49,7 @@ export default function PoolSwitcher({ pools, current, onSwitch }: Props) {
             }}
             style={{ padding: '0.25rem', marginTop: '0.25rem' }}
           >
-            {pools.map((p) => (
+            {filtered.map((p) => (
               <option key={p.pairId} value={p.pairId}>
                 {`${p.dex}${p.version ? ` (${p.version})` : ''} — ${p.base}/${p.quote}${
                   p.liqUsd ? ` — $${formatCompact(p.liqUsd)}` : ''

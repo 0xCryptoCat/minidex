@@ -8,7 +8,7 @@ import type {
   Candle,
 } from '../../src/lib/types';
 import fs from 'fs/promises';
-import { toGTNetwork } from '../shared/chains';
+import { CHAIN_TO_GT_NETWORK } from '../shared/chains';
 import { buildCandlesFromTrades } from '../shared/agg';
 
 const GT_FIXTURE = '../../fixtures/ohlc-gt-1m.json';
@@ -113,7 +113,8 @@ export const handler: Handler = async (event) => {
   const poolAddress = event.queryStringParameters?.poolAddress;
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
   const gtSupported = event.queryStringParameters?.gtSupported !== 'false';
-  const gtNetwork = chain ? toGTNetwork(chain) : null;
+  const gtNetwork = chain ? CHAIN_TO_GT_NETWORK[chain] : undefined;
+  const validPool = /^0x[0-9a-fA-F]{40}$/.test(poolAddress || '');
   const SUPPORTED_CHAINS = new Set([
     'ethereum',
     'bsc',
@@ -132,6 +133,7 @@ export const handler: Handler = async (event) => {
     'x-items': '0',
   };
   const attempted: string[] = [];
+  if (!CG_API_KEY) attempted.push('cg:disabled');
   if (!isValidPair(pairId) || !isValidTf(tf) || !chain) {
     const body: ApiError = { error: 'invalid_request', provider: 'none' };
     log('response', event.rawUrl, 400, 0, 'none');
@@ -175,7 +177,19 @@ export const handler: Handler = async (event) => {
 
   log('params', { pairId, tf, chain, poolAddress, forceProvider, gtSupported, gtNetwork });
 
-  if ((forceProvider === 'gt' || (!forceProvider && gtSupported)) && gtNetwork && poolAddress) {
+  if (!gtNetwork) {
+    log('skip gt: invalid network', chain);
+  }
+  if (!validPool) {
+    headers['x-invalid-pool'] = '1';
+    log('skip gt: invalid pool', poolAddress);
+  }
+
+  if (
+    (forceProvider === 'gt' || (!forceProvider && gtSupported)) &&
+    gtNetwork &&
+    validPool
+  ) {
     attempted.push('gt');
     const ladder = ['5m', '15m', '1h'];
     const tfs = [tf, ...ladder.filter((t) => t !== tf)];
@@ -224,6 +238,10 @@ export const handler: Handler = async (event) => {
       const interval = MAP_TF_CG[tf] || '1m';
       const cgUrl = `${CG_API_BASE}/pool-ohlcv-contract-address?chain=${chain}&address=${poolAddress}&interval=${interval}`;
       const res = await fetch(cgUrl, { headers: { 'x-cg-pro-api-key': CG_API_KEY } });
+      if (res.status === 401 || res.status === 403) {
+        headers['x-cg-auth'] = 'fail';
+        log('cg auth fail', res.status);
+      }
       if (res.ok) {
         const cg = await res.json();
         const list = Array.isArray(cg?.data)
@@ -266,6 +284,10 @@ export const handler: Handler = async (event) => {
       try {
         const cgUrl = `${CG_API_BASE}/pool-trades-contract-address?chain=${chain}&address=${poolAddress}&limit=300`;
         const res = await fetch(cgUrl, { headers: { 'x-cg-pro-api-key': CG_API_KEY } });
+        if (res.status === 401 || res.status === 403) {
+          headers['x-cg-auth'] = 'fail';
+          log('cg auth fail', res.status);
+        }
         if (res.ok) {
           const cg = await res.json();
           const list = Array.isArray(cg?.data)
@@ -309,7 +331,7 @@ export const handler: Handler = async (event) => {
       }
     }
 
-    if (trades.length === 0 && gtSupported && gtNetwork && poolAddress) {
+    if (trades.length === 0 && gtSupported && gtNetwork && validPool) {
       attempted.push('gt-trades');
       try {
         const gtUrl = `${GT_API_BASE}/networks/${gtNetwork}/pools/${poolAddress}/trades?limit=300`;

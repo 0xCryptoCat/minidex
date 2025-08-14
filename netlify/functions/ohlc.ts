@@ -1,14 +1,14 @@
 import type { Handler } from '@netlify/functions';
 import type { OHLCResponse, ApiError, Provider, Timeframe, Trade } from '../../src/lib/types';
 import fs from 'fs/promises';
-import { isGtSupported } from '../shared/dex-allow';
+import { toGTNetwork } from '../shared/chains';
 import { buildCandlesFromTrades } from '../shared/agg';
 
 const GT_FIXTURE = '../../fixtures/ohlc-gt-1m.json';
 const DS_FIXTURE = '../../fixtures/ohlc-ds-1m.json';
 
 const USE_FIXTURES = process.env.USE_FIXTURES === 'true';
-const GT_API_BASE = process.env.GT_API_BASE || '';
+const GT_API_BASE = process.env.GT_API_BASE || 'https://api.geckoterminal.com/api/v2';
 const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
 const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
 const DEBUG = process.env.DEBUG_LOGS === 'true';
@@ -25,26 +25,10 @@ function isValidTf(tf?: string): tf is Timeframe {
   return !!tf;
 }
 
-function isValidAddress(addr?: string): addr is string {
-  return !!addr && /^0x[a-fA-F0-9]{40}$/.test(addr);
-}
-
 async function readFixture(path: string): Promise<OHLCResponse> {
   const url = new URL(path, import.meta.url);
   const data = await fs.readFile(url, 'utf8');
   return JSON.parse(data) as OHLCResponse;
-}
-
-async function fetchJson(url: string): Promise<any> {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), 3000);
-  try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new Error('status');
-    return await res.json();
-  } finally {
-    clearTimeout(id);
-  }
 }
 
 const TF_FALLBACK_GT: Record<Timeframe, Timeframe[]> = {
@@ -56,6 +40,15 @@ const TF_FALLBACK_GT: Record<Timeframe, Timeframe[]> = {
   '1d': ['1d'],
 };
 
+const TF_MAP_GT: Record<Timeframe, string> = {
+  '1m': 'minute',
+  '5m': '5m',
+  '15m': '15m',
+  '1h': 'hour',
+  '4h': '4h',
+  '1d': 'day',
+};
+
 const TF_FALLBACK_CG: Record<Timeframe, Timeframe[]> = {
   '1m': ['1m', '5m', '15m', '1h'],
   '5m': ['5m', '15m', '1h'],
@@ -64,6 +57,7 @@ const TF_FALLBACK_CG: Record<Timeframe, Timeframe[]> = {
   '4h': ['4h', '1d'],
   '1d': ['1d'],
 };
+
 
 function mapTfToCG(tf: Timeframe): string {
   const map: Record<Timeframe, string> = {
@@ -77,41 +71,14 @@ function mapTfToCG(tf: Timeframe): string {
   return map[tf] || '1m';
 }
 
-async function remapPool(chain: string, token: string): Promise<string | undefined> {
-  const url = `${GT_API_BASE}/networks/${chain}/tokens/${token}/pools`;
-  try {
-    const resp = await fetchJson(url);
-    const arr = Array.isArray(resp?.data) ? resp.data : [];
-    const list = arr
-      .map((d: any) => {
-        const attr = d.attributes || {};
-        return {
-          addr: attr.pool_address,
-          dex: attr.dex || attr.name || '',
-          version: attr.version || attr.dex_version,
-          liq: attr.reserve_in_usd ?? attr.reserve_usd ?? 0,
-        };
-      })
-      .filter((p: any) => isValidAddress(p.addr));
-    list.sort((a: any, b: any) => {
-      const sup = Number(isGtSupported(b.dex, b.version)) - Number(isGtSupported(a.dex, a.version));
-      if (sup !== 0) return sup;
-      return b.liq - a.liq;
-    });
-    return list[0]?.addr;
-  } catch {
-    return undefined;
-  }
-}
-
 export const handler: Handler = async (event) => {
   const pairId = event.queryStringParameters?.pairId;
   const tf = event.queryStringParameters?.tf as Timeframe | undefined;
   const chain = event.queryStringParameters?.chain;
   const poolAddress = event.queryStringParameters?.poolAddress;
-  const address = event.queryStringParameters?.address;
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
   const gtSupported = event.queryStringParameters?.gtSupported !== 'false';
+  const gtNetwork = chain ? toGTNetwork(chain) : null;
   const SUPPORTED_CHAINS = new Set([
     'ethereum',
     'bsc',
@@ -171,56 +138,35 @@ export const handler: Handler = async (event) => {
   let provider: Provider | 'none' = 'none';
   let effectiveTf: Timeframe | undefined;
 
-  log('params', { pairId, tf, chain, poolAddress, forceProvider, gtSupported });
+  log('params', { pairId, tf, chain, poolAddress, forceProvider, gtSupported, gtNetwork });
 
-  if ((forceProvider === 'gt' || (!forceProvider && gtSupported)) && chain && poolAddress) {
+  if ((forceProvider === 'gt' || (!forceProvider && gtSupported)) && gtNetwork && poolAddress) {
     attempted.push('gt');
-    let poolAddr = poolAddress;
     const tfs = TF_FALLBACK_GT[tf] || [tf];
     for (const t of tfs) {
       try {
-        let gtUrl = `${GT_API_BASE}/networks/${chain}/pools/${poolAddr}/ohlcv/${t}`;
-        let gtResp = await fetch(gtUrl, { headers: { 'Content-Type': 'application/json' } });
-        if (gtResp.status === 404 && address) {
-          const remapped = await remapPool(chain, address);
-          if (remapped && remapped !== poolAddr) {
-            log('remap', poolAddr, '->', remapped);
-            poolAddr = remapped;
-            headers['x-remapped-pool'] = '1';
-            gtUrl = `${GT_API_BASE}/networks/${chain}/pools/${poolAddr}/ohlcv/${t}`;
-            gtResp = await fetch(gtUrl, { headers: { 'Content-Type': 'application/json' } });
-          }
-        }
-        if (gtResp.ok) {
-          const gtData = await gtResp.json();
-          const list = gtData.data?.attributes?.ohlcv || gtData.data?.attributes?.ohlcv_list || [];
-          const mapped = Array.isArray(list)
-            ? list
-            : Array.isArray(gtData.data)
-            ? gtData.data
-            : Array.isArray(gtData.candles)
-            ? gtData.candles
-            : [];
-          const candlesGt = mapped.map((c: any) => ({
-            t: Number(c[0] ?? c.t ?? c.timestamp),
-            o: Number(c[1] ?? c.o ?? c.open),
-            h: Number(c[2] ?? c.h ?? c.high),
-            l: Number(c[3] ?? c.l ?? c.low),
-            c: Number(c[4] ?? c.c ?? c.close),
-            v:
-              c[5] !== undefined
-                ? Number(c[5])
-                : c.v !== undefined
-                ? Number(c.v)
-                : undefined,
-          }));
-          if (candlesGt.length > 0) {
-            log('gt candles', candlesGt.length);
-            candles = candlesGt;
-            provider = 'gt';
-            effectiveTf = t;
-            break;
-          }
+        const gtTf = TF_MAP_GT[t] || 'minute';
+        const gtUrl = `${GT_API_BASE}/networks/${gtNetwork}/pools/${poolAddress}/ohlcv/${gtTf}`;
+        const gtResp = await fetch(gtUrl);
+        if (!gtResp.ok) continue;
+        const gtData = await gtResp.json();
+        const list = gtData?.data?.attributes?.ohlcv_list || [];
+        const candlesGt = Array.isArray(list)
+          ? list.map((c: any) => ({
+              t: Number(c[0]),
+              o: Number(c[1]),
+              h: Number(c[2]),
+              l: Number(c[3]),
+              c: Number(c[4]),
+              v: c[5] !== undefined ? Number(c[5]) : undefined,
+            }))
+          : [];
+        if (candlesGt.length > 0) {
+          log('gt candles', candlesGt.length);
+          candles = candlesGt;
+          provider = 'gt';
+          effectiveTf = t;
+          break;
         }
       } catch {
         // ignore
@@ -305,10 +251,10 @@ export const handler: Handler = async (event) => {
       }
     }
 
-    if (trades.length === 0 && gtSupported && chain && poolAddress) {
+    if (trades.length === 0 && gtSupported && gtNetwork && poolAddress) {
       attempted.push('gt-trades');
       try {
-        const gtUrl = `${GT_API_BASE}/networks/${chain}/pools/${poolAddress}/trades?limit=300`;
+        const gtUrl = `${GT_API_BASE}/networks/${gtNetwork}/pools/${poolAddress}/trades?limit=300`;
         const resp = await fetch(gtUrl);
         if (resp.ok) {
           const gtData = await resp.json();

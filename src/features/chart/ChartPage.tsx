@@ -121,7 +121,6 @@ export default function ChartPage() {
                 pairId={currentPool.pairId}
                 chain={currentPool.chain}
                 poolAddress={currentPool.poolAddress}
-                address={address!}
                 provider={provider}
                 xDomain={xDomain}
                 onXDomainChange={setXDomain}
@@ -133,7 +132,6 @@ export default function ChartPage() {
               pairId={currentPool.pairId}
               chain={currentPool.chain}
               poolAddress={currentPool.poolAddress}
-              address={address!}
             />
           )}
           {view === 'detail' && currentPool && address && (

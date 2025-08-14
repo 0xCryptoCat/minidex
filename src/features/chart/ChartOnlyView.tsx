@@ -10,14 +10,13 @@ import { formatFetchMeta, type FetchMeta } from '../../lib/format';
 interface Props {
   pairId: string;
   chain: string;
-  poolAddress?: string;
-  address: string;
+  poolAddress: string;
   provider: Provider;
   xDomain: [number, number] | null;
   onXDomainChange?: (d: [number, number]) => void;
 }
 
-export default function ChartOnlyView({ pairId, chain, poolAddress, address, provider, xDomain, onXDomainChange }: Props) {
+export default function ChartOnlyView({ pairId, chain, poolAddress, provider, xDomain, onXDomainChange }: Props) {
   const [showMarkers, setShowMarkers] = useState(false);
   const [markers, setMarkers] = useState<TradeMarkerCluster[]>([]);
   const [noTrades, setNoTrades] = useState(false);
@@ -36,7 +35,7 @@ export default function ChartOnlyView({ pairId, chain, poolAddress, address, pro
     (async () => {
       for (const t of order) {
         try {
-          const res = await ohlc({ pairId, chain, poolAddress, tf: t, address });
+          const res = await ohlc({ pairId, chain, poolAddress, tf: t });
           if (res.candles.length > 0 || res.effectiveTf) {
             const eff = res.effectiveTf || t;
             setTf(eff);
@@ -48,7 +47,7 @@ export default function ChartOnlyView({ pairId, chain, poolAddress, address, pro
         }
       }
     })();
-  }, [pairId, provider, chain, poolAddress, address]);
+  }, [pairId, provider, chain, poolAddress]);
 
   useEffect(() => {
     if (showMarkers) {
@@ -111,7 +110,6 @@ export default function ChartOnlyView({ pairId, chain, poolAddress, address, pro
         markers={showMarkers ? markers : []}
         chain={chain}
         poolAddress={poolAddress}
-        address={address}
       />
     </div>
   );

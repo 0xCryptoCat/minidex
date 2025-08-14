@@ -14,9 +14,8 @@ interface Props {
   xDomain: [number, number] | null;
   onXDomainChange?: (d: [number, number]) => void;
   markers?: TradeMarkerCluster[];
-  chain?: string;
-  poolAddress?: string;
-  address?: string;
+  chain: string;
+  poolAddress: string;
 }
 
 export default function PriceChart({
@@ -27,7 +26,6 @@ export default function PriceChart({
   markers = [],
   chain,
   poolAddress,
-  address,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -128,7 +126,7 @@ export default function PriceChart({
     let candles: Candle[] = [];
 
     const poller = createPoller(async () => {
-      const data = await ohlc({ pairId, tf, chain, poolAddress, address });
+      const data = await ohlc({ pairId, tf, chain, poolAddress });
       setMeta((data as any)._meta);
       candles = data.candles;
       if (data.rollupHint === 'client' && data.tf !== tf) {
@@ -164,7 +162,7 @@ export default function PriceChart({
     poller.start();
 
     const tradesPoller = createPoller(async () => {
-      const tr = await trades({ pairId, chain, poolAddress, address });
+      const tr = await trades({ pairId, chain, poolAddress });
       if (tr && Array.isArray(tr.trades) && tr.trades.length > 0) {
         // noop: data is cached in trades() and used elsewhere
       }

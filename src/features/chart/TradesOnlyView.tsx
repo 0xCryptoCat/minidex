@@ -6,11 +6,10 @@ import { formatFetchMeta, type FetchMeta } from '../../lib/format';
 interface Props {
   pairId: string;
   chain: string;
-  poolAddress?: string;
-  address: string;
+  poolAddress: string;
 }
 
-export default function TradesOnlyView({ pairId, chain, poolAddress, address }: Props) {
+export default function TradesOnlyView({ pairId, chain, poolAddress }: Props) {
   const [rows, setRows] = useState<Trade[]>([]);
   const [noTrades, setNoTrades] = useState(false);
   const [meta, setMeta] = useState<FetchMeta | null>(null);
@@ -18,7 +17,7 @@ export default function TradesOnlyView({ pairId, chain, poolAddress, address }: 
 
   useEffect(() => {
     let cancelled = false;
-    trades({ pairId, chain, poolAddress, address })
+    trades({ pairId, chain, poolAddress })
       .then((data) => {
         if (cancelled) return;
         setRows(data.trades || []);

@@ -1,14 +1,14 @@
 import type { Handler } from '@netlify/functions';
 import type { TradesResponse, ApiError, Provider, Trade } from '../../src/lib/types';
 import fs from 'fs/promises';
-import { isGtSupported } from '../shared/dex-allow';
+import { toGTNetwork } from '../shared/chains';
 
 const GT_FIXTURE = '../../fixtures/trades-gt.json';
 const DS_FIXTURE = '../../fixtures/trades-ds.json';
 
 const USE_FIXTURES = process.env.USE_FIXTURES === 'true';
 const DS_API_BASE = process.env.DS_API_BASE || '';
-const GT_API_BASE = process.env.GT_API_BASE || '';
+const GT_API_BASE = process.env.GT_API_BASE || 'https://api.geckoterminal.com/api/v2';
 const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
 const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
 const DEBUG = process.env.DEBUG_LOGS === 'true';
@@ -19,10 +19,6 @@ function log(...args: any[]) {
 
 function isValidPair(id?: string): id is string {
   return !!id;
-}
-
-function isValidAddress(addr?: string): addr is string {
-  return !!addr && /^0x[a-fA-F0-9]{40}$/.test(addr);
 }
 
 async function readFixture(path: string): Promise<TradesResponse> {
@@ -43,42 +39,15 @@ async function fetchJson(url: string): Promise<any> {
   }
 }
 
-async function remapPool(chain: string, token: string): Promise<string | undefined> {
-  const url = `${GT_API_BASE}/networks/${chain}/tokens/${token}/pools`;
-  try {
-    const resp = await fetchJson(url);
-    const arr = Array.isArray(resp?.data) ? resp.data : [];
-    const list = arr
-      .map((d: any) => {
-        const attr = d.attributes || {};
-        return {
-          addr: attr.pool_address,
-          dex: attr.dex || attr.name || '',
-          version: attr.version || attr.dex_version,
-          liq: attr.reserve_in_usd ?? attr.reserve_usd ?? 0,
-        };
-      })
-      .filter((p: any) => isValidAddress(p.addr));
-    list.sort((a: any, b: any) => {
-      const sup = Number(isGtSupported(b.dex, b.version)) - Number(isGtSupported(a.dex, a.version));
-      if (sup !== 0) return sup;
-      return b.liq - a.liq;
-    });
-    return list[0]?.addr;
-  } catch {
-    return undefined;
-  }
-}
-
 export const handler: Handler = async (event) => {
   const pairId = event.queryStringParameters?.pairId;
   const chain = event.queryStringParameters?.chain;
   const poolAddress = event.queryStringParameters?.poolAddress;
-  const address = event.queryStringParameters?.address;
   const limit = Number(event.queryStringParameters?.limit) || 200;
   const windowH = Number(event.queryStringParameters?.window) || 24;
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
   const gtSupported = event.queryStringParameters?.gtSupported !== 'false';
+  const gtNetwork = chain ? toGTNetwork(chain) : null;
 
   const SUPPORTED_CHAINS = new Set([
     'ethereum',
@@ -109,7 +78,7 @@ export const handler: Handler = async (event) => {
     return { statusCode: 200, headers, body: JSON.stringify(body) };
   }
 
-  log('params', { pairId, chain, poolAddress, forceProvider, limit, windowH, gtSupported });
+  log('params', { pairId, chain, poolAddress, forceProvider, limit, windowH, gtSupported, gtNetwork });
 
   if (USE_FIXTURES) {
     try {
@@ -147,22 +116,11 @@ export const handler: Handler = async (event) => {
   let provider: Provider | 'none' = 'none';
   const cutoff = Date.now() - windowH * 3600 * 1000;
 
-  if ((forceProvider === 'gt' || (!forceProvider && gtSupported)) && chain && poolAddress) {
+  if ((forceProvider === 'gt' || (!forceProvider && gtSupported)) && gtNetwork && poolAddress) {
     attempted.push('gt');
-    let poolAddr = poolAddress;
     try {
-      let gtUrl = `${GT_API_BASE}/networks/${chain}/pools/${poolAddr}/trades?limit=${limit}`;
-      let gtResp = await fetch(gtUrl);
-      if (gtResp.status === 404 && address) {
-        const remapped = await remapPool(chain, address);
-        if (remapped && remapped !== poolAddr) {
-          log('remap', poolAddr, '->', remapped);
-          poolAddr = remapped;
-          headers['x-remapped-pool'] = '1';
-          gtUrl = `${GT_API_BASE}/networks/${chain}/pools/${poolAddr}/trades?limit=${limit}`;
-          gtResp = await fetch(gtUrl);
-        }
-      }
+      const gtUrl = `${GT_API_BASE}/networks/${gtNetwork}/pools/${poolAddress}/trades?limit=${limit}`;
+      const gtResp = await fetch(gtUrl);
       if (gtResp.ok) {
         const gtData = await gtResp.json();
         const list = Array.isArray(gtData.data) ? gtData.data : [];

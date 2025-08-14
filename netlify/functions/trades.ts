@@ -78,6 +78,7 @@ export const handler: Handler = async (event) => {
   const limit = Number(event.queryStringParameters?.limit) || 200;
   const windowH = Number(event.queryStringParameters?.window) || 24;
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
+  const gtSupported = event.queryStringParameters?.gtSupported !== 'false';
 
   const SUPPORTED_CHAINS = new Set([
     'ethereum',
@@ -108,7 +109,7 @@ export const handler: Handler = async (event) => {
     return { statusCode: 200, headers, body: JSON.stringify(body) };
   }
 
-  log('params', { pairId, chain, poolAddress, forceProvider, limit, windowH });
+  log('params', { pairId, chain, poolAddress, forceProvider, limit, windowH, gtSupported });
 
   if (USE_FIXTURES) {
     try {
@@ -146,96 +147,7 @@ export const handler: Handler = async (event) => {
   let provider: Provider | 'none' = 'none';
   const cutoff = Date.now() - windowH * 3600 * 1000;
 
-  if (forceProvider === 'cg' || (!forceProvider && CG_API_BASE && CG_API_KEY)) {
-    attempted.push('cg');
-    try {
-      const cgUrl = `${CG_API_BASE}/pool-trades/${pairId}`;
-      const res = await fetch(cgUrl, {
-        headers: { 'x-cg-pro-api-key': CG_API_KEY },
-      });
-      if (res.ok) {
-      const cg = await res.json();
-        const list = Array.isArray(cg?.data)
-          ? cg.data
-          : Array.isArray(cg?.trades)
-          ? cg.trades
-          : Array.isArray(cg)
-          ? cg
-          : [];
-        trades = list.map((t: any) => ({
-          ts: Number(t.timestamp ?? t.ts ?? t.time ?? t[0]),
-          side: (t.trade_type || t.side || t.type || '').toLowerCase() === 'sell' ? 'sell' : 'buy',
-          price: Number(t.price_usd ?? t.priceUsd ?? t.price ?? t[1] ?? 0),
-          amountBase:
-            t.amount_base !== undefined
-              ? Number(t.amount_base)
-              : t.amount_base_token !== undefined
-              ? Number(t.amount_base_token)
-              : undefined,
-          amountQuote:
-            t.amount_quote !== undefined
-              ? Number(t.amount_quote)
-              : t.amount_quote_token !== undefined
-              ? Number(t.amount_quote_token)
-              : undefined,
-          txHash: t.tx_hash || t.txHash,
-          wallet: t.wallet || t.address,
-        }));
-        trades = trades.filter((t: Trade) => t.ts * 1000 >= cutoff).slice(0, limit);
-        if (trades.length > 0) {
-          log('cg trades', trades.length);
-          headers['x-provider'] = 'cg';
-          headers['x-fallbacks-tried'] = attempted.join(',');
-          headers['x-items'] = String(trades.length);
-          const bodyRes: TradesResponse = { pairId, trades, provider: 'cg' };
-          log('response', event.rawUrl, 200, trades.length, 'cg');
-          return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
-        }
-      }
-    } catch {
-      // ignore and fall through to DS
-    }
-  }
-
-  if (forceProvider !== 'gt') {
-    attempted.push('ds');
-    try {
-      const ds = await fetchJson(`${DS_API_BASE}/dex/pairs/${pairId}/trades`);
-      const dsList = Array.isArray(ds?.trades) ? ds.trades : [];
-      trades = dsList.map((t: any) => ({
-        ts: Number(t.ts ?? t.time ?? t.blockTimestamp ?? t[0]),
-        side: (t.side || t.type || t.tradeType || '').toLowerCase() === 'sell' ? 'sell' : 'buy',
-        price: Number(t.priceUsd ?? t.price_usd ?? t.price ?? t[1] ?? 0),
-        amountBase:
-          t.amountBase !== undefined
-            ? Number(t.amountBase)
-            : t.baseAmount !== undefined
-            ? Number(t.baseAmount)
-            : t.amount0 !== undefined
-            ? Number(t.amount0)
-            : undefined,
-        amountQuote:
-          t.amountQuote !== undefined
-            ? Number(t.amountQuote)
-            : t.quoteAmount !== undefined
-            ? Number(t.quoteAmount)
-            : t.amount1 !== undefined
-            ? Number(t.amount1)
-            : undefined,
-        txHash: t.txHash || t.tx_hash || t.transactionHash,
-        wallet: t.wallet || t.maker || t.trader,
-      }));
-      trades = trades.filter((t: Trade) => t.ts * 1000 >= cutoff).slice(0, limit);
-      if (trades.length > 0) {
-        provider = 'ds';
-        log('ds trades', trades.length);
-      }
-    } catch {
-      // ignore and fall through to GT
-    }
-  }
-
-  if (trades.length === 0 && forceProvider !== 'ds' && chain && poolAddress) {
+  if ((forceProvider === 'gt' || (!forceProvider && gtSupported)) && chain && poolAddress) {
     attempted.push('gt');
     let poolAddr = poolAddress;
     try {
@@ -268,6 +180,90 @@ export const handler: Handler = async (event) => {
           provider = 'gt';
           log('gt trades', trades.length);
         }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (trades.length === 0 && (forceProvider !== 'gt') && CG_API_BASE && CG_API_KEY && chain && poolAddress) {
+    attempted.push('cg');
+    try {
+      const cgUrl = `${CG_API_BASE}/pool-trades-contract-address?chain=${chain}&address=${poolAddress}&limit=300`;
+      const res = await fetch(cgUrl, {
+        headers: { 'x-cg-pro-api-key': CG_API_KEY },
+      });
+      if (res.ok) {
+        const cg = await res.json();
+        const list = Array.isArray(cg?.data)
+          ? cg.data
+          : Array.isArray(cg?.trades)
+          ? cg.trades
+          : Array.isArray(cg)
+          ? cg
+          : [];
+        trades = list.map((t: any) => ({
+          ts: Number(t.timestamp ?? t.ts ?? t.time ?? t[0]),
+          side: (t.trade_type || t.side || t.type || '').toLowerCase() === 'sell' ? 'sell' : 'buy',
+          price: Number(t.price_usd ?? t.priceUsd ?? t.price ?? t[1] ?? 0),
+          amountBase:
+            t.amount_base !== undefined
+              ? Number(t.amount_base)
+              : t.amount_base_token !== undefined
+              ? Number(t.amount_base_token)
+              : undefined,
+          amountQuote:
+            t.amount_quote !== undefined
+              ? Number(t.amount_quote)
+              : t.amount_quote_token !== undefined
+              ? Number(t.amount_quote_token)
+              : undefined,
+          txHash: t.tx_hash || t.txHash,
+          wallet: t.wallet || t.address,
+        }));
+        trades = trades.filter((t: Trade) => t.ts * 1000 >= cutoff).slice(0, limit);
+        if (trades.length > 0) {
+          provider = 'cg';
+          log('cg trades', trades.length);
+        }
+      }
+    } catch {
+      // ignore and fall through
+    }
+  }
+
+  if (trades.length === 0 && forceProvider !== 'gt' && forceProvider !== 'cg') {
+    attempted.push('ds');
+    try {
+      const ds = await fetchJson(`${DS_API_BASE}/dex/pairs/${pairId}/trades`);
+      const dsList = Array.isArray(ds?.trades) ? ds.trades : [];
+      trades = dsList.map((t: any) => ({
+        ts: Number(t.ts ?? t.time ?? t.blockTimestamp ?? t[0]),
+        side: (t.side || t.type || t.tradeType || '').toLowerCase() === 'sell' ? 'sell' : 'buy',
+        price: Number(t.priceUsd ?? t.price_usd ?? t.price ?? t[1] ?? 0),
+        amountBase:
+          t.amountBase !== undefined
+            ? Number(t.amountBase)
+            : t.baseAmount !== undefined
+            ? Number(t.baseAmount)
+            : t.amount0 !== undefined
+            ? Number(t.amount0)
+            : undefined,
+        amountQuote:
+          t.amountQuote !== undefined
+            ? Number(t.amountQuote)
+            : t.quoteAmount !== undefined
+            ? Number(t.quoteAmount)
+            : t.amount1 !== undefined
+            ? Number(t.amount1)
+            : undefined,
+        txHash: t.txHash || t.tx_hash || t.transactionHash,
+        wallet: t.wallet || t.maker || t.trader,
+      }));
+      trades = trades.filter((t: Trade) => t.ts * 1000 >= cutoff).slice(0, limit);
+      if (trades.length > 0) {
+        provider = 'ds';
+        log('ds trades', trades.length);
       }
     } catch {
       // ignore

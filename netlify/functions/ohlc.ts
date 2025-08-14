@@ -235,16 +235,34 @@ export const handler: Handler = async (event) => {
             : Array.isArray(cg)
             ? cg
             : [];
-          trades = list.map((t: any) => ({
-            ts: Number(t.timestamp ?? t.ts ?? t.time ?? t[0]),
-            price: Number(t.price_usd ?? t.priceUsd ?? t.price ?? t[1] ?? 0),
-            amountBase:
-              t.amount_base !== undefined
-                ? Number(t.amount_base)
-                : t.amount_base_token !== undefined
-                ? Number(t.amount_base_token)
-                : undefined,
-          })) as Trade[];
+          trades = list.map((t: any) => {
+            const attrs = t.attributes || t;
+            const tsRaw =
+              attrs.block_timestamp ?? attrs.timestamp ?? attrs.ts ?? attrs.time ?? attrs[0];
+            const ts =
+              typeof tsRaw === 'string' && !/^[0-9]+$/.test(tsRaw)
+                ? Math.floor(new Date(tsRaw).getTime() / 1000)
+                : Number(tsRaw);
+            return {
+              ts,
+              price: parseFloat(
+                attrs.price_to_in_usd ??
+                  attrs.price_from_in_usd ??
+                  attrs.price_usd ??
+                  attrs.priceUsd ??
+                  attrs.price ??
+                  attrs[1] ??
+                  '0'
+              ),
+              amountBase: parseFloat(
+                attrs.to_token_amount ??
+                  attrs.from_token_amount ??
+                  attrs.amount_base ??
+                  attrs.amount_base_token ??
+                  '0'
+              ),
+            } as Trade;
+          });
         }
       } catch {
         // ignore
@@ -259,14 +277,16 @@ export const handler: Handler = async (event) => {
         if (resp.ok) {
           const gtData = await resp.json();
           const list = Array.isArray(gtData.data) ? gtData.data : [];
-          trades = list.map((t: any) => ({
-            ts: Math.floor(new Date(t.attributes.timestamp).getTime() / 1000),
-            price: Number(t.attributes.price_usd),
-            amountBase:
-              t.attributes.amount_base !== undefined
-                ? Number(t.attributes.amount_base)
-                : undefined,
-          })) as Trade[];
+          trades = list.map((t: any) => {
+            const attrs = t.attributes || {};
+            return {
+              ts: Math.floor(new Date(attrs.block_timestamp).getTime() / 1000),
+              price: parseFloat(attrs.price_to_in_usd ?? attrs.price_from_in_usd ?? '0'),
+              amountBase: parseFloat(
+                attrs.to_token_amount ?? attrs.from_token_amount ?? '0'
+              ),
+            } as Trade;
+          });
         }
       } catch {
         // ignore

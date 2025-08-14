@@ -58,6 +58,15 @@ const TF_FALLBACK_CG: Record<Timeframe, Timeframe[]> = {
   '1d': ['1d'],
 };
 
+const TF_TO_SEC: Record<Timeframe, number> = {
+  '1m': 60,
+  '5m': 300,
+  '15m': 900,
+  '1h': 3600,
+  '4h': 14400,
+  '1d': 86400,
+};
+
 
 function mapTfToCG(tf: Timeframe): string {
   const map: Record<Timeframe, string> = {
@@ -294,7 +303,8 @@ export const handler: Handler = async (event) => {
     }
 
     if (trades.length > 0) {
-      candles = buildCandlesFromTrades(trades, tf);
+      const tfSec = TF_TO_SEC[tf] || 60;
+      candles = buildCandlesFromTrades(trades, tfSec);
       provider = 'synthetic';
       effectiveTf = tf;
       headers['x-provider'] = 'synthetic';

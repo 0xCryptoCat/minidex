@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import type { ListItem as Item } from '../../lib/types';
+import { formatCompact } from '../../lib/format';
 
 interface Props {
   item: Item;
@@ -26,28 +27,47 @@ export default function ListItem({ item, rank }: Props) {
     ? Math.floor((Date.now() / 1000 - item.createdAt) / 86400)
     : undefined;
   return (
-      <div
-        onClick={handleClick}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '40px 1fr 60px 80px 80px 80px 80px',
-          gap: '0.5rem',
-          padding: '0.5rem',
-          cursor: 'pointer',
-          borderBottom: '1px solid #eee',
-          background: item.promoted ? '#fffbe6' : undefined,
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') handleClick();
+      }}
+      className="list-item-row"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+        gap: '0.5rem',
+        padding: '0.5rem',
+        cursor: 'pointer',
+        borderBottom: '1px solid #eee',
+        background: item.promoted ? '#fffbe6' : undefined,
+        minHeight: 40,
       }}
     >
       <div>{rank}</div>
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <strong>{item.token.symbol}</strong>
-        <span style={{ fontSize: '0.75rem', color: '#666' }}>{pair}</span>
+      <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.token.symbol}</strong>
+        <span style={{ fontSize: '0.75rem', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {pair}
+        </span>
       </div>
-      <div>{ageDays !== undefined ? `${ageDays}d` : '-'}</div>
-      <div>{item.priceUsd !== undefined ? `$${item.priceUsd.toFixed(4)}` : '-'}</div>
-      <div>{item.liqUsd !== undefined ? `$${item.liqUsd.toLocaleString()}` : '-'}</div>
-      <div>{item.volWindowUsd !== undefined ? `$${item.volWindowUsd.toLocaleString()}` : '-'}</div>
-      <div>{item.priceChangePct !== undefined ? `${item.priceChangePct.toFixed(2)}%` : '-'}</div>
+      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {ageDays !== undefined ? `${ageDays}d` : '-'}
+      </div>
+      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {item.priceUsd !== undefined ? `$${item.priceUsd.toFixed(4)}` : '-'}
+      </div>
+      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {formatCompact(item.liqUsd)}
+      </div>
+      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {formatCompact(item.volWindowUsd)}
+      </div>
+      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {item.priceChangePct !== undefined ? `${item.priceChangePct.toFixed(2)}%` : '-'}
+      </div>
     </div>
   );
 }
@@ -57,10 +77,11 @@ export function ListItemSkeleton() {
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: '40px 1fr 60px 80px 80px 80px 80px',
+        gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
         gap: '0.5rem',
         padding: '0.5rem',
         borderBottom: '1px solid #eee',
+        minHeight: 40,
       }}
     >
       {Array.from({ length: 7 }).map((_, i) => (

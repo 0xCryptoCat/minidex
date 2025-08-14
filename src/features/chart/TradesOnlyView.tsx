@@ -34,9 +34,9 @@ export default function TradesOnlyView({ pairId, chain, poolAddress, address }: 
       {rows.length > 0 && <div>{rows.length} trades</div>}
       {rows.length === 0 && noTrades && <div>No recent trades</div>}
       {rows.length > 0 && (
-        <table style={{ width: '100%' }}>
+        <table className="search-results-table">
           <thead>
-            <tr>
+            <tr style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
               <th>Time</th>
               <th>Side</th>
               <th>Price</th>
@@ -44,7 +44,14 @@ export default function TradesOnlyView({ pairId, chain, poolAddress, address }: 
           </thead>
           <tbody>
             {rows.map((t) => (
-              <tr key={t.txHash || t.ts}>
+              <tr
+                key={t.txHash || t.ts}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                  minHeight: 40,
+                }}
+              >
                 <td>{new Date(t.ts * 1000).toLocaleTimeString()}</td>
                 <td>{t.side}</td>
                 <td>${t.price.toFixed(4)}</td>

@@ -126,17 +126,8 @@ export default function SearchPage() {
       )}
       {(loading || results.length > 0) && (
         <table className="search-results-table">
-          <colgroup>
-            <col style={{ width: '40px' }} />
-            <col />
-            <col style={{ width: '80px' }} />
-            <col style={{ width: '80px' }} />
-            <col style={{ width: '80px' }} />
-            <col style={{ width: '80px' }} />
-            <col style={{ width: '80px' }} />
-          </colgroup>
           <thead>
-            <tr>
+            <tr style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
               <th></th>
               <th>Token</th>
               <th>Chain</th>

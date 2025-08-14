@@ -99,16 +99,34 @@ export const handler: Handler = async (event) => {
   const poolAddress = event.queryStringParameters?.poolAddress;
   const address = event.queryStringParameters?.address;
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
-
-  if (!isValidPair(pairId) || !isValidTf(tf) || !chain) {
-    const body: ApiError = { error: 'invalid_request', provider: 'none' };
-    return { statusCode: 400, body: JSON.stringify(body) };
-  }
+  const SUPPORTED_CHAINS = new Set([
+    'ethereum',
+    'bsc',
+    'polygon',
+    'optimism',
+    'arbitrum',
+    'avalanche',
+    'base',
+  ]);
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Cache-Control': 'public, max-age=30, stale-while-revalidate=60',
+    'x-provider': 'none',
+    'x-fallbacks-tried': '',
+    'x-items': '0',
   };
+  const attempted: string[] = [];
+  if (!isValidPair(pairId) || !isValidTf(tf) || !chain) {
+    const body: ApiError = { error: 'invalid_request', provider: 'none' };
+    log('response', event.rawUrl, 400, 0, 'none');
+    return { statusCode: 400, headers, body: JSON.stringify(body) };
+  }
+  if (!SUPPORTED_CHAINS.has(chain)) {
+    const body: ApiError = { error: 'unsupported_network', provider: 'none' };
+    log('response', event.rawUrl, 200, 0, 'none');
+    return { statusCode: 200, headers, body: JSON.stringify(body) };
+  }
 
   if (USE_FIXTURES) {
     try {
@@ -143,6 +161,7 @@ export const handler: Handler = async (event) => {
   log('params', { pairId, tf, chain, poolAddress, forceProvider });
 
   if (forceProvider === 'cg' || (!forceProvider && CG_API_BASE && CG_API_KEY)) {
+    attempted.push('cg');
     try {
       const isAddr = /^0x[0-9a-fA-F]{40}$/.test(pairId);
       const cgUrl = `${CG_API_BASE}/${isAddr ? 'pool-ohlcv' : 'token-ohlcv'}/${pairId}?interval=${tf}`;
@@ -168,8 +187,14 @@ export const handler: Handler = async (event) => {
         }));
         if (candles.length > 0) {
           log('cg candles', candles.length);
+          provider = 'cg';
+          effectiveTf = tf;
+          headers['x-provider'] = provider;
+          headers['x-fallbacks-tried'] = attempted.join(',');
           headers['x-effective-tf'] = tf;
+          headers['x-items'] = String(candles.length);
           const bodyRes: OHLCResponse = { pairId, tf, candles, provider: 'cg', effectiveTf: tf };
+          log('response', event.rawUrl, 200, candles.length, provider);
           return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
         }
       }
@@ -179,6 +204,7 @@ export const handler: Handler = async (event) => {
   }
 
   if (forceProvider !== 'gt') {
+    attempted.push('ds');
     try {
       const ds = await fetchJson(`${DS_API_BASE}/dex/pairs/${pairId}/candles?timeframe=${tf}`);
       const dsList = Array.isArray(ds?.candles) ? ds.candles : [];
@@ -201,6 +227,7 @@ export const handler: Handler = async (event) => {
   }
 
   if (candles.length === 0 && forceProvider !== 'ds' && chain && poolAddress) {
+    attempted.push('gt');
     let poolAddr = poolAddress;
     const tfs = TF_FALLBACK_GT[tf] || [tf];
     for (const t of tfs) {
@@ -255,7 +282,11 @@ export const handler: Handler = async (event) => {
   }
 
   const bodyRes: OHLCResponse = { pairId, tf, candles, provider, effectiveTf };
+  headers['x-provider'] = provider;
+  headers['x-fallbacks-tried'] = attempted.join(',');
+  headers['x-items'] = String(candles.length);
   headers['x-effective-tf'] = effectiveTf || tf;
+  log('response', event.rawUrl, 200, candles.length, provider);
   return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
 };
 

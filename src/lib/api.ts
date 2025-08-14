@@ -35,6 +35,9 @@ export async function search(query: string, provider?: string): Promise<SearchRe
   try {
     const res = await fetch(url.toString());
     const data = await res.json();
+    if (!res.ok || (data.error && data.error !== 'rate_limit')) {
+      console.log('headers', Object.fromEntries(res.headers.entries()));
+    }
     if (!res.ok) {
       if (res.status === 429) {
         return { error: 'rate_limit', provider: 'none' };
@@ -64,6 +67,9 @@ export async function pairs(
 
   const res = await fetch(url.toString());
   const data = await res.json();
+  if (!res.ok || (data.error && data.error !== 'rate_limit')) {
+    console.log('headers', Object.fromEntries(res.headers.entries()));
+  }
   if (res.ok) setPairsCache(key, data);
   return data;
 }
@@ -91,6 +97,9 @@ export async function ohlc(params: {
 
   const res = await fetch(url.toString());
   const data = await res.json();
+  if (!res.ok || (data as any).error) {
+    console.log('headers', Object.fromEntries(res.headers.entries()));
+  }
   if (!res.ok) {
     const err: any = new Error('api error');
     err.status = res.status;
@@ -128,6 +137,9 @@ export async function trades(params: {
 
   const res = await fetch(url.toString());
   const data = await res.json();
+  if (!res.ok || (data as any).error) {
+    console.log('headers', Object.fromEntries(res.headers.entries()));
+  }
   if (!res.ok) {
     const err: any = new Error('api error');
     err.status = res.status;
@@ -155,6 +167,9 @@ export async function token(
   try {
     const res = await fetch(url.toString());
     const data = await res.json();
+    if (!res.ok || (data.error && data.error !== 'rate_limit')) {
+      console.log('headers', Object.fromEntries(res.headers.entries()));
+    }
     if (!res.ok) {
       return data.error ? data : { error: 'upstream_error', provider: 'none' };
     }
@@ -176,6 +191,9 @@ export async function lists(
   try {
     const res = await fetch(url.toString());
     const data = await res.json();
+    if (!res.ok || (data.error && data.error !== 'rate_limit')) {
+      console.log('headers', Object.fromEntries(res.headers.entries()));
+    }
     if (!res.ok) {
       return data.error ? data : { error: 'upstream_error', provider: 'none' };
     }

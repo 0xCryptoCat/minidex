@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import type { Trade } from '../../lib/types';
 import { trades } from '../../lib/api';
+import { formatFetchMeta, type FetchMeta } from '../../lib/format';
 
 interface Props {
   pairId: string;
@@ -12,6 +13,8 @@ interface Props {
 export default function TradesOnlyView({ pairId, chain, poolAddress, address }: Props) {
   const [rows, setRows] = useState<Trade[]>([]);
   const [noTrades, setNoTrades] = useState(false);
+  const [meta, setMeta] = useState<FetchMeta | null>(null);
+  const loggedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -20,6 +23,7 @@ export default function TradesOnlyView({ pairId, chain, poolAddress, address }: 
         if (cancelled) return;
         setRows(data.trades || []);
         setNoTrades(!data.trades || data.trades.length === 0);
+        setMeta((data as any)._meta);
       })
       .catch(() => {
         if (!cancelled) setNoTrades(true);
@@ -29,10 +33,24 @@ export default function TradesOnlyView({ pairId, chain, poolAddress, address }: 
     };
   }, [pairId, chain, poolAddress]);
 
+  useEffect(() => {
+    if (noTrades && meta && !loggedRef.current && (import.meta as any).env?.DEV) {
+      console.log('no-trades meta', meta);
+      loggedRef.current = true;
+    }
+  }, [noTrades, meta]);
+
   return (
     <div>
       {rows.length > 0 && <div>{rows.length} trades</div>}
-      {rows.length === 0 && noTrades && <div>No recent trades</div>}
+      {rows.length === 0 && noTrades && (
+        <div>
+          <div>No recent trades</div>
+          {meta && formatFetchMeta(meta) && (
+            <div style={{ fontSize: '0.75rem' }}>{formatFetchMeta(meta)}</div>
+          )}
+        </div>
+      )}
       {rows.length > 0 && (
         <table className="search-results-table">
           <thead>

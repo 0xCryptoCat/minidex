@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { createChart, type IChartApi, type UTCTimestamp } from 'lightweight-charts';
 import type { Timeframe, Candle } from '../../lib/types';
 import { ohlc, trades } from '../../lib/api';
+import { formatFetchMeta, type FetchMeta } from '../../lib/format';
 import { createPoller } from '../../lib/polling';
 import { rollupCandles } from '../../lib/time';
 import type { TradeMarkerCluster } from '../trades/TradeMarkers';
@@ -38,6 +39,8 @@ export default function PriceChart({
   const [degraded, setDegraded] = useState(false);
   const [hasData, setHasData] = useState(true);
   const [effectiveTf, setEffectiveTf] = useState<Timeframe | undefined>();
+  const [meta, setMeta] = useState<FetchMeta | null>(null);
+  const loggedRef = useRef(false);
 
   const explorerTemplate = useMemo(() => {
     if (!chain) return undefined;
@@ -126,6 +129,7 @@ export default function PriceChart({
 
     const poller = createPoller(async () => {
       const data = await ohlc({ pairId, tf, chain, poolAddress, address });
+      setMeta((data as any)._meta);
       candles = data.candles;
       if (data.rollupHint === 'client' && data.tf !== tf) {
         candles = rollupCandles(candles, data.tf, tf);
@@ -176,6 +180,13 @@ export default function PriceChart({
     };
   }, [pairId, tf, chain, poolAddress]);
 
+  useEffect(() => {
+    if (!hasData && meta && !loggedRef.current && (import.meta as any).env?.DEV) {
+      console.log('no-data meta', meta);
+      loggedRef.current = true;
+    }
+  }, [hasData, meta]);
+
   return (
     <div style={{ position: 'relative' }}>
       {degraded && (
@@ -210,9 +221,13 @@ export default function PriceChart({
             justifyContent: 'center',
             color: '#666',
             pointerEvents: 'none',
+            flexDirection: 'column',
           }}
         >
-          No chart data available
+          <div>No chart data available</div>
+          {meta && formatFetchMeta(meta) && (
+            <div style={{ fontSize: '10px', marginTop: 4 }}>{formatFetchMeta(meta)}</div>
+          )}
         </div>
       )}
       {hoveredMarkers && hoveredMarkers.length > 0 && (

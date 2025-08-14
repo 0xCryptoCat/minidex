@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { PoolSummary, TokenResponse } from '../../lib/types';
 import { token as fetchToken } from '../../lib/api';
-import { formatCompact } from '../../lib/format';
+import { formatCompact, formatAge } from '../../lib/format';
 
 interface Props {
   chain: string;
@@ -32,6 +32,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
   }
 
   const { meta, kpis, links, provider } = detail;
+  const createdTs = kpis.ageDays !== undefined ? Math.floor(Date.now() / 1000 - kpis.ageDays * 86400) : undefined;
 
   return (
     <div style={{ fontSize: '0.875rem' }}>
@@ -61,14 +62,12 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
           <div>{kpis.priceUsd !== undefined ? `$${kpis.priceUsd.toFixed(4)}` : '-'}</div>
         </div>
         <div>
-          <div style={{ fontSize: '0.75rem', color: '#666' }}>FDV/MC</div>
-          <div>
-            {kpis.fdvUsd !== undefined
-              ? `$${formatCompact(kpis.fdvUsd)}`
-              : kpis.mcUsd !== undefined
-              ? `$${formatCompact(kpis.mcUsd)}`
-              : '-'}
-          </div>
+          <div style={{ fontSize: '0.75rem', color: '#666' }}>FDV</div>
+          <div>{kpis.fdvUsd !== undefined ? `$${formatCompact(kpis.fdvUsd)}` : '-'}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '0.75rem', color: '#666' }}>MC</div>
+          <div>{kpis.mcUsd !== undefined ? `$${formatCompact(kpis.mcUsd)}` : '-'}</div>
         </div>
         <div>
           <div style={{ fontSize: '0.75rem', color: '#666' }}>Liquidity</div>
@@ -84,7 +83,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
         </div>
         <div>
           <div style={{ fontSize: '0.75rem', color: '#666' }}>Age</div>
-          <div>{kpis.ageDays !== undefined ? `${Math.floor(kpis.ageDays)}` : '-'}</div>
+          <div>{createdTs ? formatAge(createdTs) : '-'}</div>
         </div>
       </div>
       <div style={{ marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -111,6 +110,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
       </div>
       {pools.length > 1 && (
         <div style={{ marginTop: '0.5rem' }}>
+          <div style={{ fontSize: '0.75rem', marginBottom: '0.25rem' }}>Pools</div>
           {pools.map((p) => (
             <div key={p.pairId} style={{ marginBottom: '0.25rem' }}>
               <button
@@ -118,7 +118,9 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
                 disabled={p.pairId === pairId}
                 style={{ fontSize: '0.75rem' }}
               >
-                {p.dex} {p.base}/{p.quote}
+                {`${p.dex}${p.version ? ` (${p.version})` : ''} — ${p.base}/${p.quote}${
+                  p.liqUsd ? ` — $${formatCompact(p.liqUsd)}` : ''
+                }`}
               </button>
             </div>
           ))}

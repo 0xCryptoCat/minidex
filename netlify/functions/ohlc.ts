@@ -1,7 +1,7 @@
 import type { Handler } from '@netlify/functions';
 import type { OHLCResponse, ApiError, Provider, Timeframe, Trade } from '../../src/lib/types';
 import fs from 'fs/promises';
-import { isGtSupported } from './gt-allow';
+import { isGtSupported } from '../shared/dex-allow';
 import { buildCandlesFromTrades } from '../shared/agg';
 
 const GT_FIXTURE = '../../fixtures/ohlc-gt-1m.json';

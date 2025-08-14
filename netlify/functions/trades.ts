@@ -1,7 +1,7 @@
 import type { Handler } from '@netlify/functions';
 import type { TradesResponse, ApiError, Provider, Trade } from '../../src/lib/types';
 import fs from 'fs/promises';
-import { isGtSupported } from './gt-allow';
+import { isGtSupported } from '../shared/dex-allow';
 
 const GT_FIXTURE = '../../fixtures/trades-gt.json';
 const DS_FIXTURE = '../../fixtures/trades-ds.json';

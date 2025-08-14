@@ -8,7 +8,7 @@ import type {
   Address,
 } from '../../src/lib/types';
 import fs from 'fs/promises';
-import { isGtSupported } from './gt-allow';
+import { isGtSupported } from '../shared/dex-allow';
 
 const GT_FIXTURE = '../../fixtures/pairs-gt.json';
 
@@ -161,29 +161,47 @@ export const handler: Handler = async (event) => {
       };
 
       const pools: PoolSummary[] = [];
-      const gtPoolsUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}/pools`;
       let gtArr: any[] = [];
-      try {
-        const gtPools = await fetchJson(gtPoolsUrl);
-        gtArr = Array.isArray(gtPools?.data) ? gtPools.data : [];
-      } catch (err) {
-        log('gt pools fetch failed', gtPoolsUrl, err);
+      const needsGtPools = ds.pairs.some((p: any) => {
+        const addr =
+          p.pairAddress ||
+          p.liquidityPoolAddress ||
+          p.pair?.contract ||
+          p.pair?.address;
+        return !isValidAddress(addr);
+      });
+      if (needsGtPools) {
+        const gtPoolsUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}/pools`;
+        try {
+          const gtPools = await fetchJson(gtPoolsUrl);
+          gtArr = Array.isArray(gtPools?.data) ? gtPools.data : [];
+        } catch (err) {
+          log('gt pools fetch failed', gtPoolsUrl, err);
+        }
       }
 
       for (const p of ds.pairs) {
         const chainSlug = mapChainId(p.chainId);
-        let poolAddr = p.pairAddress || p.liquidityPoolAddress;
+        let poolAddr =
+          p.pairAddress ||
+          p.liquidityPoolAddress ||
+          p.pair?.contract ||
+          p.pair?.address;
         let liqUsd = p.liquidity?.usd ?? p.liquidityUsd;
         const version = p.dexVersion || p.version;
+        const pairId = p.pairId || p.pair?.id || p.pairAddress || '';
 
-        const match = gtArr.find((d) => {
-          const attr = d.attributes || {};
-          return (
-            (attr.dex || '').toLowerCase() === (p.dexId || '').toLowerCase() &&
-            attr.base_token?.symbol === p.baseToken?.symbol &&
-            attr.quote_token?.symbol === p.quoteToken?.symbol
-          );
-        });
+        let match: any;
+        if (gtArr.length) {
+          match = gtArr.find((d) => {
+            const attr = d.attributes || {};
+            return (
+              (attr.dex || '').toLowerCase() === (p.dexId || '').toLowerCase() &&
+              attr.base_token?.symbol === p.baseToken?.symbol &&
+              attr.quote_token?.symbol === p.quoteToken?.symbol
+            );
+          });
+        }
         if (!isValidAddress(poolAddr)) {
           if (match && isValidAddress(match.attributes?.pool_address)) {
             poolAddr = match.attributes.pool_address;
@@ -196,7 +214,7 @@ export const handler: Handler = async (event) => {
           }
         }
         pools.push({
-          pairId: p.pairId || p.pairAddress,
+          pairId: pairId,
           dex: p.dexId,
           version,
           base: p.baseToken?.symbol,

@@ -2,6 +2,7 @@ import type { Handler } from '@netlify/functions';
 import type { TradesResponse, ApiError, Provider, Trade } from '../../src/lib/types';
 import fs from 'fs/promises';
 import { toGTNetwork } from '../shared/chains';
+import { sanitizeTrades } from '../shared/agg';
 
 const GT_FIXTURE = '../../fixtures/trades-gt.json';
 
@@ -99,16 +100,18 @@ export const handler: Handler = async (event) => {
         const tradesGt = list.map((t: any) => {
           const attrs = t.attributes || {};
           return {
-            ts: Math.floor(new Date(attrs.block_timestamp).getTime() / 1000),
+            ts: Math.floor(Date.parse(attrs.block_timestamp) / 1000),
             side: String(attrs.kind).toLowerCase() === 'buy' ? 'buy' : 'sell',
-            price: parseFloat(attrs.price_to_in_usd ?? attrs.price_from_in_usd ?? '0'),
-            amountBase: parseFloat(attrs.to_token_amount ?? attrs.from_token_amount ?? '0'),
-            amountQuote: parseFloat(attrs.volume_in_usd ?? '0'),
+            price: Number(attrs.price_to_in_usd ?? attrs.price_from_in_usd ?? '0'),
+            amountBase: Number(attrs.to_token_amount ?? attrs.from_token_amount ?? '0'),
+            amountQuote: Number(attrs.volume_in_usd ?? '0'),
             txHash: attrs.tx_hash,
             wallet: attrs.tx_from_address,
           } as Trade;
         });
-        trades = tradesGt.filter((t) => t.ts * 1000 >= cutoff).slice(0, limit);
+        trades = sanitizeTrades(
+          tradesGt.filter((t) => t.ts * 1000 >= cutoff).slice(0, limit)
+        );
         if (trades.length > 0) {
           provider = 'gt';
           log('gt trades', trades.length);
@@ -135,19 +138,18 @@ export const handler: Handler = async (event) => {
           : Array.isArray(cg)
           ? cg
           : [];
-        trades = list.map((t: any) => {
+        const tradesCg = list.map((t: any) => {
           const attrs = t.attributes || t;
-          const tsRaw =
-            attrs.block_timestamp ?? attrs.timestamp ?? attrs.ts ?? attrs.time ?? attrs[0];
-          const ts =
-            typeof tsRaw === 'string' && !/^[0-9]+$/.test(tsRaw)
-              ? Math.floor(new Date(tsRaw).getTime() / 1000)
-              : Number(tsRaw);
+          const tsRaw = attrs.timestamp ?? attrs.ts ?? attrs.time ?? attrs[0];
+          let ts = Number(tsRaw);
+          if (!Number.isFinite(ts)) {
+            ts = Math.floor(Date.parse(String(tsRaw)) / 1000);
+          }
           const sideRaw = attrs.kind ?? attrs.trade_type ?? attrs.side ?? attrs.type ?? '';
           return {
             ts,
             side: String(sideRaw).toLowerCase() === 'sell' ? 'sell' : 'buy',
-            price: parseFloat(
+            price: Number(
               attrs.price_to_in_usd ??
                 attrs.price_from_in_usd ??
                 attrs.price_usd ??
@@ -156,14 +158,14 @@ export const handler: Handler = async (event) => {
                 attrs[1] ??
                 '0'
             ),
-            amountBase: parseFloat(
+            amountBase: Number(
               attrs.to_token_amount ??
                 attrs.from_token_amount ??
                 attrs.amount_base ??
                 attrs.amount_base_token ??
                 '0'
             ),
-            amountQuote: parseFloat(
+            amountQuote: Number(
               attrs.volume_in_usd ??
                 attrs.amount_quote ??
                 attrs.amount_quote_token ??
@@ -173,7 +175,9 @@ export const handler: Handler = async (event) => {
             wallet: attrs.tx_from_address || attrs.wallet || attrs.address,
           } as Trade;
         });
-        trades = trades.filter((t: Trade) => t.ts * 1000 >= cutoff).slice(0, limit);
+        trades = sanitizeTrades(
+          tradesCg.filter((t: Trade) => t.ts * 1000 >= cutoff).slice(0, limit)
+        );
         if (trades.length > 0) {
           provider = 'cg';
           log('cg trades', trades.length);

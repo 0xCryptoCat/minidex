@@ -21,9 +21,11 @@ export function formatAge(createdTs?: number): string {
 }
 
 export interface FetchMeta {
+  provider?: string | null;
   tried?: string | null;
   effectiveTf?: string | null;
   remapped?: string | null;
+  items?: string | null;
 }
 
 export function formatFetchMeta(meta?: FetchMeta): string | undefined {
@@ -31,14 +33,13 @@ export function formatFetchMeta(meta?: FetchMeta): string | undefined {
   const parts: string[] = [];
   const tried = meta.tried?.split(',').filter(Boolean);
   if (tried && tried.length > 0) {
-    parts.push(`Tried: ${tried.join(' → ')}`);
+    parts.push(`Tried: ${tried.join('→')}`);
   }
   const extras: string[] = [];
-  if (meta.effectiveTf) extras.push(`effective TF: ${meta.effectiveTf}`);
-  if (meta.remapped && meta.remapped !== '0') extras.push('remapped: yes');
-  if (extras.length > 0) {
-    parts.push(`(${extras.join('; ')})`);
-  }
+  if (meta.effectiveTf) extras.push(`tf: ${meta.effectiveTf}`);
+  if (meta.items) extras.push(`items: ${meta.items}`);
+  if (meta.remapped) extras.push(`remap: ${meta.remapped !== '0' ? 'yes' : 'no'}`);
+  if (extras.length > 0) parts.push(`(${extras.join(', ')})`);
   return parts.join(' ');
 }
 

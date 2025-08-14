@@ -56,6 +56,7 @@ export default function PriceChart({
   const [effectiveTf, setEffectiveTf] = useState<Timeframe | undefined>();
   const [meta, setMeta] = useState<FetchMeta | null>(null);
   const loggedRef = useRef(false);
+  const sampleCandlesLoggedRef = useRef(false);
 
   const explorerTemplate = useMemo(() => {
     if (!chain) return undefined;
@@ -173,6 +174,10 @@ export default function PriceChart({
         candleSeriesRef.current?.setData(c);
         volumeSeriesRef.current?.setData(v);
         setHasData(true);
+        if (!sampleCandlesLoggedRef.current && (import.meta as any).env?.DEV) {
+          console.log('sample candles', candles.slice(0, 2).map((cd) => ({ t: cd.t, o: cd.o, h: cd.h, l: cd.l, c: cd.c })));
+          sampleCandlesLoggedRef.current = true;
+        }
       } else {
         setHasData(false);
       }

@@ -1,7 +1,7 @@
 import type { Handler } from '@netlify/functions';
 import type { TradesResponse, ApiError, Provider, Trade } from '../../src/lib/types';
 import fs from 'fs/promises';
-import { toGTNetwork } from '../shared/chains';
+import { CHAIN_TO_GT_NETWORK } from '../shared/chains';
 import { sanitizeTrades } from '../shared/agg';
 
 const GT_FIXTURE = '../../fixtures/trades-gt.json';
@@ -34,7 +34,8 @@ export const handler: Handler = async (event) => {
   const windowH = Number(event.queryStringParameters?.window) || 24;
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
   const gtSupported = event.queryStringParameters?.gtSupported !== 'false';
-  const gtNetwork = chain ? toGTNetwork(chain) : null;
+  const gtNetwork = chain ? CHAIN_TO_GT_NETWORK[chain] : undefined;
+  const validPool = /^0x[0-9a-fA-F]{40}$/.test(poolAddress || '');
 
   const SUPPORTED_CHAINS = new Set([
     'ethereum',
@@ -54,6 +55,7 @@ export const handler: Handler = async (event) => {
     'x-items': '0',
   };
   const attempted: string[] = [];
+  if (!CG_API_KEY) attempted.push('cg:disabled');
   if (!isValidPair(pairId) || !chain) {
     const body: ApiError = { error: 'invalid_request', provider: 'none' };
     log('response', event.rawUrl, 400, 0, 'none');
@@ -66,6 +68,14 @@ export const handler: Handler = async (event) => {
   }
 
   log('params', { pairId, chain, poolAddress, forceProvider, limit, windowH, gtSupported, gtNetwork });
+
+  if (!gtNetwork) {
+    log('skip gt: invalid network', chain);
+  }
+  if (!validPool) {
+    headers['x-invalid-pool'] = '1';
+    log('skip gt: invalid pool', poolAddress);
+  }
 
   if (USE_FIXTURES) {
     try {
@@ -89,7 +99,11 @@ export const handler: Handler = async (event) => {
   let provider: Provider | 'none' = 'none';
   const cutoff = Date.now() - windowH * 3600 * 1000;
 
-  if ((forceProvider === 'gt' || (!forceProvider && gtSupported)) && gtNetwork && poolAddress) {
+  if (
+    (forceProvider === 'gt' || (!forceProvider && gtSupported)) &&
+    gtNetwork &&
+    validPool
+  ) {
     attempted.push('gt');
     try {
       const gtUrl = `${GT_API_BASE}/networks/${gtNetwork}/pools/${poolAddress}/trades?limit=${limit}`;
@@ -129,6 +143,10 @@ export const handler: Handler = async (event) => {
       const res = await fetch(cgUrl, {
         headers: { 'x-cg-pro-api-key': CG_API_KEY },
       });
+      if (res.status === 401 || res.status === 403) {
+        headers['x-cg-auth'] = 'fail';
+        log('cg auth fail', res.status);
+      }
       if (res.ok) {
         const cg = await res.json();
         const list = Array.isArray(cg?.data)

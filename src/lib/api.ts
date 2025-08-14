@@ -28,9 +28,11 @@ const BASE = '/.netlify/functions';
 
 function readMeta(res: Response): FetchMeta {
   return {
+    provider: res.headers.get('x-provider'),
     tried: res.headers.get('x-fallbacks-tried'),
     effectiveTf: res.headers.get('x-effective-tf'),
     remapped: res.headers.get('x-remapped-pool'),
+    items: res.headers.get('x-items'),
   };
 }
 

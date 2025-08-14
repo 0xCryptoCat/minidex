@@ -1,5 +1,12 @@
 import type { Handler } from '@netlify/functions';
-import type { OHLCResponse, ApiError, Provider, Timeframe, Trade } from '../../src/lib/types';
+import type {
+  OHLCResponse,
+  ApiError,
+  Provider,
+  Timeframe,
+  Trade,
+  Candle,
+} from '../../src/lib/types';
 import fs from 'fs/promises';
 import { toGTNetwork } from '../shared/chains';
 import { buildCandlesFromTrades } from '../shared/agg';
@@ -31,16 +38,48 @@ async function readFixture(path: string): Promise<OHLCResponse> {
   return JSON.parse(data) as OHLCResponse;
 }
 
-const TF_FALLBACK_GT: Record<Timeframe, Timeframe[]> = {
-  '1m': ['1m', '5m', '15m', '1h'],
-  '5m': ['5m', '15m', '1h'],
-  '15m': ['15m', '1h'],
-  '1h': ['1h', '4h', '1d'],
-  '4h': ['4h', '1d'],
-  '1d': ['1d'],
-};
+function sanitizeCandles(candles: Candle[]): Candle[] {
+  const now = Math.floor(Date.now() / 1000) + 60;
+  const out: Candle[] = [];
+  for (const c of candles) {
+    let t = Number(c.t);
+    let o = Number(c.o);
+    let h = Number(c.h);
+    let l = Number(c.l);
+    let close = Number(c.c);
+    let v = c.v !== undefined ? Number(c.v) : undefined;
+    if (![t, o, h, l, close].every(Number.isFinite)) continue;
+    if (t > now) continue;
+    if (h < l) {
+      const tmp = h;
+      h = l;
+      l = tmp;
+    }
+    if (o > h) o = h;
+    if (o < l) o = l;
+    if (close > h) close = h;
+    if (close < l) close = l;
+    o = parseFloat(o.toFixed(12));
+    h = parseFloat(h.toFixed(12));
+    l = parseFloat(l.toFixed(12));
+    close = parseFloat(close.toFixed(12));
+    if (v !== undefined) v = parseFloat(v.toFixed(12));
+    out.push({ t: Math.floor(t), o, h, l, c: close, v });
+  }
+  out.sort((a, b) => a.t - b.t);
+  const deduped: Candle[] = [];
+  for (const c of out) {
+    const prev = deduped[deduped.length - 1];
+    if (prev && prev.t === c.t) {
+      deduped[deduped.length - 1] = c;
+    } else {
+      deduped.push(c);
+    }
+  }
+  return deduped;
+}
 
-const TF_MAP_GT: Record<Timeframe, string> = {
+const MAP_TF_GT: Record<string, string> = {
   '1m': 'minute',
   '5m': '5m',
   '15m': '15m',
@@ -49,16 +88,16 @@ const TF_MAP_GT: Record<Timeframe, string> = {
   '1d': 'day',
 };
 
-const TF_FALLBACK_CG: Record<Timeframe, Timeframe[]> = {
-  '1m': ['1m', '5m', '15m', '1h'],
-  '5m': ['5m', '15m', '1h'],
-  '15m': ['15m', '1h'],
-  '1h': ['1h', '4h', '1d'],
-  '4h': ['4h', '1d'],
-  '1d': ['1d'],
+const MAP_TF_CG: Record<string, string> = {
+  '1m': '1m',
+  '5m': '5m',
+  '15m': '15m',
+  '1h': '1h',
+  '4h': '4h',
+  '1d': '1d',
 };
 
-const TF_TO_SEC: Record<Timeframe, number> = {
+const TF_SECONDS: Record<string, number> = {
   '1m': 60,
   '5m': 300,
   '15m': 900,
@@ -66,19 +105,6 @@ const TF_TO_SEC: Record<Timeframe, number> = {
   '4h': 14400,
   '1d': 86400,
 };
-
-
-function mapTfToCG(tf: Timeframe): string {
-  const map: Record<Timeframe, string> = {
-    '1m': '1m',
-    '5m': '5m',
-    '15m': '15m',
-    '1h': '1h',
-    '4h': '4h',
-    '1d': '1d',
-  };
-  return map[tf] || '1m';
-}
 
 export const handler: Handler = async (event) => {
   const pairId = event.queryStringParameters?.pairId;
@@ -143,7 +169,7 @@ export const handler: Handler = async (event) => {
     }
   }
 
-  let candles: any[] = [];
+  let candles: Candle[] = [];
   let provider: Provider | 'none' = 'none';
   let effectiveTf: Timeframe | undefined;
 
@@ -151,16 +177,17 @@ export const handler: Handler = async (event) => {
 
   if ((forceProvider === 'gt' || (!forceProvider && gtSupported)) && gtNetwork && poolAddress) {
     attempted.push('gt');
-    const tfs = TF_FALLBACK_GT[tf] || [tf];
+    const ladder = ['5m', '15m', '1h'];
+    const tfs = [tf, ...ladder.filter((t) => t !== tf)];
     for (const t of tfs) {
       try {
-        const gtTf = TF_MAP_GT[t] || 'minute';
+        const gtTf = MAP_TF_GT[t] || 'minute';
         const gtUrl = `${GT_API_BASE}/networks/${gtNetwork}/pools/${poolAddress}/ohlcv/${gtTf}`;
         const gtResp = await fetch(gtUrl);
         if (!gtResp.ok) continue;
         const gtData = await gtResp.json();
         const list = gtData?.data?.attributes?.ohlcv_list || [];
-        const candlesGt = Array.isArray(list)
+        const raw = Array.isArray(list)
           ? list.map((c: any) => ({
               t: Number(c[0]),
               o: Number(c[1]),
@@ -170,11 +197,12 @@ export const handler: Handler = async (event) => {
               v: c[5] !== undefined ? Number(c[5]) : undefined,
             }))
           : [];
+        const candlesGt = sanitizeCandles(raw);
         if (candlesGt.length > 0) {
           log('gt candles', candlesGt.length);
           candles = candlesGt;
           provider = 'gt';
-          effectiveTf = t;
+          effectiveTf = t as Timeframe;
           break;
         }
       } catch {
@@ -192,39 +220,42 @@ export const handler: Handler = async (event) => {
     poolAddress
   ) {
     attempted.push('cg');
-    const tfs = TF_FALLBACK_CG[tf] || [tf];
-    for (const t of tfs) {
-      try {
-        const cgUrl = `${CG_API_BASE}/pool-ohlcv-contract-address?chain=${chain}&address=${poolAddress}&interval=${mapTfToCG(t)}`;
-        const res = await fetch(cgUrl, { headers: { 'x-cg-pro-api-key': CG_API_KEY } });
-        if (res.ok) {
-          const cg = await res.json();
-          const list = Array.isArray(cg?.data)
-            ? cg.data
-            : Array.isArray(cg?.candles)
-            ? cg.candles
-            : Array.isArray(cg)
-            ? cg
-            : [];
-          const candlesCg = list.map((c: any) => ({
-            t: Number(c[0] ?? c.timestamp),
-            o: Number(c[1] ?? c.open),
-            h: Number(c[2] ?? c.high),
-            l: Number(c[3] ?? c.low),
-            c: Number(c[4] ?? c.close),
-            v: c[5] !== undefined ? Number(c[5]) : c.volume !== undefined ? Number(c.volume) : undefined,
-          }));
-          if (candlesCg.length > 0) {
-            candles = candlesCg;
-            provider = 'cg';
-            effectiveTf = t;
-            log('cg candles', candles.length);
-            break;
-          }
+    try {
+      const interval = MAP_TF_CG[tf] || '1m';
+      const cgUrl = `${CG_API_BASE}/pool-ohlcv-contract-address?chain=${chain}&address=${poolAddress}&interval=${interval}`;
+      const res = await fetch(cgUrl, { headers: { 'x-cg-pro-api-key': CG_API_KEY } });
+      if (res.ok) {
+        const cg = await res.json();
+        const list = Array.isArray(cg?.data)
+          ? cg.data
+          : Array.isArray(cg?.candles)
+          ? cg.candles
+          : Array.isArray(cg)
+          ? cg
+          : [];
+        const raw = list.map((c: any) => ({
+          t: Number(c[0] ?? c.timestamp),
+          o: Number(c[1] ?? c.open),
+          h: Number(c[2] ?? c.high),
+          l: Number(c[3] ?? c.low),
+          c: Number(c[4] ?? c.close),
+          v:
+            c[5] !== undefined
+              ? Number(c[5])
+              : c.volume !== undefined
+              ? Number(c.volume)
+              : undefined,
+        }));
+        const candlesCg = sanitizeCandles(raw);
+        if (candlesCg.length > 0) {
+          candles = candlesCg;
+          provider = 'cg';
+          effectiveTf = tf;
+          log('cg candles', candles.length);
         }
-      } catch {
-        // ignore
       }
+    } catch {
+      // ignore
     }
   }
 
@@ -303,14 +334,16 @@ export const handler: Handler = async (event) => {
     }
 
     if (trades.length > 0) {
-      const tfSec = TF_TO_SEC[tf] || 60;
-      candles = buildCandlesFromTrades(trades, tfSec);
+      effectiveTf = effectiveTf || tf;
+      const tfSec = TF_SECONDS[effectiveTf] || 60;
+      candles = sanitizeCandles(buildCandlesFromTrades(trades, tfSec));
       provider = 'synthetic';
-      effectiveTf = tf;
       headers['x-provider'] = 'synthetic';
       headers['x-synthesized-from'] = 'trades';
     }
   }
+
+  candles = sanitizeCandles(candles);
 
   const bodyRes: OHLCResponse = { pairId, tf, candles, provider, effectiveTf };
   headers['x-provider'] = provider;

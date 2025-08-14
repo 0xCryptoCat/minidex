@@ -4,10 +4,8 @@ import fs from 'fs/promises';
 import { toGTNetwork } from '../shared/chains';
 
 const GT_FIXTURE = '../../fixtures/trades-gt.json';
-const DS_FIXTURE = '../../fixtures/trades-ds.json';
 
 const USE_FIXTURES = process.env.USE_FIXTURES === 'true';
-const DS_API_BASE = process.env.DS_API_BASE || '';
 const GT_API_BASE = process.env.GT_API_BASE || 'https://api.geckoterminal.com/api/v2';
 const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
 const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
@@ -25,18 +23,6 @@ async function readFixture(path: string): Promise<TradesResponse> {
   const url = new URL(path, import.meta.url);
   const data = await fs.readFile(url, 'utf8');
   return JSON.parse(data) as TradesResponse;
-}
-
-async function fetchJson(url: string): Promise<any> {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), 3000);
-  try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new Error('status');
-    return await res.json();
-  } finally {
-    clearTimeout(id);
-  }
 }
 
 export const handler: Handler = async (event) => {
@@ -82,33 +68,19 @@ export const handler: Handler = async (event) => {
 
   if (USE_FIXTURES) {
     try {
-      if (forceProvider !== 'gt') {
-        attempted.push('ds');
-        const ds = await readFixture(DS_FIXTURE);
-        ds.pairId = pairId;
-        headers['x-provider'] = 'ds';
-        headers['x-fallbacks-tried'] = attempted.join(',');
-        headers['x-items'] = String(ds.trades.length);
-        log('response', event.rawUrl, 200, ds.trades.length, 'ds');
-        return { statusCode: 200, headers, body: JSON.stringify(ds) };
-      }
-      throw new Error('force gt');
+      attempted.push('gt');
+      const gt = await readFixture(GT_FIXTURE);
+      gt.pairId = pairId;
+      headers['x-provider'] = 'gt';
+      headers['x-fallbacks-tried'] = attempted.join(',');
+      headers['x-items'] = String(gt.trades.length);
+      log('response', event.rawUrl, 200, gt.trades.length, 'gt');
+      return { statusCode: 200, headers, body: JSON.stringify(gt) };
     } catch {
-      try {
-        attempted.push('gt');
-        const gt = await readFixture(GT_FIXTURE);
-        gt.pairId = pairId;
-        headers['x-provider'] = 'gt';
-        headers['x-fallbacks-tried'] = attempted.join(',');
-        headers['x-items'] = String(gt.trades.length);
-        log('response', event.rawUrl, 200, gt.trades.length, 'gt');
-        return { statusCode: 200, headers, body: JSON.stringify(gt) };
-      } catch {
-        headers['x-fallbacks-tried'] = attempted.join(',');
-        const body: ApiError = { error: 'upstream_error', provider: 'none' };
-        log('response', event.rawUrl, 500, 0, 'none');
-        return { statusCode: 500, headers, body: JSON.stringify(body) };
-      }
+      headers['x-fallbacks-tried'] = attempted.join(',');
+      const body: ApiError = { error: 'upstream_error', provider: 'none' };
+      log('response', event.rawUrl, 500, 0, 'none');
+      return { statusCode: 500, headers, body: JSON.stringify(body) };
     }
   }
 
@@ -124,15 +96,18 @@ export const handler: Handler = async (event) => {
       if (gtResp.ok) {
         const gtData = await gtResp.json();
         const list = Array.isArray(gtData.data) ? gtData.data : [];
-        const tradesGt = list.map((t: any) => ({
-          ts: Math.floor(new Date(t.attributes.timestamp).getTime() / 1000),
-          side: t.attributes.trade_type === 'buy' ? 'buy' : 'sell',
-          price: Number(t.attributes.price_usd),
-          amountBase: t.attributes.amount_base !== undefined ? Number(t.attributes.amount_base) : undefined,
-          amountQuote: t.attributes.amount_quote !== undefined ? Number(t.attributes.amount_quote) : undefined,
-          txHash: t.attributes.tx_hash,
-          wallet: t.attributes.wallet,
-        }));
+        const tradesGt = list.map((t: any) => {
+          const attrs = t.attributes || {};
+          return {
+            ts: Math.floor(new Date(attrs.block_timestamp).getTime() / 1000),
+            side: String(attrs.kind).toLowerCase() === 'buy' ? 'buy' : 'sell',
+            price: parseFloat(attrs.price_to_in_usd ?? attrs.price_from_in_usd ?? '0'),
+            amountBase: parseFloat(attrs.to_token_amount ?? attrs.from_token_amount ?? '0'),
+            amountQuote: parseFloat(attrs.volume_in_usd ?? '0'),
+            txHash: attrs.tx_hash,
+            wallet: attrs.tx_from_address,
+          } as Trade;
+        });
         trades = tradesGt.filter((t) => t.ts * 1000 >= cutoff).slice(0, limit);
         if (trades.length > 0) {
           provider = 'gt';
@@ -160,25 +135,44 @@ export const handler: Handler = async (event) => {
           : Array.isArray(cg)
           ? cg
           : [];
-        trades = list.map((t: any) => ({
-          ts: Number(t.timestamp ?? t.ts ?? t.time ?? t[0]),
-          side: (t.trade_type || t.side || t.type || '').toLowerCase() === 'sell' ? 'sell' : 'buy',
-          price: Number(t.price_usd ?? t.priceUsd ?? t.price ?? t[1] ?? 0),
-          amountBase:
-            t.amount_base !== undefined
-              ? Number(t.amount_base)
-              : t.amount_base_token !== undefined
-              ? Number(t.amount_base_token)
-              : undefined,
-          amountQuote:
-            t.amount_quote !== undefined
-              ? Number(t.amount_quote)
-              : t.amount_quote_token !== undefined
-              ? Number(t.amount_quote_token)
-              : undefined,
-          txHash: t.tx_hash || t.txHash,
-          wallet: t.wallet || t.address,
-        }));
+        trades = list.map((t: any) => {
+          const attrs = t.attributes || t;
+          const tsRaw =
+            attrs.block_timestamp ?? attrs.timestamp ?? attrs.ts ?? attrs.time ?? attrs[0];
+          const ts =
+            typeof tsRaw === 'string' && !/^[0-9]+$/.test(tsRaw)
+              ? Math.floor(new Date(tsRaw).getTime() / 1000)
+              : Number(tsRaw);
+          const sideRaw = attrs.kind ?? attrs.trade_type ?? attrs.side ?? attrs.type ?? '';
+          return {
+            ts,
+            side: String(sideRaw).toLowerCase() === 'sell' ? 'sell' : 'buy',
+            price: parseFloat(
+              attrs.price_to_in_usd ??
+                attrs.price_from_in_usd ??
+                attrs.price_usd ??
+                attrs.priceUsd ??
+                attrs.price ??
+                attrs[1] ??
+                '0'
+            ),
+            amountBase: parseFloat(
+              attrs.to_token_amount ??
+                attrs.from_token_amount ??
+                attrs.amount_base ??
+                attrs.amount_base_token ??
+                '0'
+            ),
+            amountQuote: parseFloat(
+              attrs.volume_in_usd ??
+                attrs.amount_quote ??
+                attrs.amount_quote_token ??
+                '0'
+            ),
+            txHash: attrs.tx_hash || attrs.txHash,
+            wallet: attrs.tx_from_address || attrs.wallet || attrs.address,
+          } as Trade;
+        });
         trades = trades.filter((t: Trade) => t.ts * 1000 >= cutoff).slice(0, limit);
         if (trades.length > 0) {
           provider = 'cg';
@@ -187,44 +181,6 @@ export const handler: Handler = async (event) => {
       }
     } catch {
       // ignore and fall through
-    }
-  }
-
-  if (trades.length === 0 && forceProvider !== 'gt' && forceProvider !== 'cg') {
-    attempted.push('ds');
-    try {
-      const ds = await fetchJson(`${DS_API_BASE}/dex/pairs/${pairId}/trades`);
-      const dsList = Array.isArray(ds?.trades) ? ds.trades : [];
-      trades = dsList.map((t: any) => ({
-        ts: Number(t.ts ?? t.time ?? t.blockTimestamp ?? t[0]),
-        side: (t.side || t.type || t.tradeType || '').toLowerCase() === 'sell' ? 'sell' : 'buy',
-        price: Number(t.priceUsd ?? t.price_usd ?? t.price ?? t[1] ?? 0),
-        amountBase:
-          t.amountBase !== undefined
-            ? Number(t.amountBase)
-            : t.baseAmount !== undefined
-            ? Number(t.baseAmount)
-            : t.amount0 !== undefined
-            ? Number(t.amount0)
-            : undefined,
-        amountQuote:
-          t.amountQuote !== undefined
-            ? Number(t.amountQuote)
-            : t.quoteAmount !== undefined
-            ? Number(t.quoteAmount)
-            : t.amount1 !== undefined
-            ? Number(t.amount1)
-            : undefined,
-        txHash: t.txHash || t.tx_hash || t.transactionHash,
-        wallet: t.wallet || t.maker || t.trader,
-      }));
-      trades = trades.filter((t: Trade) => t.ts * 1000 >= cutoff).slice(0, limit);
-      if (trades.length > 0) {
-        provider = 'ds';
-        log('ds trades', trades.length);
-      }
-    } catch {
-      // ignore
     }
   }
 

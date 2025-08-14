@@ -1,6 +1,7 @@
 import type { Handler } from '@netlify/functions';
 import type { TradesResponse, ApiError, Provider, Trade } from '../../src/lib/types';
 import fs from 'fs/promises';
+import { isGtSupported } from './gt-allow';
 
 const GT_FIXTURE = '../../fixtures/trades-gt.json';
 const DS_FIXTURE = '../../fixtures/trades-ds.json';
@@ -18,6 +19,10 @@ function log(...args: any[]) {
 
 function isValidPair(id?: string): id is string {
   return !!id;
+}
+
+function isValidAddress(addr?: string): addr is string {
+  return !!addr && /^0x[a-fA-F0-9]{40}$/.test(addr);
 }
 
 async function readFixture(path: string): Promise<TradesResponse> {
@@ -38,10 +43,40 @@ async function fetchJson(url: string): Promise<any> {
   }
 }
 
+async function remapPool(chain: string, token: string): Promise<string | undefined> {
+  const url = `${GT_API_BASE}/networks/${chain}/tokens/${token}/pools`;
+  try {
+    const resp = await fetchJson(url);
+    const arr = Array.isArray(resp?.data) ? resp.data : [];
+    const list = arr
+      .map((d: any) => {
+        const attr = d.attributes || {};
+        return {
+          addr: attr.pool_address,
+          dex: attr.dex || attr.name || '',
+          version: attr.version || attr.dex_version,
+          liq: attr.reserve_in_usd ?? attr.reserve_usd ?? 0,
+        };
+      })
+      .filter((p: any) => isValidAddress(p.addr));
+    list.sort((a: any, b: any) => {
+      const sup = Number(isGtSupported(b.dex, b.version)) - Number(isGtSupported(a.dex, a.version));
+      if (sup !== 0) return sup;
+      return b.liq - a.liq;
+    });
+    return list[0]?.addr;
+  } catch {
+    return undefined;
+  }
+}
+
 export const handler: Handler = async (event) => {
   const pairId = event.queryStringParameters?.pairId;
   const chain = event.queryStringParameters?.chain;
   const poolAddress = event.queryStringParameters?.poolAddress;
+  const address = event.queryStringParameters?.address;
+  const limit = Number(event.queryStringParameters?.limit) || 200;
+  const windowH = Number(event.queryStringParameters?.window) || 24;
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
 
   if (!isValidPair(pairId) || !chain) {
@@ -49,12 +84,12 @@ export const handler: Handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify(body) };
   }
 
-  const headers = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Cache-Control': 'public, max-age=30, stale-while-revalidate=60',
   };
 
-  log('params', { pairId, chain, poolAddress, forceProvider });
+  log('params', { pairId, chain, poolAddress, forceProvider, limit, windowH });
 
   if (USE_FIXTURES) {
     try {
@@ -78,6 +113,7 @@ export const handler: Handler = async (event) => {
 
   let trades: Trade[] = [];
   let provider: Provider | 'none' = 'none';
+  const cutoff = Date.now() - windowH * 3600 * 1000;
 
   if (forceProvider === 'cg' || (!forceProvider && CG_API_BASE && CG_API_KEY)) {
     try {
@@ -113,6 +149,7 @@ export const handler: Handler = async (event) => {
           txHash: t.tx_hash || t.txHash,
           wallet: t.wallet || t.address,
         }));
+        trades = trades.filter((t: Trade) => t.ts * 1000 >= cutoff).slice(0, limit);
         if (trades.length > 0) {
           log('cg trades', trades.length);
           const bodyRes: TradesResponse = { pairId, trades, provider: 'cg' };
@@ -151,6 +188,7 @@ export const handler: Handler = async (event) => {
         txHash: t.txHash || t.tx_hash || t.transactionHash,
         wallet: t.wallet || t.maker || t.trader,
       }));
+      trades = trades.filter((t: Trade) => t.ts * 1000 >= cutoff).slice(0, limit);
       if (trades.length > 0) {
         provider = 'ds';
         log('ds trades', trades.length);
@@ -161,9 +199,20 @@ export const handler: Handler = async (event) => {
   }
 
   if (trades.length === 0 && forceProvider !== 'ds' && chain && poolAddress) {
+    let poolAddr = poolAddress;
     try {
-      const gtUrl = `${GT_API_BASE}/networks/${chain}/pools/${poolAddress}/trades`;
-      const gtResp = await fetch(gtUrl);
+      let gtUrl = `${GT_API_BASE}/networks/${chain}/pools/${poolAddr}/trades?limit=${limit}`;
+      let gtResp = await fetch(gtUrl);
+      if (gtResp.status === 404 && address) {
+        const remapped = await remapPool(chain, address);
+        if (remapped && remapped !== poolAddr) {
+          log('remap', poolAddr, '->', remapped);
+          poolAddr = remapped;
+          headers['x-remapped-pool'] = '1';
+          gtUrl = `${GT_API_BASE}/networks/${chain}/pools/${poolAddr}/trades?limit=${limit}`;
+          gtResp = await fetch(gtUrl);
+        }
+      }
       if (gtResp.ok) {
         const gtData = await gtResp.json();
         const list = Array.isArray(gtData.data) ? gtData.data : [];
@@ -176,9 +225,11 @@ export const handler: Handler = async (event) => {
           txHash: t.attributes.tx_hash,
           wallet: t.attributes.wallet,
         }));
-        log('gt trades', tradesGt.length);
-        const bodyRes: TradesResponse = { pairId, trades: tradesGt, provider: 'gt' };
-        return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+        trades = tradesGt.filter((t) => t.ts * 1000 >= cutoff).slice(0, limit);
+        if (trades.length > 0) {
+          provider = 'gt';
+          log('gt trades', trades.length);
+        }
       }
     } catch {
       // ignore

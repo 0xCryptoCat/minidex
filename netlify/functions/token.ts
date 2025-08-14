@@ -53,10 +53,58 @@ export const handler: Handler = async (event) => {
     'Cache-Control': 'public, max-age=30, stale-while-revalidate=60',
   };
 
+  log('params', { chain, address });
+
+  let meta: any = null;
+  let pairs: any[] = [];
+  const links: any = {};
+  let ageDays: number | undefined;
+
+  if (DS_API_BASE) {
+    try {
+      const res = await fetch(`${DS_API_BASE}/dex/tokens/${address}`);
+      if (res.ok) {
+        const ds = await res.json();
+        const tokenMeta = ds.token || ds.pairs?.[0]?.baseToken || {};
+        meta = {
+          address: tokenMeta.address || address,
+          symbol: tokenMeta.symbol || '',
+          name: tokenMeta.name || '',
+          icon: tokenMeta.icon || tokenMeta.imageUrl || undefined,
+        };
+        pairs = Array.isArray(ds.pairs)
+          ? ds.pairs.map((p: any) => {
+              if (!ageDays) {
+                const created = p.pairCreatedAt || p.createdAt;
+                if (created) {
+                  ageDays = (Date.now() / 1000 - Number(created)) / 86400;
+                }
+              }
+              return {
+                pairId: p.pairId || p.pairAddress,
+                dex: p.dexId,
+                version: p.dexVersion || p.version,
+                poolAddress: p.pairAddress,
+                pairUrl: p.url,
+                base: p.baseToken?.symbol,
+                quote: p.quoteToken?.symbol,
+              };
+            })
+          : [];
+        const info = ds.token?.info || {};
+        links.website = info.website || info.websites?.[0];
+        links.twitter = info.twitter;
+        links.telegram = info.telegram;
+        links.explorer = info.explorer;
+        log('ds token meta');
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   let core: any = null;
   let provider: 'cg' | 'ds' | undefined;
-
-  log('params', { chain, address });
 
   if (CG_API_BASE && CG_API_KEY) {
     try {
@@ -66,9 +114,7 @@ export const handler: Handler = async (event) => {
       core = {
         priceUsd: attr?.price_usd !== undefined ? Number(attr.price_usd) : undefined,
         mcUsd:
-          attr?.market_cap_usd !== undefined
-            ? Number(attr.market_cap_usd)
-            : undefined,
+          attr?.market_cap_usd !== undefined ? Number(attr.market_cap_usd) : undefined,
         fdvUsd:
           attr?.fully_diluted_valuation_usd !== undefined
             ? Number(attr.fully_diluted_valuation_usd)
@@ -85,7 +131,7 @@ export const handler: Handler = async (event) => {
       provider = 'cg';
       log('cg token');
     } catch {
-      // ignore and fall back to DS
+      // ignore
     }
   }
 
@@ -133,7 +179,7 @@ export const handler: Handler = async (event) => {
                 : undefined,
           };
           provider = 'ds';
-          log('ds token');
+          log('ds token metrics');
         }
       }
     } catch {
@@ -141,8 +187,29 @@ export const handler: Handler = async (event) => {
     }
   }
 
-  if (core) {
-    const bodyRes: TokenResponse = { chain, address, core, provider: provider! };
+  if (!links.explorer) {
+    const EXPLORER: Record<string, string> = {
+      ethereum: 'https://etherscan.io/token/{addr}',
+      arbitrum: 'https://arbiscan.io/token/{addr}',
+      polygon: 'https://polygonscan.com/token/{addr}',
+      bsc: 'https://bscscan.com/token/{addr}',
+      base: 'https://basescan.org/token/{addr}',
+      optimism: 'https://optimistic.etherscan.io/token/{addr}',
+      avalanche: 'https://snowtrace.io/token/{addr}',
+    };
+    if (EXPLORER[chain]) {
+      links.explorer = EXPLORER[chain].replace('{addr}', address);
+    }
+  }
+
+  if (meta && core) {
+    const bodyRes: TokenResponse = {
+      meta,
+      kpis: { ...core, ageDays },
+      links,
+      pairs,
+      provider: provider!,
+    };
     return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
   }
 

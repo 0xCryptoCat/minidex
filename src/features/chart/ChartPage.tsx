@@ -54,8 +54,13 @@ export default function ChartPage() {
           return;
         }
         setToken(data.token);
-        setPools(data.pools);
-        const sel = data.pools.find((p) => p.pairId === pairId) || data.pools[0];
+        const sorted = data.pools.slice().sort((a, b) => {
+          const sup = Number(!!b.gtSupported) - Number(!!a.gtSupported);
+          if (sup !== 0) return sup;
+          return (b.liqUsd || 0) - (a.liqUsd || 0);
+        });
+        setPools(sorted);
+        const sel = sorted.find((p) => p.pairId === pairId) || sorted[0];
         setCurrentPool(sel || null);
         setNoData(!sel || !sel.poolAddress);
       })
@@ -122,6 +127,7 @@ export default function ChartPage() {
                 pairId={currentPool.pairId}
                 chain={currentPool.chain}
                 poolAddress={currentPool.poolAddress}
+                address={address!}
                 tf="1m"
                 xDomain={xDomain}
                 onXDomainChange={setXDomain}
@@ -133,10 +139,17 @@ export default function ChartPage() {
               pairId={currentPool.pairId}
               chain={currentPool.chain}
               poolAddress={currentPool.poolAddress}
+              address={address!}
             />
           )}
           {view === 'detail' && currentPool && address && (
-            <DetailView chain={currentPool.chain} address={address} pairId={currentPool.pairId} />
+            <DetailView
+              chain={currentPool.chain}
+              address={address}
+              pairId={currentPool.pairId}
+              pools={pools}
+              onSwitch={handlePoolSwitch}
+            />
           )}
         </>
       )}

@@ -1,5 +1,5 @@
 /* ---------- Core primitives ---------- */
-export type Provider = 'gt' | 'ds' | 'cg';       // geckoterminal | dexscreener | coingecko
+export type Provider = 'gt' | 'ds' | 'cg' | 'synthetic';       // geckoterminal | dexscreener | coingecko | synthetic
 export type ChainSlug =
   | 'ethereum' | 'arbitrum' | 'polygon' | 'bsc' | 'base' | 'optimism' | 'avalanche'
   | string; // keep open for many chains

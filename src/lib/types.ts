@@ -41,6 +41,8 @@ export interface PoolSummary {
   quote: string;           // quote symbol (e.g., "WETH")
   chain: ChainSlug;
   poolAddress?: Address;   // contract address for GeckoTerminal
+  liqUsd?: number;         // liquidity for default selection
+  gtSupported?: boolean;   // whether GT supports this pool
 }
 
 /* ---------- /api/search ---------- */
@@ -78,6 +80,7 @@ export interface OHLCResponse {
   candles: Candle[];
   provider: Provider;
   rollupHint?: 'client' | 'server' | 'none'; // if provider lacks requested tf
+  effectiveTf?: Timeframe; // actual timeframe served if different
 }
 
 /* ---------- /api/trades ---------- */
@@ -127,12 +130,32 @@ export interface ListsResponse {
 }
 
 /* ---------- /api/token ---------- */
-export interface TokenResponse {
-  chain: ChainSlug;
-  address: Address;
-  core: CoreFinance;
+export interface TokenLinks {
+  website?: string;
+  explorer?: string;
+  twitter?: string;
+  telegram?: string;
+}
+
+export interface TokenPairInfo {
+  pairId: PairId;
+  dex: string;
+  version?: string;
+  poolAddress?: Address;
+  pairUrl?: string;
+  base?: string;
+  quote?: string;
+}
+
+export interface TokenDetail {
+  meta: TokenMeta;
+  kpis: CoreFinance & { ageDays?: number };
+  links: TokenLinks;
+  pairs: TokenPairInfo[];
   provider: Provider;
 }
+
+export type TokenResponse = TokenDetail;
 
 /* ---------- /api/explorer (optional) ---------- */
 export interface ExplorerTxPreview {

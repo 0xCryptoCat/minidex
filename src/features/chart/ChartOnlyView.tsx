@@ -7,12 +7,13 @@ interface Props {
   pairId: string;
   chain: string;
   poolAddress?: string;
+  address: string;
   tf: Timeframe;
   xDomain: [number, number] | null;
   onXDomainChange?: (d: [number, number]) => void;
 }
 
-export default function ChartOnlyView({ pairId, chain, poolAddress, tf, xDomain, onXDomainChange }: Props) {
+export default function ChartOnlyView({ pairId, chain, poolAddress, address, tf, xDomain, onXDomainChange }: Props) {
   const [showMarkers, setShowMarkers] = useState(false);
   const [markers, setMarkers] = useState<TradeMarkerCluster[]>([]);
   const [noTrades, setNoTrades] = useState(false);
@@ -53,6 +54,7 @@ export default function ChartOnlyView({ pairId, chain, poolAddress, tf, xDomain,
         markers={showMarkers ? markers : []}
         chain={chain}
         poolAddress={poolAddress}
+        address={address}
       />
     </div>
   );

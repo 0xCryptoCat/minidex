@@ -15,6 +15,7 @@ interface Props {
   markers?: TradeMarkerCluster[];
   chain?: string;
   poolAddress?: string;
+  address?: string;
 }
 
 export default function PriceChart({
@@ -25,6 +26,7 @@ export default function PriceChart({
   markers = [],
   chain,
   poolAddress,
+  address,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -35,6 +37,7 @@ export default function PriceChart({
   const [provider, setProvider] = useState<string>('');
   const [degraded, setDegraded] = useState(false);
   const [hasData, setHasData] = useState(true);
+  const [effectiveTf, setEffectiveTf] = useState<Timeframe | undefined>();
 
   const explorerTemplate = useMemo(() => {
     if (!chain) return undefined;
@@ -122,11 +125,12 @@ export default function PriceChart({
     let candles: Candle[] = [];
 
     const poller = createPoller(async () => {
-      const data = await ohlc({ pairId, tf, chain, poolAddress });
+      const data = await ohlc({ pairId, tf, chain, poolAddress, address });
       candles = data.candles;
       if (data.rollupHint === 'client' && data.tf !== tf) {
         candles = rollupCandles(candles, data.tf, tf);
       }
+      setEffectiveTf(data.effectiveTf);
       if (candles.length > 0) {
         const c = candles.map((cd) => ({
           time: cd.t as UTCTimestamp,
@@ -156,7 +160,7 @@ export default function PriceChart({
     poller.start();
 
     const tradesPoller = createPoller(async () => {
-      const tr = await trades({ pairId, chain, poolAddress });
+      const tr = await trades({ pairId, chain, poolAddress, address });
       if (tr && Array.isArray(tr.trades) && tr.trades.length > 0) {
         // noop: data is cached in trades() and used elsewhere
       }
@@ -243,6 +247,22 @@ export default function PriceChart({
               </div>
             );
           })}
+        </div>
+      )}
+      {effectiveTf && effectiveTf !== tf && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            background: '#000',
+            color: '#fff',
+            padding: '2px 4px',
+            fontSize: '10px',
+            opacity: 0.7,
+          }}
+        >
+          TF downgraded to {effectiveTf}
         </div>
       )}
       {provider && (

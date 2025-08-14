@@ -73,9 +73,10 @@ export async function ohlc(params: {
   chain: string;
   poolAddress?: string;
   tf: Timeframe;
+  address?: string;
   provider?: string;
 }): Promise<OHLCResponse> {
-  const { pairId, chain, poolAddress, tf, provider } = params;
+  const { pairId, chain, poolAddress, tf, provider, address } = params;
   const key = `${chain}:${pairId}:${poolAddress || ''}:${tf}`;
   const cached = getOHLCCache(key);
   if (cached) return cached;
@@ -85,6 +86,7 @@ export async function ohlc(params: {
   url.searchParams.set('chain', chain);
   if (poolAddress) url.searchParams.set('poolAddress', poolAddress);
   url.searchParams.set('tf', tf);
+  if (address) url.searchParams.set('address', address);
   if (provider) url.searchParams.set('provider', provider);
 
   const res = await fetch(url.toString());
@@ -105,9 +107,12 @@ export async function trades(params: {
   pairId: string;
   chain: string;
   poolAddress?: string;
+  address?: string;
+  limit?: number;
+  window?: number;
   provider?: string;
 }): Promise<TradesResponse> {
-  const { pairId, chain, poolAddress, provider } = params;
+  const { pairId, chain, poolAddress, provider, address, limit, window: windowH } = params;
   const key = `${chain}:${pairId}:${poolAddress || ''}`;
   const cached = getTradesCache(key);
   if (cached) return cached;
@@ -116,7 +121,10 @@ export async function trades(params: {
   url.searchParams.set('pairId', pairId);
   url.searchParams.set('chain', chain);
   if (poolAddress) url.searchParams.set('poolAddress', poolAddress);
+  if (address) url.searchParams.set('address', address);
   if (provider) url.searchParams.set('provider', provider);
+  if (limit) url.searchParams.set('limit', String(limit));
+  if (windowH) url.searchParams.set('window', String(windowH));
 
   const res = await fetch(url.toString());
   const data = await res.json();

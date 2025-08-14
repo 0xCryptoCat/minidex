@@ -8,6 +8,7 @@ import type {
   Address,
 } from '../../src/lib/types';
 import fs from 'fs/promises';
+import { isGtSupported } from './gt-allow';
 
 const GT_FIXTURE = '../../fixtures/pairs-gt.json';
 
@@ -142,50 +143,58 @@ export const handler: Handler = async (event) => {
       };
 
       const pools: PoolSummary[] = [];
+      const gtPoolsUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}/pools`;
+      let gtArr: any[] = [];
+      try {
+        const gtPools = await fetchJson(gtPoolsUrl);
+        gtArr = Array.isArray(gtPools?.data) ? gtPools.data : [];
+      } catch (err) {
+        log('gt pools fetch failed', gtPoolsUrl, err);
+      }
+
       for (const p of ds.pairs) {
         const chainSlug = mapChainId(p.chainId);
         let poolAddr = p.pairAddress || p.liquidityPoolAddress;
+        let liqUsd = p.liquidity?.usd ?? p.liquidityUsd;
+        const version = p.dexVersion || p.version;
+
+        const match = gtArr.find((d) => {
+          const attr = d.attributes || {};
+          return (
+            (attr.dex || '').toLowerCase() === (p.dexId || '').toLowerCase() &&
+            attr.base_token?.symbol === p.baseToken?.symbol &&
+            attr.quote_token?.symbol === p.quoteToken?.symbol
+          );
+        });
         if (!isValidAddress(poolAddr)) {
-          const detailUrl = `${DS_API_BASE}/dex/pairs/${chainSlug}/${p.pairId || p.pairAddress}`;
-          try {
-            const detail = await fetchJson(detailUrl);
-            poolAddr =
-              detail?.pair?.pairAddress || detail?.pair?.address || detail?.pairAddress;
-          } catch (err) {
-            log('ds detail fetch failed', detailUrl, err);
+          if (match && isValidAddress(match.attributes?.pool_address)) {
+            poolAddr = match.attributes.pool_address;
+          }
+        }
+        if (match) {
+          const attr = match.attributes || {};
+          if (liqUsd === undefined) {
+            liqUsd = attr.reserve_in_usd ?? attr.reserve_usd;
           }
         }
         pools.push({
           pairId: p.pairId || p.pairAddress,
           dex: p.dexId,
+          version,
           base: p.baseToken?.symbol,
           quote: p.quoteToken?.symbol,
           chain: chainSlug,
           poolAddress: isValidAddress(poolAddr) ? (poolAddr as Address) : undefined,
+          liqUsd: liqUsd !== undefined ? Number(liqUsd) : undefined,
+          gtSupported: isGtSupported(p.dexId, version),
         });
       }
-      const missing = pools.some((p) => !p.poolAddress);
-      if (missing) {
-        const gtPoolsUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}/pools`;
-        try {
-          const gtPools = await fetchJson(gtPoolsUrl);
-          const arr = Array.isArray(gtPools?.data) ? gtPools.data : [];
-          for (const d of arr) {
-            const attr = d.attributes || {};
-            if (!isValidAddress(attr.pool_address)) continue;
-            pools.push({
-              pairId: d.id,
-              dex: attr.dex || attr.name || '',
-              base: attr.base_token?.symbol,
-              quote: attr.quote_token?.symbol,
-              chain: chain!,
-              poolAddress: attr.pool_address as Address,
-            });
-          }
-        } catch (err) {
-          log('gt pools fetch failed', gtPoolsUrl, err);
-        }
-      }
+
+      pools.sort((a, b) => {
+        const sup = Number(!!b.gtSupported) - Number(!!a.gtSupported);
+        if (sup !== 0) return sup;
+        return (b.liqUsd || 0) - (a.liqUsd || 0);
+      });
 
       log('dexscreener pools', pools.length);
       const bodyRes: PairsResponse = { token, pools, provider: 'ds' };
@@ -208,15 +217,27 @@ export const handler: Handler = async (event) => {
       const arr = Array.isArray(poolsResp?.data) ? poolsResp.data : [];
       for (const d of arr) {
         const attr = d.attributes || {};
+        const dex = attr.dex || attr.name || '';
+        const version = attr.version || attr.dex_version;
+        const liqUsd = attr.reserve_in_usd ?? attr.reserve_usd;
         pools.push({
           pairId: d.id,
-          dex: attr.dex || attr.name || '',
+          dex,
+          version,
           base: attr.base_token?.symbol,
           quote: attr.quote_token?.symbol,
           chain: chain as string,
           poolAddress: attr.pool_address as Address,
+          liqUsd: liqUsd !== undefined ? Number(liqUsd) : undefined,
+          gtSupported: isGtSupported(dex, version),
         });
       }
+
+      pools.sort((a, b) => {
+        const sup = Number(!!b.gtSupported) - Number(!!a.gtSupported);
+        if (sup !== 0) return sup;
+        return (b.liqUsd || 0) - (a.liqUsd || 0);
+      });
       const attr = tokenResp.data?.attributes || {};
       const token: TokenMeta = {
         address: attr.address || address,

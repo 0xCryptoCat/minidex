@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { PoolSummary, TokenResponse } from '../../lib/types';
 import { token as fetchToken } from '../../lib/api';
+import { formatCompact } from '../../lib/format';
 
 interface Props {
   chain: string;
@@ -63,19 +64,19 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
           <div style={{ fontSize: '0.75rem', color: '#666' }}>FDV/MC</div>
           <div>
             {kpis.fdvUsd !== undefined
-              ? `$${kpis.fdvUsd.toLocaleString()}`
+              ? `$${formatCompact(kpis.fdvUsd)}`
               : kpis.mcUsd !== undefined
-              ? `$${kpis.mcUsd.toLocaleString()}`
+              ? `$${formatCompact(kpis.mcUsd)}`
               : '-'}
           </div>
         </div>
         <div>
           <div style={{ fontSize: '0.75rem', color: '#666' }}>Liquidity</div>
-          <div>{kpis.liqUsd !== undefined ? `$${kpis.liqUsd.toLocaleString()}` : '-'}</div>
+          <div>{kpis.liqUsd !== undefined ? `$${formatCompact(kpis.liqUsd)}` : '-'}</div>
         </div>
         <div>
           <div style={{ fontSize: '0.75rem', color: '#666' }}>24h Vol</div>
-          <div>{kpis.vol24hUsd !== undefined ? `$${kpis.vol24hUsd.toLocaleString()}` : '-'}</div>
+          <div>{kpis.vol24hUsd !== undefined ? `$${formatCompact(kpis.vol24hUsd)}` : '-'}</div>
         </div>
         <div>
           <div style={{ fontSize: '0.75rem', color: '#666' }}>24h Change</div>

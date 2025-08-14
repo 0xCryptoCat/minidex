@@ -1,4 +1,5 @@
 import type { PoolSummary } from '../../lib/types';
+import { formatCompact } from '../../lib/format';
 
 interface Props {
   pools: PoolSummary[];
@@ -33,11 +34,7 @@ export default function PoolSwitcher({ pools, current, onSwitch }: Props) {
             {pools.map((p) => (
               <option key={p.pairId} value={p.pairId}>
                 {`${p.dex}${p.version ? ` (${p.version})` : ''} — ${p.base}/${p.quote}${
-                  p.liqUsd
-                    ? ` — $${p.liqUsd.toLocaleString(undefined, {
-                        maximumFractionDigits: 0,
-                      })}`
-                    : ''
+                  p.liqUsd ? ` — $${formatCompact(p.liqUsd)}` : ''
                 }`}
               </option>
             ))}
@@ -58,6 +55,7 @@ export default function PoolSwitcher({ pools, current, onSwitch }: Props) {
             borderRadius: '9999px',
             border: '1px solid #999',
             background: current === p.pairId ? '#ddd' : 'transparent',
+            minHeight: 40,
           }}
         >
           {p.dex} {p.base}/{p.quote}

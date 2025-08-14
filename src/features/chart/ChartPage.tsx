@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import type { PoolSummary, TokenMeta } from '../../lib/types';
+import type { PoolSummary, TokenMeta, Provider } from '../../lib/types';
 import { pairs } from '../../lib/api';
 import PoolSwitcher from './PoolSwitcher';
 import ChartOnlyView from './ChartOnlyView';
@@ -17,6 +17,7 @@ export default function ChartPage() {
   const [token, setToken] = useState<TokenMeta | null>(null);
   const [pools, setPools] = useState<PoolSummary[]>([]);
   const [currentPool, setCurrentPool] = useState<PoolSummary | null>(null);
+  const [provider, setProvider] = useState<Provider | null>(null);
   const [searchParams] = useSearchParams();
   const view = (searchParams.get('view') as View) || 'chart';
   const [xDomain, setXDomain] = useState<[number, number] | null>(null);
@@ -34,6 +35,7 @@ export default function ChartPage() {
     setUnsupported(false);
     setLoading(true);
     setError(null);
+    setProvider(null);
     pairs(chain, address)
       .then((data) => {
         if (cancelled) return;
@@ -47,6 +49,7 @@ export default function ChartPage() {
           return;
         }
         setToken(data.token);
+        setProvider(data.provider);
         const sorted = data.pools.slice().sort((a, b) => {
           const sup = Number(!!b.gtSupported) - Number(!!a.gtSupported);
           if (sup !== 0) return sup;
@@ -112,14 +115,14 @@ export default function ChartPage() {
             />
           )}
 
-          {view === 'chart' && currentPool && currentPool.poolAddress && (
+          {view === 'chart' && currentPool && currentPool.poolAddress && provider && (
             <div style={{ marginTop: '1rem' }}>
               <ChartOnlyView
                 pairId={currentPool.pairId}
                 chain={currentPool.chain}
                 poolAddress={currentPool.poolAddress}
                 address={address!}
-                tf="1m"
+                provider={provider}
                 xDomain={xDomain}
                 onXDomainChange={setXDomain}
               />

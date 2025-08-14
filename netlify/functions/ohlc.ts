@@ -10,6 +10,11 @@ const DS_API_BASE = process.env.DS_API_BASE || '';
 const GT_API_BASE = process.env.GT_API_BASE || '';
 const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
 const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
+const DEBUG = process.env.DEBUG_LOGS === 'true';
+
+function log(...args: any[]) {
+  if (DEBUG) console.log('[ohlc]', ...args);
+}
 
 function isValidPair(id?: string): id is string {
   return !!id;
@@ -83,6 +88,8 @@ export const handler: Handler = async (event) => {
   let candles: any[] = [];
   let provider: Provider | 'none' = 'none';
 
+  log('params', { pairId, tf, chain, poolAddress, forceProvider });
+
   if (forceProvider === 'cg' || (!forceProvider && CG_API_BASE && CG_API_KEY)) {
     try {
       const isAddr = /^0x[0-9a-fA-F]{40}$/.test(pairId);
@@ -108,6 +115,7 @@ export const handler: Handler = async (event) => {
           v: c[5] !== undefined ? Number(c[5]) : c.volume !== undefined ? Number(c.volume) : undefined,
         }));
         if (candles.length > 0) {
+          log('cg candles', candles.length);
           const bodyRes: OHLCResponse = { pairId, tf, candles, provider: 'cg' };
           return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
         }
@@ -129,7 +137,10 @@ export const handler: Handler = async (event) => {
         c: Number(c.c ?? c.close ?? c[4]),
         v: c.v !== undefined ? Number(c.v) : c[5] !== undefined ? Number(c[5]) : undefined,
       }));
-      if (candles.length > 0) provider = 'ds';
+      if (candles.length > 0) {
+        provider = 'ds';
+        log('ds candles', candles.length);
+      }
     } catch {
       // ignore and fall through to GT
     }
@@ -163,6 +174,7 @@ export const handler: Handler = async (event) => {
               : undefined,
         }));
         if (candlesGt.length > 0) {
+          log('gt candles', candlesGt.length);
           const bodyRes: OHLCResponse = { pairId, tf, candles: candlesGt, provider: 'gt' };
           return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
         }

@@ -20,6 +20,11 @@ const GT_API_KEY = process.env.GT_API_KEY || '';
 const DS_API_BASE = process.env.DS_API_BASE || '';
 const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
 const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
+const DEBUG = process.env.DEBUG_LOGS === 'true';
+
+function log(...args: any[]) {
+  if (DEBUG) console.log('[lists]', ...args);
+}
 
 function isValidType(t?: string): t is ListType {
   return t === 'trending' || t === 'discovery' || t === 'leaderboard';
@@ -89,6 +94,8 @@ export const handler: Handler = async (event) => {
   const window = event.queryStringParameters?.window as Window | undefined;
   const limitParam = event.queryStringParameters?.limit;
   const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+
+  log('params', { chain, type, window, limit });
 
   if (!isValidType(type) || !isValidWindow(window)) {
     const body: ApiError = { error: 'invalid_request', provider: 'none' };
@@ -178,6 +185,7 @@ export const handler: Handler = async (event) => {
       if (items.length > 0) {
         rank(items);
         provider = 'gt';
+        log('gt items', items.length);
       }
     } catch {
       // noop, will fall back to DS
@@ -231,6 +239,7 @@ export const handler: Handler = async (event) => {
       if (items.length > 0) {
         rank(items);
         provider = 'cg';
+        log('cg items', items.length);
       }
     } catch {
       // ignore, fall through
@@ -288,6 +297,7 @@ export const handler: Handler = async (event) => {
     if (items.length > 0) {
       rank(items);
       provider = 'ds';
+      log('ds items', items.length);
     }
   }
 

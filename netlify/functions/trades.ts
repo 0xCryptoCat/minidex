@@ -10,6 +10,11 @@ const DS_API_BASE = process.env.DS_API_BASE || '';
 const GT_API_BASE = process.env.GT_API_BASE || '';
 const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
 const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
+const DEBUG = process.env.DEBUG_LOGS === 'true';
+
+function log(...args: any[]) {
+  if (DEBUG) console.log('[trades]', ...args);
+}
 
 function isValidPair(id?: string): id is string {
   return !!id;
@@ -49,6 +54,8 @@ export const handler: Handler = async (event) => {
     'Cache-Control': 'public, max-age=30, stale-while-revalidate=60',
   };
 
+  log('params', { pairId, chain, poolAddress, forceProvider });
+
   if (USE_FIXTURES) {
     try {
       if (forceProvider !== 'gt') {
@@ -79,7 +86,7 @@ export const handler: Handler = async (event) => {
         headers: { 'x-cg-pro-api-key': CG_API_KEY },
       });
       if (res.ok) {
-        const cg = await res.json();
+      const cg = await res.json();
         const list = Array.isArray(cg?.data)
           ? cg.data
           : Array.isArray(cg?.trades)
@@ -107,6 +114,7 @@ export const handler: Handler = async (event) => {
           wallet: t.wallet || t.address,
         }));
         if (trades.length > 0) {
+          log('cg trades', trades.length);
           const bodyRes: TradesResponse = { pairId, trades, provider: 'cg' };
           return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
         }
@@ -143,7 +151,10 @@ export const handler: Handler = async (event) => {
         txHash: t.txHash || t.tx_hash || t.transactionHash,
         wallet: t.wallet || t.maker || t.trader,
       }));
-      if (trades.length > 0) provider = 'ds';
+      if (trades.length > 0) {
+        provider = 'ds';
+        log('ds trades', trades.length);
+      }
     } catch {
       // ignore and fall through to GT
     }
@@ -159,12 +170,13 @@ export const handler: Handler = async (event) => {
         const tradesGt = list.map((t: any) => ({
           ts: Math.floor(new Date(t.attributes.timestamp).getTime() / 1000),
           side: t.attributes.trade_type === 'buy' ? 'buy' : 'sell',
-          price: t.attributes.price_usd,
-          amountBase: parseFloat(t.attributes.amount_base),
-          amountQuote: parseFloat(t.attributes.amount_quote),
+          price: Number(t.attributes.price_usd),
+          amountBase: t.attributes.amount_base !== undefined ? Number(t.attributes.amount_base) : undefined,
+          amountQuote: t.attributes.amount_quote !== undefined ? Number(t.attributes.amount_quote) : undefined,
           txHash: t.attributes.tx_hash,
           wallet: t.attributes.wallet,
         }));
+        log('gt trades', tradesGt.length);
         const bodyRes: TradesResponse = { pairId, trades: tradesGt, provider: 'gt' };
         return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
       }

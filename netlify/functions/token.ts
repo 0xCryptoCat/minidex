@@ -4,6 +4,11 @@ import type { TokenResponse, ApiError } from '../../src/lib/types';
 const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
 const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
 const DS_API_BASE = process.env.DS_API_BASE || '';
+const DEBUG = process.env.DEBUG_LOGS === 'true';
+
+function log(...args: any[]) {
+  if (DEBUG) console.log('[token]', ...args);
+}
 
 function isValidChain(chain?: string): chain is string {
   return !!chain;
@@ -51,6 +56,8 @@ export const handler: Handler = async (event) => {
   let core: any = null;
   let provider: 'cg' | 'ds' | undefined;
 
+  log('params', { chain, address });
+
   if (CG_API_BASE && CG_API_KEY) {
     try {
       const cg = await fetchCgToken(chain, address);
@@ -76,6 +83,7 @@ export const handler: Handler = async (event) => {
           priceChange?.h24 !== undefined ? Number(priceChange.h24) : undefined,
       };
       provider = 'cg';
+      log('cg token');
     } catch {
       // ignore and fall back to DS
     }
@@ -125,6 +133,7 @@ export const handler: Handler = async (event) => {
                 : undefined,
           };
           provider = 'ds';
+          log('ds token');
         }
       }
     } catch {

@@ -71,31 +71,65 @@ export const handler: Handler = async (event) => {
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
   const chain = event.queryStringParameters?.chain;
 
+  const SUPPORTED_CHAINS = new Set([
+    'ethereum',
+    'bsc',
+    'polygon',
+    'optimism',
+    'arbitrum',
+    'avalanche',
+    'base',
+  ]);
+
   if (!isValidAddress(query)) {
     const body: ApiError = { error: 'invalid_address', provider: 'none' };
     return { statusCode: 400, body: JSON.stringify(body) };
   }
 
-  const headers = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Cache-Control': 'public, max-age=30, stale-while-revalidate=60',
+    'x-provider': 'none',
+    'x-fallbacks-tried': '',
+    'x-items': '0',
   };
+  const attempted: string[] = [];
+  let provider: Provider | 'none' = 'none';
+  if (chain && !SUPPORTED_CHAINS.has(chain)) {
+    const body: ApiError = { error: 'unsupported_network', provider: 'none' };
+    log('response', event.rawUrl, 200, 0, provider);
+    return { statusCode: 200, headers, body: JSON.stringify(body) };
+  }
 
   if (USE_FIXTURES) {
     try {
       if (forceProvider !== 'gt') {
+        attempted.push('ds');
         const ds = await readFixture(DS_FIXTURE);
         ds.query = query;
+        provider = 'ds';
+        headers['x-provider'] = provider;
+        headers['x-fallbacks-tried'] = attempted.join(',');
+        headers['x-items'] = String(ds.results.length || 0);
+        log('response', event.rawUrl, 200, ds.results.length || 0, provider);
         return { statusCode: 200, headers, body: JSON.stringify(ds) };
       }
       throw new Error('force gt');
     } catch {
       try {
+        attempted.push('gt');
         const gt = await readFixture(GT_FIXTURE);
         gt.query = query;
+        provider = 'gt';
+        headers['x-provider'] = provider;
+        headers['x-fallbacks-tried'] = attempted.join(',');
+        headers['x-items'] = String(gt.results.length || 0);
+        log('response', event.rawUrl, 200, gt.results.length || 0, provider);
         return { statusCode: 200, headers, body: JSON.stringify(gt) };
       } catch {
+        headers['x-fallbacks-tried'] = attempted.join(',');
         const body: ApiError = { error: 'upstream_error', provider: 'none' };
+        log('response', event.rawUrl, 500, 0, provider);
         return { statusCode: 500, headers, body: JSON.stringify(body) };
       }
     }
@@ -104,6 +138,7 @@ export const handler: Handler = async (event) => {
   try {
     log('params', { query, chain, forceProvider });
     if (forceProvider === 'cg') {
+      attempted.push('cg');
       if (!isValidChain(chain) || !CG_API_BASE || !CG_API_KEY) {
         throw new Error('force gt');
       }
@@ -144,9 +179,15 @@ export const handler: Handler = async (event) => {
         provider: 'cg',
       }];
       const bodyRes: SearchResponse = { query, results };
+      provider = 'cg';
+      headers['x-provider'] = provider;
+      headers['x-fallbacks-tried'] = attempted.join(',');
+      headers['x-items'] = String(results.length);
+      log('response', event.rawUrl, 200, results.length, provider);
       return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
     }
     if (forceProvider !== 'gt') {
+      attempted.push('ds');
       const ds = await fetchJson(`${DS_API_BASE}/dex/tokens/${query}`);
       if (!ds || !Array.isArray(ds.pairs) || ds.pairs.length === 0) {
         throw new Error('empty');
@@ -243,16 +284,24 @@ export const handler: Handler = async (event) => {
 
       log('dexscreener results', results.length);
       const bodyRes: SearchResponse = { query, results };
+      provider = 'ds';
+      headers['x-provider'] = provider;
+      headers['x-fallbacks-tried'] = attempted.join(',');
+      headers['x-items'] = String(results.length);
+      log('response', event.rawUrl, 200, results.length, provider);
       return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
     }
     throw new Error('force gt');
   } catch {
     log('ds branch failed');
     if (forceProvider === 'ds') {
+      headers['x-fallbacks-tried'] = attempted.join(',');
       const body: ApiError = { error: 'upstream_error', provider: 'none' };
+      log('response', event.rawUrl, 500, 0, provider);
       return { statusCode: 500, headers, body: JSON.stringify(body) };
     }
     try {
+      attempted.push('gt');
       const gt = await fetchJson(`${GT_API_BASE}/search/pairs?query=${query}`);
       const arr = Array.isArray(gt?.data) ? gt.data : [];
       const results: SearchResult[] = arr.map((d: any) => {
@@ -302,10 +351,16 @@ export const handler: Handler = async (event) => {
       log('gt results', results.length);
       const bodyRes: SearchResponse = { query, results };
       if (!results.length) throw new Error('empty');
+      provider = 'gt';
+      headers['x-provider'] = provider;
+      headers['x-fallbacks-tried'] = attempted.join(',');
+      headers['x-items'] = String(results.length);
+      log('response', event.rawUrl, 200, results.length, provider);
       return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
     } catch {
       if (CG_API_BASE && CG_API_KEY && isValidChain(chain)) {
         try {
+          attempted.push('cg');
           const cgUrl = `${CG_API_BASE}/token-data/${chain}/${query}`;
           const res = await fetch(cgUrl, { headers: { 'x-cg-pro-api-key': CG_API_KEY } });
           if (res.ok) {
@@ -346,13 +401,20 @@ export const handler: Handler = async (event) => {
               { chain: chain!, token, core, pools: [], provider: 'cg' },
             ];
             const bodyRes: SearchResponse = { query, results };
+            provider = 'cg';
+            headers['x-provider'] = provider;
+            headers['x-fallbacks-tried'] = attempted.join(',');
+            headers['x-items'] = String(results.length);
+            log('response', event.rawUrl, 200, results.length, provider);
             return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
           }
         } catch {
           // ignore
         }
       }
+      headers['x-fallbacks-tried'] = attempted.join(',');
       const body: ApiError = { error: 'upstream_error', provider: 'none' };
+      log('response', event.rawUrl, 500, 0, provider);
       return { statusCode: 500, headers, body: JSON.stringify(body) };
     }
   }

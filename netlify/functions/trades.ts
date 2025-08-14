@@ -79,33 +79,64 @@ export const handler: Handler = async (event) => {
   const windowH = Number(event.queryStringParameters?.window) || 24;
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
 
-  if (!isValidPair(pairId) || !chain) {
-    const body: ApiError = { error: 'invalid_request', provider: 'none' };
-    return { statusCode: 400, body: JSON.stringify(body) };
-  }
+  const SUPPORTED_CHAINS = new Set([
+    'ethereum',
+    'bsc',
+    'polygon',
+    'optimism',
+    'arbitrum',
+    'avalanche',
+    'base',
+  ]);
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Cache-Control': 'public, max-age=30, stale-while-revalidate=60',
+    'x-provider': 'none',
+    'x-fallbacks-tried': '',
+    'x-items': '0',
   };
+  const attempted: string[] = [];
+  if (!isValidPair(pairId) || !chain) {
+    const body: ApiError = { error: 'invalid_request', provider: 'none' };
+    log('response', event.rawUrl, 400, 0, 'none');
+    return { statusCode: 400, headers, body: JSON.stringify(body) };
+  }
+  if (!SUPPORTED_CHAINS.has(chain)) {
+    const body: ApiError = { error: 'unsupported_network', provider: 'none' };
+    log('response', event.rawUrl, 200, 0, 'none');
+    return { statusCode: 200, headers, body: JSON.stringify(body) };
+  }
 
   log('params', { pairId, chain, poolAddress, forceProvider, limit, windowH });
 
   if (USE_FIXTURES) {
     try {
       if (forceProvider !== 'gt') {
+        attempted.push('ds');
         const ds = await readFixture(DS_FIXTURE);
         ds.pairId = pairId;
+        headers['x-provider'] = 'ds';
+        headers['x-fallbacks-tried'] = attempted.join(',');
+        headers['x-items'] = String(ds.trades.length);
+        log('response', event.rawUrl, 200, ds.trades.length, 'ds');
         return { statusCode: 200, headers, body: JSON.stringify(ds) };
       }
       throw new Error('force gt');
     } catch {
       try {
+        attempted.push('gt');
         const gt = await readFixture(GT_FIXTURE);
         gt.pairId = pairId;
+        headers['x-provider'] = 'gt';
+        headers['x-fallbacks-tried'] = attempted.join(',');
+        headers['x-items'] = String(gt.trades.length);
+        log('response', event.rawUrl, 200, gt.trades.length, 'gt');
         return { statusCode: 200, headers, body: JSON.stringify(gt) };
       } catch {
+        headers['x-fallbacks-tried'] = attempted.join(',');
         const body: ApiError = { error: 'upstream_error', provider: 'none' };
+        log('response', event.rawUrl, 500, 0, 'none');
         return { statusCode: 500, headers, body: JSON.stringify(body) };
       }
     }
@@ -116,6 +147,7 @@ export const handler: Handler = async (event) => {
   const cutoff = Date.now() - windowH * 3600 * 1000;
 
   if (forceProvider === 'cg' || (!forceProvider && CG_API_BASE && CG_API_KEY)) {
+    attempted.push('cg');
     try {
       const cgUrl = `${CG_API_BASE}/pool-trades/${pairId}`;
       const res = await fetch(cgUrl, {
@@ -152,7 +184,11 @@ export const handler: Handler = async (event) => {
         trades = trades.filter((t: Trade) => t.ts * 1000 >= cutoff).slice(0, limit);
         if (trades.length > 0) {
           log('cg trades', trades.length);
+          headers['x-provider'] = 'cg';
+          headers['x-fallbacks-tried'] = attempted.join(',');
+          headers['x-items'] = String(trades.length);
           const bodyRes: TradesResponse = { pairId, trades, provider: 'cg' };
+          log('response', event.rawUrl, 200, trades.length, 'cg');
           return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
         }
       }
@@ -162,6 +198,7 @@ export const handler: Handler = async (event) => {
   }
 
   if (forceProvider !== 'gt') {
+    attempted.push('ds');
     try {
       const ds = await fetchJson(`${DS_API_BASE}/dex/pairs/${pairId}/trades`);
       const dsList = Array.isArray(ds?.trades) ? ds.trades : [];
@@ -199,6 +236,7 @@ export const handler: Handler = async (event) => {
   }
 
   if (trades.length === 0 && forceProvider !== 'ds' && chain && poolAddress) {
+    attempted.push('gt');
     let poolAddr = poolAddress;
     try {
       let gtUrl = `${GT_API_BASE}/networks/${chain}/pools/${poolAddr}/trades?limit=${limit}`;
@@ -237,6 +275,10 @@ export const handler: Handler = async (event) => {
   }
 
   const bodyRes: TradesResponse = { pairId, trades, provider };
+  headers['x-provider'] = provider;
+  headers['x-fallbacks-tried'] = attempted.join(',');
+  headers['x-items'] = String(trades.length);
+  log('response', event.rawUrl, 200, trades.length, provider);
   return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
 };
 

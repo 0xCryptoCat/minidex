@@ -7,7 +7,6 @@ import ChartOnlyView from './ChartOnlyView';
 import DetailView from './DetailView';
 import TradesOnlyView from './TradesOnlyView';
 import copy from '../../copy/en.json';
-import chains from '../../lib/chains.json';
 
 // Views for chart page
 type View = 'chart' | 'depth' | 'trades' | 'detail';
@@ -32,12 +31,6 @@ export default function ChartPage() {
       return;
     }
     let cancelled = false;
-    const supported = (chains as any[]).some((c) => c.slug === chain);
-    if (!supported) {
-      setUnsupported(true);
-      setLoading(false);
-      return;
-    }
     setUnsupported(false);
     setLoading(true);
     setError(null);
@@ -98,7 +91,7 @@ export default function ChartPage() {
       {loading && <div>{copy.loading}</div>}
 
       {unsupported && (
-        <div style={{ color: 'red' }}>This network is currently unsupported.</div>
+        <div style={{ color: 'red' }}>Network not supported (yet)</div>
       )}
 
       {!loading && error && (
@@ -107,11 +100,9 @@ export default function ChartPage() {
         </div>
       )}
 
-      {!loading && !error && !unsupported && pools.length === 0 && (
-        <div>{copy.no_pools}</div>
-      )}
+      {!loading && !error && pools.length === 0 && <div>{copy.no_pools}</div>}
 
-      {!loading && !error && !unsupported && pools.length > 0 && (
+      {!loading && !error && pools.length > 0 && (
         <>
           {view !== 'detail' && pools.length > 1 && (
             <PoolSwitcher

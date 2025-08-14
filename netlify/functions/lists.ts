@@ -95,6 +95,16 @@ export const handler: Handler = async (event) => {
   const limitParam = event.queryStringParameters?.limit;
   const limit = limitParam ? parseInt(limitParam, 10) : undefined;
 
+  const SUPPORTED_CHAINS = new Set([
+    'ethereum',
+    'bsc',
+    'polygon',
+    'optimism',
+    'arbitrum',
+    'avalanche',
+    'base',
+  ]);
+
   log('params', { chain, type, window, limit });
 
   if (!isValidType(type) || !isValidWindow(window)) {
@@ -102,14 +112,24 @@ export const handler: Handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify(body) };
   }
 
-  const headers = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Cache-Control': 'public, max-age=60, stale-while-revalidate=60',
+    'x-provider': 'none',
+    'x-fallbacks-tried': '',
+    'x-items': '0',
   };
+  const attempted: string[] = [];
 
   if (!chain) {
     const bodyRes: ListsResponse = { chain: '', type: type!, window: window!, items: [], provider: 'none' };
+    log('response', event.rawUrl, 200, 0, 'none');
     return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+  }
+  if (!SUPPORTED_CHAINS.has(chain)) {
+    const body: ApiError = { error: 'unsupported_network', provider: 'none' };
+    log('response', event.rawUrl, 200, 0, 'none');
+    return { statusCode: 200, headers, body: JSON.stringify(body) };
   }
 
   const key = `${type}:${chain}:${window}`;
@@ -134,6 +154,7 @@ export const handler: Handler = async (event) => {
   let provider: 'gt' | 'ds' | 'cg' | 'none' = 'none';
 
   if (GT_API_BASE) {
+    attempted.push('gt');
     try {
       const gtUrl = `${GT_API_BASE}/networks/${chain}/${type}?window=${window}${
         limit ? `&limit=${limit}` : ''
@@ -193,6 +214,7 @@ export const handler: Handler = async (event) => {
   }
 
   if (items.length === 0 && CG_API_BASE && CG_API_KEY) {
+    attempted.push('cg');
     try {
       const cgUrl = `${CG_API_BASE}/trending/${chain}?window=${window}`;
       const cg = await fetchJson(cgUrl, {
@@ -247,6 +269,7 @@ export const handler: Handler = async (event) => {
   }
 
   if (items.length === 0 && DS_API_BASE) {
+    attempted.push('ds');
     const addresses = DS_POPULAR[chain] || [];
     for (const addr of addresses.slice(0, limit ?? addresses.length)) {
       try {
@@ -303,5 +326,9 @@ export const handler: Handler = async (event) => {
 
   const limited = limit !== undefined ? items.slice(0, limit) : items;
   const bodyRes: ListsResponse = { chain, type, window, items: limited, provider };
+  headers['x-provider'] = provider;
+  headers['x-fallbacks-tried'] = attempted.join(',');
+  headers['x-items'] = String(limited.length);
+  log('response', event.rawUrl, 200, limited.length, provider);
   return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
 };

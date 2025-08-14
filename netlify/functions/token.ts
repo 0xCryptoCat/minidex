@@ -42,16 +42,35 @@ async function fetchCgToken(chain: string, address: string): Promise<any> {
 export const handler: Handler = async (event) => {
   const chain = event.queryStringParameters?.chain;
   const address = event.queryStringParameters?.address;
+  const SUPPORTED_CHAINS = new Set([
+    'ethereum',
+    'bsc',
+    'polygon',
+    'optimism',
+    'arbitrum',
+    'avalanche',
+    'base',
+  ]);
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'public, max-age=30, stale-while-revalidate=60',
+    'x-provider': 'none',
+    'x-fallbacks-tried': '',
+    'x-items': '0',
+  };
+  const attempted: string[] = [];
 
   if (!isValidChain(chain) || !isValidAddress(address)) {
     const body: ApiError = { error: 'invalid_request', provider: 'none' };
-    return { statusCode: 400, body: JSON.stringify(body) };
+    log('response', event.rawUrl, 400, 0, 'none');
+    return { statusCode: 400, headers, body: JSON.stringify(body) };
   }
-
-  const headers = {
-    'Content-Type': 'application/json',
-    'Cache-Control': 'public, max-age=30, stale-while-revalidate=60',
-  };
+  if (!SUPPORTED_CHAINS.has(chain)) {
+    const body: ApiError = { error: 'unsupported_network', provider: 'none' };
+    log('response', event.rawUrl, 200, 0, 'none');
+    return { statusCode: 200, headers, body: JSON.stringify(body) };
+  }
 
   log('params', { chain, address });
 
@@ -107,6 +126,7 @@ export const handler: Handler = async (event) => {
   let provider: 'cg' | 'ds' | undefined;
 
   if (CG_API_BASE && CG_API_KEY) {
+    attempted.push('cg');
     try {
       const cg = await fetchCgToken(chain, address);
       const attr = cg?.data?.attributes || cg?.data || cg;
@@ -136,6 +156,7 @@ export const handler: Handler = async (event) => {
   }
 
   if (!core && DS_API_BASE) {
+    attempted.push('ds');
     try {
       const res = await fetch(`${DS_API_BASE}/dex/tokens/${address}`);
       if (res.ok) {
@@ -203,6 +224,9 @@ export const handler: Handler = async (event) => {
   }
 
   if (meta && core) {
+    headers['x-provider'] = provider || 'none';
+    headers['x-fallbacks-tried'] = attempted.join(',');
+    headers['x-items'] = String(pairs.length);
     const bodyRes: TokenResponse = {
       meta,
       kpis: { ...core, ageDays },
@@ -210,10 +234,13 @@ export const handler: Handler = async (event) => {
       pairs,
       provider: provider!,
     };
+    log('response', event.rawUrl, 200, pairs.length, provider || 'none');
     return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
   }
 
+  headers['x-fallbacks-tried'] = attempted.join(',');
   const body: ApiError = { error: 'upstream_error', provider: 'none' };
+  log('response', event.rawUrl, 500, 0, provider || 'none');
   return { statusCode: 500, headers, body: JSON.stringify(body) };
 };
 

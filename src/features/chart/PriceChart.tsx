@@ -8,6 +8,23 @@ import { rollupCandles } from '../../lib/time';
 import type { TradeMarkerCluster } from '../trades/TradeMarkers';
 import chains from '../../lib/chains.json';
 
+function toLWCandles(cs: { t: number; o: number; h: number; l: number; c: number }[]) {
+  const out: { time: number; open: number; high: number; low: number; close: number }[] = [];
+  let prevT = -Infinity;
+  for (const k of cs) {
+    const time = Math.floor(Number(k.t));
+    const open = Number(k.o);
+    const high = Number(k.h);
+    const low = Number(k.l);
+    const close = Number(k.c);
+    if (![time, open, high, low, close].every(Number.isFinite)) continue;
+    if (time <= prevT) continue;
+    out.push({ time, open, high, low, close });
+    prevT = time;
+  }
+  return out;
+}
+
 interface Props {
   pairId: string;
   tf: Timeframe;
@@ -125,6 +142,9 @@ export default function PriceChart({
     if (!pairId || !chain || !poolAddress) return;
     let candles: Candle[] = [];
 
+    candleSeriesRef.current?.setData([]);
+    volumeSeriesRef.current?.setData([]);
+
     const poller = createPoller(async () => {
       const data = await ohlc({ pairId, tf, chain, poolAddress });
       setMeta((data as any)._meta);
@@ -133,25 +153,27 @@ export default function PriceChart({
         candles = rollupCandles(candles, data.tf, tf);
       }
       setEffectiveTf(data.effectiveTf);
-      if (candles.length > 0) {
-        const c = candles.map((cd) => ({
-          time: cd.t as UTCTimestamp,
-          open: cd.o,
-          high: cd.h,
-          low: cd.l,
-          close: cd.c,
-        }));
-        const v = candles.map((cd) => ({
-          time: cd.t as UTCTimestamp,
-          value: cd.v || 0,
-          color: cd.c >= cd.o ? '#26a69a' : '#ef5350',
-        }));
+      const c = toLWCandles(candles).map((cd) => ({
+        time: cd.time as UTCTimestamp,
+        open: cd.open,
+        high: cd.high,
+        low: cd.low,
+        close: cd.close,
+      }));
+      if (c.length > 0) {
+        const v = c.map((cd) => {
+          const src = candles.find((k) => Math.floor(Number(k.t)) === cd.time);
+          const vol = src && Number.isFinite(Number(src.v)) ? Number(src.v) : 0;
+          return {
+            time: cd.time as UTCTimestamp,
+            value: vol,
+            color: cd.close >= cd.open ? '#26a69a' : '#ef5350',
+          };
+        });
         candleSeriesRef.current?.setData(c);
         volumeSeriesRef.current?.setData(v);
         setHasData(true);
       } else {
-        candleSeriesRef.current?.setData([]);
-        volumeSeriesRef.current?.setData([]);
         setHasData(false);
       }
       setProvider(data.provider);

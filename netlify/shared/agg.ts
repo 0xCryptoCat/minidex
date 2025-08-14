@@ -1,4 +1,4 @@
-import type { Candle, Trade, Timeframe } from '../../src/lib/types';
+import type { Candle, Trade } from '../../src/lib/types';
 
 /**
  * Aggregate trades into OHLC candles.
@@ -6,19 +6,13 @@ import type { Candle, Trade, Timeframe } from '../../src/lib/types';
  * Volume is summed using the trade's base amount when available. Trades
  * lacking a base amount contribute zero volume.
  */
-export function buildCandlesFromTrades(trades: Trade[], tf: Timeframe = '1m'): Candle[] {
-  const bucketSec: Record<Timeframe, number> = {
-    '1m': 60,
-    '5m': 300,
-    '15m': 900,
-    '1h': 3600,
-    '4h': 14400,
-    '1d': 86400,
-  };
-  const interval = bucketSec[tf] || 60;
+export function buildCandlesFromTrades(
+  trades: Trade[],
+  tfSeconds: number = 60
+): Candle[] {
   const buckets: Record<number, Candle> = {};
   for (const t of trades) {
-    const bucket = Math.floor(t.ts / interval) * interval;
+    const bucket = Math.floor(t.ts / tfSeconds) * tfSeconds;
     const candle = buckets[bucket];
     if (!candle) {
       buckets[bucket] = {

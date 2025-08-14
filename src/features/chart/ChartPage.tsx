@@ -50,6 +50,7 @@ export default function ChartPage() {
           } else {
             setError(data.error);
           }
+          setNoData(true);
           return;
         }
         setToken(data.token);
@@ -59,7 +60,10 @@ export default function ChartPage() {
         setNoData(!sel || !sel.poolAddress);
       })
       .catch(() => {
-        if (!cancelled) setError('network');
+        if (!cancelled) {
+          setError('network');
+          setNoData(true);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -134,10 +138,10 @@ export default function ChartPage() {
           {view === 'detail' && currentPool && address && (
             <DetailView chain={currentPool.chain} address={address} pairId={currentPool.pairId} />
           )}
-
-          {noData && <div>No chart data available for this pool</div>}
         </>
       )}
+
+      {noData && <div>No chart data available for this pool</div>}
     </div>
   );
 }

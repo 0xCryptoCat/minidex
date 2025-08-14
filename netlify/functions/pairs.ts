@@ -1,5 +1,12 @@
 import type { Handler } from '@netlify/functions';
-import type { PairsResponse, ApiError, Provider, PoolSummary, TokenMeta } from '../../src/lib/types';
+import type {
+  PairsResponse,
+  ApiError,
+  Provider,
+  PoolSummary,
+  TokenMeta,
+  Address,
+} from '../../src/lib/types';
 import fs from 'fs/promises';
 
 const GT_FIXTURE = '../../fixtures/pairs-gt.json';
@@ -7,12 +14,11 @@ const GT_FIXTURE = '../../fixtures/pairs-gt.json';
 const USE_FIXTURES = process.env.USE_FIXTURES === 'true';
 const DS_API_BASE = process.env.DS_API_BASE || '';
 const GT_API_BASE = process.env.GT_API_BASE || '';
-const SUPPORTED_CHAINS = new Set(Object.values(CHAIN_ID_MAP));
+const DEBUG = process.env.DEBUG_LOGS === 'true';
 
 function log(...args: any[]) {
   if (DEBUG) console.log('[pairs]', ...args);
 }
-const DEBUG = process.env.DEBUG_LOGS === 'true';
 
 // Map numeric chain IDs from Dexscreener to chain slugs used in the app.
 const CHAIN_ID_MAP: Record<string, string> = {
@@ -24,6 +30,13 @@ const CHAIN_ID_MAP: Record<string, string> = {
   '43114': 'avalanche',
   '8453': 'base',
 };
+
+let SUPPORTED_CHAINS: Set<string> | null = null;
+try {
+  SUPPORTED_CHAINS = new Set(Object.values(CHAIN_ID_MAP));
+} catch (err) {
+  log('failed to init supported chains', err);
+}
 
 function mapChainId(id: unknown): string {
   const key = typeof id === 'number' ? String(id) : (id as string | undefined);
@@ -48,9 +61,14 @@ async function fetchJson(url: string): Promise<any> {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), 3000);
   try {
+    log('fetch', url);
     const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new Error('status');
+    log('status', url, res.status);
+    if (!res.ok) throw new Error(`status ${res.status}`);
     return await res.json();
+  } catch (err) {
+    log('fetch error', url, err);
+    throw err;
   } finally {
     clearTimeout(id);
   }
@@ -60,6 +78,11 @@ export const handler: Handler = async (event) => {
   const chain = event.queryStringParameters?.chain;
   const address = event.queryStringParameters?.address;
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
+
+  if (!SUPPORTED_CHAINS) {
+    const body: ApiError = { error: 'config_error', provider: 'none' };
+    return { statusCode: 500, body: JSON.stringify(body) };
+  }
 
   log('params', { chain, address, forceProvider });
 
@@ -97,7 +120,15 @@ export const handler: Handler = async (event) => {
 
   try {
     if (forceProvider !== 'gt') {
-      const ds = await fetchJson(`${DS_API_BASE}/dex/tokens/${address}`);
+      const dsUrl = `${DS_API_BASE}/dex/tokens/${address}`;
+      let ds: any;
+      try {
+        log('try ds', dsUrl);
+        ds = await fetchJson(dsUrl);
+      } catch (err) {
+        log('ds request failed', dsUrl, err);
+        ds = null;
+      }
       if (!ds || !Array.isArray(ds.pairs) || ds.pairs.length === 0) {
         throw new Error('empty');
       }
@@ -115,14 +146,13 @@ export const handler: Handler = async (event) => {
         const chainSlug = mapChainId(p.chainId);
         let poolAddr = p.pairAddress || p.liquidityPoolAddress;
         if (!isValidAddress(poolAddr)) {
+          const detailUrl = `${DS_API_BASE}/dex/pairs/${chainSlug}/${p.pairId || p.pairAddress}`;
           try {
-            const detail = await fetchJson(
-              `${DS_API_BASE}/dex/pairs/${chainSlug}/${p.pairId || p.pairAddress}`
-            );
+            const detail = await fetchJson(detailUrl);
             poolAddr =
               detail?.pair?.pairAddress || detail?.pair?.address || detail?.pairAddress;
-          } catch {
-            // ignore
+          } catch (err) {
+            log('ds detail fetch failed', detailUrl, err);
           }
         }
         pools.push({
@@ -131,15 +161,14 @@ export const handler: Handler = async (event) => {
           base: p.baseToken?.symbol,
           quote: p.quoteToken?.symbol,
           chain: chainSlug,
-          poolAddress: isValidAddress(poolAddr) ? poolAddr : undefined,
+          poolAddress: isValidAddress(poolAddr) ? (poolAddr as Address) : undefined,
         });
       }
       const missing = pools.some((p) => !p.poolAddress);
       if (missing) {
+        const gtPoolsUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}/pools`;
         try {
-          const gtPools = await fetchJson(
-            `${GT_API_BASE}/networks/${chain}/tokens/${address}/pools`
-          );
+          const gtPools = await fetchJson(gtPoolsUrl);
           const arr = Array.isArray(gtPools?.data) ? gtPools.data : [];
           for (const d of arr) {
             const attr = d.attributes || {};
@@ -150,11 +179,11 @@ export const handler: Handler = async (event) => {
               base: attr.base_token?.symbol,
               quote: attr.quote_token?.symbol,
               chain: chain!,
-              poolAddress: attr.pool_address,
+              poolAddress: attr.pool_address as Address,
             });
           }
-        } catch {
-          // ignore
+        } catch (err) {
+          log('gt pools fetch failed', gtPoolsUrl, err);
         }
       }
 
@@ -163,17 +192,18 @@ export const handler: Handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
     }
     throw new Error('force gt');
-  } catch {
-    log('ds branch failed');
+  } catch (err) {
+    log('ds branch failed', err);
     if (forceProvider === 'ds') {
       const body: ApiError = { error: 'upstream_error', provider: 'none' };
       return { statusCode: 500, headers, body: JSON.stringify(body) };
     }
     try {
-      const tokenResp = await fetchJson(`${GT_API_BASE}/networks/${chain}/tokens/${address}`);
-      const poolsResp = await fetchJson(
-        `${GT_API_BASE}/networks/${chain}/tokens/${address}/pools`
-      );
+      const tokenUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}`;
+      const poolsUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}/pools`;
+      log('try gt', tokenUrl, poolsUrl);
+      const tokenResp = await fetchJson(tokenUrl);
+      const poolsResp = await fetchJson(poolsUrl);
       const pools: PoolSummary[] = [];
       const arr = Array.isArray(poolsResp?.data) ? poolsResp.data : [];
       for (const d of arr) {
@@ -184,7 +214,7 @@ export const handler: Handler = async (event) => {
           base: attr.base_token?.symbol,
           quote: attr.quote_token?.symbol,
           chain: chain as string,
-          poolAddress: attr.pool_address,
+          poolAddress: attr.pool_address as Address,
         });
       }
       const attr = tokenResp.data?.attributes || {};
@@ -198,7 +228,8 @@ export const handler: Handler = async (event) => {
       const bodyRes: PairsResponse = { token, pools, provider: 'gt' };
       if (!pools.length) throw new Error('empty');
       return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
-    } catch {
+    } catch (err) {
+      log('gt branch failed', err);
       const body: ApiError = { error: 'upstream_error', provider: 'none' };
       return { statusCode: 500, headers, body: JSON.stringify(body) };
     }

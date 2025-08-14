@@ -5,6 +5,7 @@ import { pairs } from '../../lib/api';
 import PoolSwitcher from './PoolSwitcher';
 import ChartOnlyView from './ChartOnlyView';
 import DetailView from './DetailView';
+import TradesOnlyView from './TradesOnlyView';
 import copy from '../../copy/en.json';
 import chains from '../../lib/chains.json';
 
@@ -44,7 +45,11 @@ export default function ChartPage() {
       .then((data) => {
         if (cancelled) return;
         if ('error' in data) {
-          setError(data.error);
+          if (data.error === 'unsupported_network') {
+            setUnsupported(true);
+          } else {
+            setError(data.error);
+          }
           return;
         }
         setToken(data.token);
@@ -84,7 +89,7 @@ export default function ChartPage() {
       {loading && <div>{copy.loading}</div>}
 
       {unsupported && (
-        <div style={{ color: 'red' }}>This network is unsupported yet</div>
+        <div style={{ color: 'red' }}>This network is currently unsupported.</div>
       )}
 
       {!loading && error && (
@@ -119,11 +124,18 @@ export default function ChartPage() {
               />
             </div>
           )}
+          {view === 'trades' && currentPool && currentPool.poolAddress && (
+            <TradesOnlyView
+              pairId={currentPool.pairId}
+              chain={currentPool.chain}
+              poolAddress={currentPool.poolAddress}
+            />
+          )}
           {view === 'detail' && currentPool && address && (
             <DetailView chain={currentPool.chain} address={address} pairId={currentPool.pairId} />
           )}
 
-          {noData && <div>No data</div>}
+          {noData && <div>No chart data available for this pool</div>}
         </>
       )}
     </div>

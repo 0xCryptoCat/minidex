@@ -1,5 +1,6 @@
 import type { Handler } from '@netlify/functions';
 import type { TokenResponse, ApiError } from '../../src/lib/types';
+import { isGtSupported } from '../shared/dex-allow';
 
 const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
 const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
@@ -77,6 +78,7 @@ export const handler: Handler = async (event) => {
   let meta: any = null;
   let pairs: any[] = [];
   const links: any = {};
+  let infoBlock: any = null;
   let ageDays: number | undefined;
 
   if (DS_API_BASE) {
@@ -99,6 +101,7 @@ export const handler: Handler = async (event) => {
                   ageDays = (Date.now() / 1000 - Number(created)) / 86400;
                 }
               }
+              const tx = p.txns || {};
               return {
                 pairId: p.pairId || p.pairAddress,
                 dex: p.dexId,
@@ -107,6 +110,68 @@ export const handler: Handler = async (event) => {
                 pairUrl: p.url,
                 base: p.baseToken?.symbol,
                 quote: p.quoteToken?.symbol,
+                liqUsd:
+                  p.liquidity?.usd !== undefined
+                    ? Number(p.liquidity.usd)
+                    : p.liquidityUsd !== undefined
+                    ? Number(p.liquidityUsd)
+                    : undefined,
+                priceUsd:
+                  p.priceUsd !== undefined
+                    ? Number(p.priceUsd)
+                    : p.price_usd !== undefined
+                    ? Number(p.price_usd)
+                    : undefined,
+                priceNative:
+                  p.priceNative !== undefined
+                    ? Number(p.priceNative)
+                    : p.price_native !== undefined
+                    ? Number(p.price_native)
+                    : undefined,
+                txns: {
+                  m5:
+                    tx.m5 !== undefined
+                      ? Number((tx.m5?.buys || 0) + (tx.m5?.sells || 0))
+                      : undefined,
+                  h1:
+                    tx.h1 !== undefined
+                      ? Number((tx.h1?.buys || 0) + (tx.h1?.sells || 0))
+                      : undefined,
+                  h6:
+                    tx.h6 !== undefined
+                      ? Number((tx.h6?.buys || 0) + (tx.h6?.sells || 0))
+                      : undefined,
+                  h24:
+                    tx.h24 !== undefined
+                      ? Number((tx.h24?.buys || 0) + (tx.h24?.sells || 0))
+                      : undefined,
+                },
+                volume: {
+                  m5: p.volume?.m5 !== undefined ? Number(p.volume.m5) : undefined,
+                  h1: p.volume?.h1 !== undefined ? Number(p.volume.h1) : undefined,
+                  h6: p.volume?.h6 !== undefined ? Number(p.volume.h6) : undefined,
+                  h24: p.volume?.h24 !== undefined ? Number(p.volume.h24) : undefined,
+                },
+                priceChange: {
+                  m5:
+                    p.priceChange?.m5 !== undefined
+                      ? Number(p.priceChange.m5)
+                      : undefined,
+                  h1:
+                    p.priceChange?.h1 !== undefined
+                      ? Number(p.priceChange.h1)
+                      : undefined,
+                  h6:
+                    p.priceChange?.h6 !== undefined
+                      ? Number(p.priceChange.h6)
+                      : undefined,
+                  h24:
+                    p.priceChange?.h24 !== undefined
+                      ? Number(p.priceChange.h24)
+                      : undefined,
+                },
+                pairCreatedAt: p.pairCreatedAt || p.createdAt,
+                gtSupported: isGtSupported(p.dexId, p.dexVersion || p.version),
               };
             })
           : [];
@@ -115,6 +180,13 @@ export const handler: Handler = async (event) => {
         links.twitter = info.twitter;
         links.telegram = info.telegram;
         links.explorer = info.explorer;
+        infoBlock = {
+          header: info.header,
+          imageUrl: info.imageUrl,
+          description: info.description,
+          websites: info.websites,
+          socials: info.socials,
+        };
         log('ds token meta');
       }
     } catch {
@@ -231,6 +303,7 @@ export const handler: Handler = async (event) => {
       meta,
       kpis: { ...core, ageDays },
       links,
+      info: infoBlock || undefined,
       pairs,
       provider: provider!,
     };

@@ -1,18 +1,26 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { routes } from './routes';
 import Header from '../components/Header';
 import BottomTabs from '../components/BottomTabs';
+import { ProviderProvider } from '../lib/provider';
 
 function Shell() {
   const location = useLocation();
   const showTabs = location.pathname.startsWith('/t/');
-  const showHeader = location.pathname !== '/';
+
+  useEffect(() => {
+    if (location.pathname === '/') {
+      document.body.classList.add('home-no-header');
+    } else {
+      document.body.classList.remove('home-no-header');
+    }
+  }, [location.pathname]);
 
   return (
     <>
-      {showHeader && <Header />}
-      <main className={`${showTabs ? 'with-tabs' : ''} ${showHeader ? '' : 'no-header'}`}>
+      <Header />
+      <main className={`${showTabs ? 'with-tabs' : ''}`}>
         <Suspense fallback={<div />}>
           <Routes>
             {routes.map((r) => (
@@ -28,8 +36,10 @@ function Shell() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Shell />
-    </BrowserRouter>
+    <ProviderProvider>
+      <BrowserRouter>
+        <Shell />
+      </BrowserRouter>
+    </ProviderProvider>
   );
 }

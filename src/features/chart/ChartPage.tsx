@@ -7,6 +7,7 @@ import ChartOnlyView from './ChartOnlyView';
 import DetailView from './DetailView';
 import TradesOnlyView from '../trades/TradesOnlyView';
 import copy from '../../copy/en.json';
+import { useProvider } from '../../lib/provider';
 
 // Views for chart page
 type View = 'chart' | 'trades' | 'detail';
@@ -25,6 +26,7 @@ export default function ChartPage() {
   const [error, setError] = useState<string | null>(null);
   const [noData, setNoData] = useState(false);
   const [unsupported, setUnsupported] = useState(false);
+  const { setProvider: setGlobalProvider } = useProvider();
 
   useEffect(() => {
     if (!chain || !address) {
@@ -36,6 +38,7 @@ export default function ChartPage() {
     setLoading(true);
     setError(null);
     setProvider(null);
+    setGlobalProvider('');
     pairs(chain, address)
       .then((data) => {
         if (cancelled) return;
@@ -50,6 +53,7 @@ export default function ChartPage() {
         }
         setToken(data.token);
         setProvider(data.provider);
+        setGlobalProvider(data.provider);
         const sorted = data.pools.slice().sort((a, b) => {
           const sup = Number(!!b.gtSupported) - Number(!!a.gtSupported);
           if (sup !== 0) return sup;

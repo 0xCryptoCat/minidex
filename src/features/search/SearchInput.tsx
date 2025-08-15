@@ -16,8 +16,6 @@ export default function SearchInput({ autoFocus, large }: Props) {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchTokenSummary[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -25,35 +23,36 @@ export default function SearchInput({ autoFocus, large }: Props) {
     if (autoFocus) inputRef.current?.focus();
   }, [autoFocus]);
 
-  useEffect(() => {
-    if (timer.current) clearTimeout(timer.current);
-    if (!query || (!isAddress(query) && query.length < 2)) {
+  function runSearch(q: string) {
+    if (!q || (!isAddress(q) && q.length < 4)) {
       setResults([]);
-      setError(null);
       return;
     }
-    timer.current = setTimeout(() => {
-      setLoading(true);
-      apiSearch(query)
-        .then((data) => {
-          if ('error' in data) {
-            setResults([]);
-            setError(data.error);
-          } else {
-            setResults(Array.isArray(data.results) ? data.results : []);
-            setError(null);
-          }
-        })
-        .catch(() => {
+    apiSearch(q)
+      .then((data) => {
+        if ('results' in data) {
+          setResults(Array.isArray(data.results) ? data.results : []);
+        } else {
           setResults([]);
-          setError('network');
-        })
-        .finally(() => setLoading(false));
-    }, 300);
+        }
+      })
+      .catch(() => setResults([]));
+  }
+
+  useEffect(() => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => runSearch(query), 500);
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
   }, [query]);
+
+  function handleKey(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      if (timer.current) clearTimeout(timer.current);
+      runSearch(query);
+    }
+  }
 
   function handleSelect(r: SearchTokenSummary) {
     const pool =
@@ -61,9 +60,6 @@ export default function SearchInput({ autoFocus, large }: Props) {
       [...(r.pools || [])].sort(
         (a: PoolSummary, b: PoolSummary) => (b.liqUsd || 0) - (a.liqUsd || 0)
       )[0];
-    if (pool && !pool.gtSupported) {
-      alert('Chart/Trades not available on this DEX; limited metrics shown.');
-    }
     navigate(
       `/t/${pool?.chain || ''}/${r.address}/${pool?.pairId || ''}?poolAddress=${
         pool?.poolAddress || ''
@@ -73,19 +69,13 @@ export default function SearchInput({ autoFocus, large }: Props) {
     setResults([]);
   }
 
-  function handleKey(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && results[0]) {
-      handleSelect(results[0]);
-    }
-  }
-
   const sizeStyle = large ? { fontSize: '1.5rem', padding: '0.75rem' } : { padding: '0.5rem' };
 
   return (
     <div style={{ position: 'relative', width: '100%', maxWidth: large ? 600 : 400 }}>
-      <label htmlFor="global-search" style={{ position: 'absolute', left: -10000 }}>{
-        'Search tokens or paste address'
-      }</label>
+      <label htmlFor="global-search" style={{ position: 'absolute', left: -10000 }}>
+        {'Search tokens or paste address'}
+      </label>
       <input
         id="global-search"
         ref={inputRef}
@@ -96,14 +86,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
         aria-label="Search tokens or paste address"
         style={{ width: '100%', ...sizeStyle }}
       />
-      {error && (
-        <div
-          style={{ position: 'absolute', top: '100%', left: 0, fontSize: '0.75rem', color: 'var(--accent-magenta)' }}
-        >
-          Error
-        </div>
-      )}
-      {!error && (loading || results.length > 0) && (
+      {results.length > 0 && (
         <ul
           style={{
             listStyle: 'none',
@@ -117,21 +100,20 @@ export default function SearchInput({ autoFocus, large }: Props) {
             zIndex: 50,
           }}
         >
-          {loading && <li style={{ padding: '0.5rem', fontSize: '0.875rem' }}>Loading...</li>}
-          {!loading &&
-            results.map((r) => (
-              <li key={r.address} style={{ padding: '0.5rem' }}>
-                <button
-                  type="button"
-                  onClick={() => handleSelect(r)}
-                  style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none' }}
-                >
-                  <strong>{r.symbol}</strong> {r.name}
-                </button>
-              </li>
-            ))}
+          {results.map((r) => (
+            <li key={r.address} style={{ padding: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => handleSelect(r)}
+                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none' }}
+              >
+                <strong>{r.symbol}</strong> {r.name}
+              </button>
+            </li>
+          ))}
         </ul>
       )}
     </div>
   );
 }
+

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import type { SearchResult } from '../../lib/types';
+import type { SearchResult, PoolSummary } from '../../lib/types';
 import { formatCompact } from '../../lib/format';
 
 interface Props { result: SearchResult }
@@ -22,10 +22,24 @@ export function SearchResultSkeleton() {
 export default function SearchResultItem({ result }: Props) {
   const navigate = useNavigate();
   const { token, core, pools, chain } = result;
+
+  const supportedPool = pools.find((p) => p.gtSupported);
+  const fallbackPool = [...pools].sort(
+    (a: PoolSummary, b: PoolSummary) => (b.liqUsd || 0) - (a.liqUsd || 0)
+  )[0];
+  const targetPool = supportedPool || fallbackPool;
+  const isSupported = !!supportedPool;
+
   function handleClick() {
-    const pairId = pools[0]?.pairId;
-    navigate(`/t/${chain}/${token.address}/${pairId || ''}`);
+    const pairId = targetPool?.pairId;
+    if (pairId) {
+      if (!isSupported) {
+        alert('Chart/Trades not available on this DEX; limited metrics shown.');
+      }
+      navigate(`/t/${chain}/${token.address}/${pairId}`);
+    }
   }
+
   return (
     <tr
       role="button"
@@ -39,6 +53,7 @@ export default function SearchResultItem({ result }: Props) {
         display: 'grid',
         gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
         minHeight: 40,
+        opacity: isSupported ? 1 : 0.5,
       }}
     >
       <td>
@@ -50,8 +65,31 @@ export default function SearchResultItem({ result }: Props) {
       </td>
       <td>
         <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{token.symbol}</strong>
-          <span style={{ fontSize: '0.75rem', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
+            <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{token.symbol}</strong>
+            {!isSupported && (
+              <span
+                style={{
+                  fontSize: '0.625rem',
+                  background: '#ccc',
+                  padding: '0 4px',
+                  borderRadius: 4,
+                  flexShrink: 0,
+                }}
+              >
+                Limited
+              </span>
+            )}
+          </div>
+          <span
+            style={{
+              fontSize: '0.75rem',
+              color: '#666',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {token.name}
           </span>
         </div>

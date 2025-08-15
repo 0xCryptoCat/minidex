@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import type { SearchResult, Provider, ListItem as TrendingItem } from '../../lib/types';
-import { search, lists } from '../../lib/api';
+import type { SearchResult, Provider } from '../../lib/types';
+import { search } from '../../lib/api';
 import copy from '../../copy/en.json';
 import SearchResultItem, { SearchResultSkeleton } from './SearchResultItem';
-import ListItem, { ListItemSkeleton } from '../lists/ListItem';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
@@ -13,9 +12,6 @@ export default function SearchPage() {
   const [provider, setProvider] = useState<Provider | ''>('');
   const [backoff, setBackoff] = useState(0);
   const [hasSearched, setHasSearched] = useState(false);
-  const [trending, setTrending] = useState<TrendingItem[]>([]);
-  const [trendingProvider, setTrendingProvider] = useState<Provider | 'none'>('gt');
-  const [trendingLoading, setTrendingLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -54,29 +50,29 @@ export default function SearchPage() {
       setProvider(data.provider !== 'none' ? data.provider : '');
       if (data.error === 'rate_limit') setBackoff(5);
     } else {
-      setResults(Array.isArray(data.results) ? data.results : []);
-      const first = Array.isArray(data.results) && data.results.length > 0 ? data.results[0] : undefined;
+      const res = Array.isArray(data.results) ? data.results : [];
+      res.forEach((r) =>
+        r.pools.sort((a, b) => {
+          const sup = Number(!!b.gtSupported) - Number(!!a.gtSupported);
+          if (sup !== 0) return sup;
+          return (b.liqUsd || 0) - (a.liqUsd || 0);
+        })
+      );
+      const sorted = res.sort((a, b) => {
+        const aSup = a.pools.some((p) => p.gtSupported);
+        const bSup = b.pools.some((p) => p.gtSupported);
+        if (aSup === bSup) {
+          const aL = a.pools[0]?.liqUsd || 0;
+          const bL = b.pools[0]?.liqUsd || 0;
+          return bL - aL;
+        }
+        return aSup ? -1 : 1;
+      });
+      setResults(sorted);
+      const first = sorted[0];
       setProvider(first?.provider || '');
     }
   }
-
-  async function fetchTrending() {
-    setTrendingLoading(true);
-    const data = await lists({ chain: 'ethereum', type: 'trending', window: '1d', limit: 10 });
-    setTrendingLoading(false);
-    if ('error' in data) {
-      setTrending([]);
-    } else {
-      setTrending(data.items);
-      setTrendingProvider(data.provider);
-    }
-  }
-
-  useEffect(() => {
-    if ((!hasSearched && !error) || (hasSearched && results.length === 0 && !loading && !error)) {
-      if (trending.length === 0 && !trendingLoading) fetchTrending();
-    }
-  }, [hasSearched, results, loading, error]);
 
   return (
     <div style={{ padding: '1rem' }}>
@@ -149,33 +145,7 @@ export default function SearchPage() {
       {!loading && hasSearched && results.length === 0 && !error && (
         <div className="no-results">{copy.no_results}</div>
       )}
-      {!error && (!hasSearched || (hasSearched && results.length === 0 && !loading)) && (
-        <section className="trending-section">
-          <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {copy.trending_tokens}
-            <span className="provider-badge" aria-label={`data provider ${trendingProvider}`}>
-              {trendingProvider}
-            </span>
-          </h2>
-          <div style={{ border: '1px solid #ccc' }}>
-            {trendingLoading
-              ? Array.from({ length: 5 }).map((_, i) => <ListItemSkeleton key={i} />)
-              : Object.entries(
-                  trending.reduce((acc: Record<string, TrendingItem[]>, it) => {
-                    (acc[it.chain] = acc[it.chain] || []).push(it);
-                    return acc;
-                  }, {})
-                ).map(([c, items]) => (
-                  <div key={c} style={{ paddingBottom: '0.5rem' }}>
-                    <h3 style={{ margin: '0.5rem' }}>{c}</h3>
-                    {items.map((item, idx) => (
-                      <ListItem key={item.pairId} item={item} rank={idx + 1} />
-                    ))}
-                  </div>
-                ))}
-          </div>
-        </section>
-      )}
+      {/* Trending section removed for now */}
     </div>
   );
 }

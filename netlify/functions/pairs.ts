@@ -96,6 +96,7 @@ export const handler: Handler = async (event) => {
 
   if (!SUPPORTED_CHAINS) {
     const body: ApiError = { error: 'config_error', provider: 'none' };
+    logError('config error: supported chains missing');
     log('response', event.rawUrl, 500, 0, provider);
     return { statusCode: 500, headers, body: JSON.stringify(body) };
   }
@@ -104,14 +105,17 @@ export const handler: Handler = async (event) => {
 
   if (!isValidChain(chain) || !isValidAddress(address)) {
     const body: ApiError = { error: 'invalid_request', provider: 'none' };
+    logError('invalid request', { chain, address });
     log('response', event.rawUrl, 400, 0, provider);
     return { statusCode: 400, headers, body: JSON.stringify(body) };
   }
   if (!SUPPORTED_CHAINS.has(chain)) {
     const body: ApiError = { error: 'unsupported_network', provider: 'none' };
+    logError('unsupported network', chain);
     log('response', event.rawUrl, 200, 0, provider);
     return { statusCode: 200, headers, body: JSON.stringify(body) };
   }
+
   try {
     if (USE_FIXTURES) {
       try {
@@ -142,6 +146,7 @@ export const handler: Handler = async (event) => {
       }
     }
 
+    // Try Dexscreener (ds) first
     if (forceProvider !== 'gt') {
       attempted.push('ds');
       const dsUrl = `${DS_API_BASE}/dex/tokens/${address}`;
@@ -246,6 +251,8 @@ export const handler: Handler = async (event) => {
       const bodyRes: PairsResponse = { token, pools, provider: 'ds' };
       return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
     }
+
+    // Try GT provider
     throw new Error('force gt');
   } catch (err) {
     logError('ds branch failed', err);
@@ -287,6 +294,7 @@ export const handler: Handler = async (event) => {
         if (sup !== 0) return sup;
         return (b.liqUsd || 0) - (a.liqUsd || 0);
       });
+
       const attr = tokenResp.data?.attributes || {};
       const token: TokenMeta = {
         address: attr.address || address,
@@ -311,11 +319,4 @@ export const handler: Handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify(body) };
     }
   }
-  } catch (err) {
-    logError('handler error', err);
-    headers['x-fallbacks-tried'] = attempted.join(',');
-    const body: ApiError = { error: 'internal_error', provider: 'none' };
-    return { statusCode: 500, headers, body: JSON.stringify(body) };
-  }
 };
-

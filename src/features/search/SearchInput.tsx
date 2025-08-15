@@ -35,7 +35,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
     const controller = new AbortController();
     abortRef.current = controller;
     apiSearch(q, undefined, controller.signal)
-      .then((data) => {
+      .then(({ data }) => {
         if ('results' in data) {
           setResults(Array.isArray(data.results) ? data.results : []);
         } else {

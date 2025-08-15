@@ -107,11 +107,6 @@ export const handler: Handler = async (event) => {
 
   log('params', { chain, type, window, limit });
 
-  if (!isValidType(type) || !isValidWindow(window)) {
-    const body: ApiError = { error: 'invalid_request', provider: 'none' };
-    return { statusCode: 400, body: JSON.stringify(body) };
-  }
-
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Cache-Control': 'public, max-age=60, stale-while-revalidate=60',
@@ -119,6 +114,10 @@ export const handler: Handler = async (event) => {
     'x-fallbacks-tried': '',
     'x-items': '0',
   };
+  if (!isValidType(type) || !isValidWindow(window)) {
+    const body: ApiError = { error: 'invalid_request', provider: 'none' };
+    return { statusCode: 400, headers, body: JSON.stringify(body) };
+  }
   const attempted: string[] = [];
 
   if (!chain) {

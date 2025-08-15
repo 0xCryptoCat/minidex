@@ -41,15 +41,15 @@ export default function ListItem({ item, rank }: Props) {
         gap: '0.5rem',
         padding: '0.5rem',
         cursor: 'pointer',
-        borderBottom: '1px solid #eee',
-        background: item.promoted ? '#fffbe6' : undefined,
+        borderBottom: '1px solid var(--border)',
+        background: item.promoted ? 'rgba(163,255,18,0.1)' : undefined,
         minHeight: 40,
       }}
     >
       <div>{rank}</div>
       <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.token.symbol}</strong>
-        <span style={{ fontSize: '0.75rem', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: '0.75rem', color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {pair}
         </span>
       </div>
@@ -80,14 +80,14 @@ export function ListItemSkeleton() {
         gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
         gap: '0.5rem',
         padding: '0.5rem',
-        borderBottom: '1px solid #eee',
+        borderBottom: '1px solid var(--border)',
         minHeight: 40,
       }}
     >
       {Array.from({ length: 7 }).map((_, i) => (
         <div
           key={i}
-          style={{ height: 16, background: '#eee', borderRadius: 4 }}
+          style={{ height: 16, background: 'var(--bg-elev)', borderRadius: 4 }}
         />
       ))}
     </div>

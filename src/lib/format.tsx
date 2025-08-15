@@ -103,22 +103,32 @@ export interface FetchMeta {
   items?: string | null;
   token?: string | null;
   priceSource?: string | null;
+  invalidPool?: string | null;
+  cgAuth?: string | null;
 }
 
 export function formatFetchMeta(meta?: FetchMeta): string | undefined {
   if (!meta) return undefined;
   const parts: string[] = [];
+  let reason: string | undefined;
   const tried = meta.tried?.split(',').filter(Boolean);
   if (tried && tried.length > 0) {
-    parts.push(`Tried: ${tried.join('→')}`);
+    const provs = tried.map((t) => {
+      const [p, r] = t.split(':');
+      if (r && !reason) reason = `${p}:${r}`;
+      return p;
+    });
+    let base = `Tried: ${provs.join('→')}`;
+    if (meta.effectiveTf) base += ` (tf: ${meta.effectiveTf})`;
+    parts.push(base);
   }
-  const extras: string[] = [];
-  if (meta.effectiveTf) extras.push(`tf: ${meta.effectiveTf}`);
-  if (meta.items) extras.push(`items: ${meta.items}`);
-  if (meta.remapped) extras.push(`remap: ${meta.remapped !== '0' ? 'yes' : 'no'}`);
-  if (meta.token) extras.push(`token: ${meta.token}`);
-  if (meta.priceSource) extras.push(`src: ${meta.priceSource}`);
-  if (extras.length > 0) parts.push(`(${extras.join(', ')})`);
-  return parts.join(' ');
+  if (meta.items) parts.push(`items: ${meta.items}`);
+  if (reason) parts.push(`reason: ${reason}`);
+  if (meta.remapped && meta.remapped !== '0') parts.push('remap: yes');
+  if (meta.invalidPool) parts.push(`invalid-pool: ${meta.invalidPool}`);
+  if (meta.cgAuth) parts.push(`cg-auth: ${meta.cgAuth}`);
+  if (meta.token) parts.push(`token: ${meta.token}`);
+  if (meta.priceSource) parts.push(`src: ${meta.priceSource}`);
+  return parts.join(' | ');
 }
 

@@ -26,7 +26,7 @@ export default function PoolSwitcher({ pools, current, onSwitch }: Props) {
         style={{
           position: 'sticky',
           top: 0,
-          background: '#fff',
+          background: 'var(--bg-elev)',
           zIndex: 1,
           marginBottom: '1rem',
         }}
@@ -71,8 +71,8 @@ export default function PoolSwitcher({ pools, current, onSwitch }: Props) {
           style={{
             padding: '0.25rem 0.5rem',
             borderRadius: '9999px',
-            border: '1px solid #999',
-            background: current === p.pairId ? '#ddd' : 'transparent',
+            border: '1px solid var(--border)',
+            background: current === p.pairId ? 'var(--bg-elev)' : 'transparent',
             minHeight: 40,
           }}
         >

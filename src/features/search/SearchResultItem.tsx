@@ -8,11 +8,11 @@ export function SearchResultSkeleton() {
   return (
     <tr style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', minHeight: 40 }}>
       <td>
-        <div style={{ width: 24, height: 24, background: '#eee', borderRadius: 4 }} />
+        <div style={{ width: 24, height: 24, background: 'var(--bg-elev)', borderRadius: 4 }} />
       </td>
       {Array.from({ length: 6 }).map((_, i) => (
         <td key={i}>
-          <div style={{ height: 16, background: '#eee', borderRadius: 4 }} />
+          <div style={{ height: 16, background: 'var(--bg-elev)', borderRadius: 4 }} />
         </td>
       ))}
     </tr>
@@ -60,7 +60,7 @@ export default function SearchResultItem({ result }: Props) {
         {token.icon ? (
           <img src={token.icon} alt={`${token.symbol} logo`} style={{ width: 24, height: 24 }} />
         ) : (
-          <div style={{ width: 24, height: 24, background: '#ccc', borderRadius: 4 }} />
+          <div style={{ width: 24, height: 24, background: 'var(--bg-elev)', borderRadius: 4 }} />
         )}
       </td>
       <td>
@@ -71,7 +71,7 @@ export default function SearchResultItem({ result }: Props) {
               <span
                 style={{
                   fontSize: '0.625rem',
-                  background: '#ccc',
+                  background: 'var(--bg-elev)',
                   padding: '0 4px',
                   borderRadius: 4,
                   flexShrink: 0,
@@ -84,7 +84,7 @@ export default function SearchResultItem({ result }: Props) {
           <span
             style={{
               fontSize: '0.75rem',
-              color: '#666',
+              color: 'var(--muted)',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -94,7 +94,7 @@ export default function SearchResultItem({ result }: Props) {
           </span>
         </div>
       </td>
-      <td style={{ fontSize: '0.875rem', color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <td style={{ fontSize: '0.875rem', color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {chain}
       </td>
       <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

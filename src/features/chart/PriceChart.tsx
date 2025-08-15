@@ -223,8 +223,8 @@ export default function PriceChart({
             top: 0,
             left: 0,
             right: 0,
-            background: 'rgba(255,0,0,0.2)',
-            color: '#900',
+            background: 'rgba(255,46,209,0.2)',
+            color: 'var(--accent-magenta)',
             padding: '2px 4px',
             fontSize: '12px',
             textAlign: 'center',
@@ -246,7 +246,7 @@ export default function PriceChart({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#666',
+            color: 'var(--muted)',
             pointerEvents: 'none',
             flexDirection: 'column',
           }}
@@ -264,7 +264,7 @@ export default function PriceChart({
             left: 4,
             top: 4,
             background: 'rgba(0,0,0,0.7)',
-            color: '#fff',
+            color: 'var(--text)',
             padding: '4px',
             fontSize: '12px',
             zIndex: 2,
@@ -274,7 +274,7 @@ export default function PriceChart({
             const link = explorerTemplate && m.txHash ? explorerTemplate.replace('{tx}', m.txHash) : undefined;
             return (
               <div key={i} style={{ marginBottom: 4 }}>
-                <div style={{ color: m.side === 'buy' ? 'lime' : 'magenta' }}>
+                <div style={{ color: m.side === 'buy' ? 'var(--accent-lime)' : 'var(--accent-magenta)' }}>
                   {m.side} {m.size?.toFixed(2)} @ {formatUsd(m.price)}
                   {m.clusterSize && m.clusterSize > 1 ? ` (${m.clusterSize})` : ''}
                 </div>
@@ -297,8 +297,8 @@ export default function PriceChart({
             position: 'absolute',
             top: 0,
             left: 0,
-            background: '#000',
-            color: '#fff',
+            background: 'var(--bg)',
+            color: 'var(--text)',
             padding: '2px 4px',
             fontSize: '10px',
             opacity: 0.7,
@@ -313,8 +313,8 @@ export default function PriceChart({
             position: 'absolute',
             top: 4,
             right: 4,
-            background: '#000',
-            color: '#fff',
+            background: 'var(--bg)',
+            color: 'var(--text)',
             padding: '2px 4px',
             fontSize: '10px',
             opacity: 0.7,

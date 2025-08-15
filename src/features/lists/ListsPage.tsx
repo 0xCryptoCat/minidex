@@ -79,7 +79,7 @@ export default function ListsPage() {
           ))}
         </select>
       </div>
-      <div style={{ flex: 1, border: '1px solid #ccc', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
         <div
           style={{
             display: 'grid',
@@ -89,7 +89,7 @@ export default function ListsPage() {
             fontWeight: 'bold',
             position: 'sticky',
             top: 0,
-            background: '#fff',
+            background: 'var(--bg-elev)',
             zIndex: 1,
           }}
         >

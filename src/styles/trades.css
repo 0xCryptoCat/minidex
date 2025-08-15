@@ -43,23 +43,23 @@
 }
 
 .tr-row {
-  min-height: 44px;
+  min-height: 52px;
   border-bottom: 1px solid var(--border);
 }
-.tr-row:nth-child(odd) { background: var(--bg); }
-.tr-row:nth-child(even) { background: var(--bg-elev); }
 
 .tr-row.buy {
+  background: rgba(163,255,18,0.06);
   color: var(--accent-lime);
 }
 .tr-row.sell {
+  background: rgba(255,46,209,0.06);
   color: var(--accent-magenta);
 }
 .tr-row.buy:hover {
-  background: rgba(163,255,18,0.08);
+  background: rgba(163,255,18,0.12);
 }
 .tr-row.sell:hover {
-  background: rgba(255,46,209,0.08);
+  background: rgba(255,46,209,0.12);
 }
 
 .tr-cell {
@@ -83,4 +83,11 @@
 }
 .tr-link:hover {
   text-decoration: underline;
+}
+
+.tr-pill {
+  background: var(--border);
+  border-radius: 1rem;
+  padding: 0 0.5rem;
+  font-size: 0.75rem;
 }

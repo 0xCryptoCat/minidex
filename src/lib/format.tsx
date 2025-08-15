@@ -10,10 +10,20 @@ export function formatCompact(value?: number): string {
   return formatter.format(value);
 }
 
-export function formatUsd(value?: number): string {
+export function formatUsd(
+  value?: number,
+  opts?: { compact?: boolean }
+): string {
   if (value === undefined || value === null || !Number.isFinite(value)) return '-';
-  if (Math.abs(value) >= 1000) return `$${formatCompact(value)}`;
+  if (Math.abs(value) >= 1000 && opts?.compact !== false)
+    return `$${formatCompact(value)}`;
   return `$${value.toFixed(4)}`;
+}
+
+export function formatDateTimeUTC(ts?: number): string {
+  if (!ts && ts !== 0) return '-';
+  const d = new Date(ts * 1000);
+  return d.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
 }
 
 export function formatTimeUTC(ts: number): string {

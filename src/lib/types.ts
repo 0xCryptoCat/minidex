@@ -146,38 +146,50 @@ export interface TokenLinks {
   telegram?: string;
 }
 
-export interface TokenPairInfo {
-  pairId: PairId;
-  dex: string;
-  version?: string;
-  poolAddress?: Address;
+export interface PoolTxCount {
+  buys: number;
+  sells: number;
+}
+
+export interface PoolDetail extends PoolSummary {
+  pairAddress?: Address;
   pairUrl?: string;
-  base?: string;
-  quote?: string;
-  liqUsd?: number;
-  liquidity?: { base?: number; quote?: number; usd?: number };
+  baseToken: { address: Address; symbol: string; name: string };
+  quoteToken: { address: Address; symbol: string; name: string };
+  priceNative?: number;
+  priceUsd?: number;
+  liquidity?: { usd?: number; base?: number; quote?: number };
   fdv?: number;
   marketCap?: number;
-  labels?: string[];
-  priceUsd?: number;
-  priceNative?: number;
-  txns?: { m5?: number; h1?: number; h6?: number; h24?: number };
+  txns?: { m5?: PoolTxCount; h1?: PoolTxCount; h6?: PoolTxCount; h24?: PoolTxCount };
   volume?: { m5?: number; h1?: number; h6?: number; h24?: number };
   priceChange?: { m5?: number; h1?: number; h6?: number; h24?: number };
-  pairCreatedAt?: UnixSeconds;
+  pairCreatedAt?: number; // ms
   gtSupported?: boolean;
 }
 
-export interface TokenDetail {
-  meta: TokenMeta;
+export interface TokenInfoBlock {
   imageUrl?: string;
-  headerUrl?: string;
+  header?: string;
   description?: string;
-  websites?: { label?: string; url: string }[];
-  socials?: { type?: string; url: string }[];
-  kpis: CoreFinance & { ageDays?: number; ageHours?: number };
-  links: TokenLinks;
-  pairs: TokenPairInfo[];
+  websites?: { label: string; url: string }[];
+  socials?: { type: string; url: string }[];
+}
+
+export interface TokenKpis {
+  priceUsd?: number;
+  priceNative?: number;
+  liqUsd?: number;
+  fdvUsd?: number;
+  mcUsd?: number;
+  priceChange24hPct?: number;
+  age?: { days: number; hours: number };
+}
+
+export interface TokenDetail {
+  info?: TokenInfoBlock;
+  kpis: TokenKpis;
+  pools: PoolDetail[];
   provider: Provider;
 }
 

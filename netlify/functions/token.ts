@@ -29,10 +29,7 @@ async function fetchCgToken(chain: string, address: string): Promise<any> {
       const res = await fetch(url, {
         headers: { 'x-cg-pro-api-key': CG_API_KEY },
       });
-      if (res.ok) {
-        const data = await res.json();
-        return data;
-      }
+      if (res.ok) return await res.json();
     } catch {
       // try next
     }
@@ -59,6 +56,7 @@ export const handler: Handler = async (event) => {
     'x-provider': 'none',
     'x-fallbacks-tried': '',
     'x-items': '0',
+    'x-ds-info': 'missing',
   };
   const attempted: string[] = [];
 
@@ -75,16 +73,9 @@ export const handler: Handler = async (event) => {
 
   log('params', { chain, address });
 
-  let meta: any = null;
-  let pairs: any[] = [];
-  const links: any = {};
-  let imageUrl: string | undefined;
-  let headerUrl: string | undefined;
-  let description: string | undefined;
-  let websites: any[] | undefined;
-  let socials: any[] | undefined;
-  let ageSec: number | undefined;
-  let provider: 'cg' | 'ds' | undefined;
+  let info: any = undefined;
+  let pools: any[] = [];
+  let provider: 'ds' | 'cg' | undefined;
   const kpis: any = {};
 
   if (DS_API_BASE) {
@@ -93,72 +84,60 @@ export const handler: Handler = async (event) => {
       const res = await fetch(`${DS_API_BASE}/token-pairs/v1/${chain}/${address}`);
       if (res.ok) {
         const ds = await res.json();
-        const tokenMeta = ds.pairs?.[0]?.baseToken || {};
-        meta = {
-          address: tokenMeta.address || address,
-          symbol: tokenMeta.symbol || '',
-          name: tokenMeta.name || '',
-          icon: tokenMeta.imageUrl || undefined,
-        };
-        pairs = Array.isArray(ds.pairs)
+        info = ds.info;
+        headers['x-ds-info'] = info ? 'present' : 'missing';
+        pools = Array.isArray(ds.pairs)
           ? ds.pairs.map((p: any) => {
               const tx = p.txns || {};
-              const mapped: any = {
+              const mapTx = (t: any) =>
+                t ? { buys: Number(t.buys || 0), sells: Number(t.sells || 0) } : undefined;
+              return {
                 pairId: p.pairId || p.pairAddress,
                 dex: p.dexId,
                 version: p.dexVersion || p.version,
-                poolAddress: p.pairAddress,
+                chain,
+                pairAddress: p.pairAddress,
                 pairUrl: p.url,
-                base: p.baseToken?.symbol,
-                quote: p.quoteToken?.symbol,
-                liqUsd:
-                  p.liquidity?.usd !== undefined
-                    ? Number(p.liquidity.usd)
-                    : p.liquidityUsd !== undefined
-                    ? Number(p.liquidityUsd)
-                    : undefined,
-                liquidity: {
-                  base: p.liquidity?.base !== undefined ? Number(p.liquidity.base) : undefined,
-                  quote: p.liquidity?.quote !== undefined ? Number(p.liquidity.quote) : undefined,
-                  usd:
-                    p.liquidity?.usd !== undefined
-                      ? Number(p.liquidity.usd)
-                      : p.liquidityUsd !== undefined
-                      ? Number(p.liquidityUsd)
-                      : undefined,
+                baseToken: {
+                  address: p.baseToken?.address,
+                  symbol: p.baseToken?.symbol,
+                  name: p.baseToken?.name,
                 },
-                fdv: p.fdv !== undefined ? Number(p.fdv) : undefined,
-                marketCap: p.marketCap !== undefined ? Number(p.marketCap) : undefined,
-                labels: Array.isArray(p.labels) ? p.labels : undefined,
-                priceUsd:
-                  p.priceUsd !== undefined
-                    ? Number(p.priceUsd)
-                    : p.price_usd !== undefined
-                    ? Number(p.price_usd)
-                    : undefined,
+                quoteToken: {
+                  address: p.quoteToken?.address,
+                  symbol: p.quoteToken?.symbol,
+                  name: p.quoteToken?.name,
+                },
                 priceNative:
                   p.priceNative !== undefined
                     ? Number(p.priceNative)
                     : p.price_native !== undefined
                     ? Number(p.price_native)
                     : undefined,
+                priceUsd:
+                  p.priceUsd !== undefined
+                    ? Number(p.priceUsd)
+                    : p.price_usd !== undefined
+                    ? Number(p.price_usd)
+                    : undefined,
+                liquidity: {
+                  usd:
+                    p.liquidity?.usd !== undefined
+                      ? Number(p.liquidity.usd)
+                      : p.liquidityUsd !== undefined
+                      ? Number(p.liquidityUsd)
+                      : undefined,
+                  base: p.liquidity?.base !== undefined ? Number(p.liquidity.base) : undefined,
+                  quote: p.liquidity?.quote !== undefined ? Number(p.liquidity.quote) : undefined,
+                },
+                fdv: p.fdv !== undefined ? Number(p.fdv) : undefined,
+                marketCap: p.marketCap !== undefined ? Number(p.marketCap) : undefined,
+                labels: Array.isArray(p.labels) ? p.labels : undefined,
                 txns: {
-                  m5:
-                    tx.m5 !== undefined
-                      ? Number((tx.m5?.buys || 0) + (tx.m5?.sells || 0))
-                      : undefined,
-                  h1:
-                    tx.h1 !== undefined
-                      ? Number((tx.h1?.buys || 0) + (tx.h1?.sells || 0))
-                      : undefined,
-                  h6:
-                    tx.h6 !== undefined
-                      ? Number((tx.h6?.buys || 0) + (tx.h6?.sells || 0))
-                      : undefined,
-                  h24:
-                    tx.h24 !== undefined
-                      ? Number((tx.h24?.buys || 0) + (tx.h24?.sells || 0))
-                      : undefined,
+                  m5: mapTx(tx.m5),
+                  h1: mapTx(tx.h1),
+                  h6: mapTx(tx.h6),
+                  h24: mapTx(tx.h24),
                 },
                 volume: {
                   m5: p.volume?.m5 !== undefined ? Number(p.volume.m5) : undefined,
@@ -167,67 +146,38 @@ export const handler: Handler = async (event) => {
                   h24: p.volume?.h24 !== undefined ? Number(p.volume.h24) : undefined,
                 },
                 priceChange: {
-                  m5:
-                    p.priceChange?.m5 !== undefined
-                      ? Number(p.priceChange.m5)
-                      : undefined,
-                  h1:
-                    p.priceChange?.h1 !== undefined
-                      ? Number(p.priceChange.h1)
-                      : undefined,
-                  h6:
-                    p.priceChange?.h6 !== undefined
-                      ? Number(p.priceChange.h6)
-                      : undefined,
-                  h24:
-                    p.priceChange?.h24 !== undefined
-                      ? Number(p.priceChange.h24)
-                      : undefined,
+                  m5: p.priceChange?.m5 !== undefined ? Number(p.priceChange.m5) : undefined,
+                  h1: p.priceChange?.h1 !== undefined ? Number(p.priceChange.h1) : undefined,
+                  h6: p.priceChange?.h6 !== undefined ? Number(p.priceChange.h6) : undefined,
+                  h24: p.priceChange?.h24 !== undefined ? Number(p.priceChange.h24) : undefined,
                 },
-                pairCreatedAt: p.pairCreatedAt || p.createdAt,
+                pairCreatedAt: p.pairCreatedAt ? Number(p.pairCreatedAt) : undefined,
                 gtSupported: isGtSupported(p.dexId, p.dexVersion || p.version),
               };
-              return mapped;
             })
           : [];
-        const info = ds.info || {};
-        imageUrl = info.imageUrl;
-        headerUrl = info.header;
-        description = info.description;
-        websites = info.websites;
-        socials = info.socials;
-        const created = pairs.reduce((min: number, p: any) => {
-          return p.pairCreatedAt && p.pairCreatedAt < min ? p.pairCreatedAt : min;
-          }, Number.MAX_SAFE_INTEGER);
-        if (created !== Number.MAX_SAFE_INTEGER) {
-          ageSec = Math.max(0, Math.floor(Date.now() / 1000 - created));
-        }
         provider = 'ds';
-        log('ds token meta');
+        log('ds token');
       }
     } catch {
       // ignore
     }
   }
 
-  if (pairs.length) {
-    const first = pairs[0];
+  if (pools.length) {
+    const first = pools[0];
     kpis.priceUsd = first.priceUsd;
-    kpis.mcUsd = first.marketCap;
+    kpis.priceNative = first.priceNative;
+    kpis.liqUsd = first.liquidity?.usd;
     kpis.fdvUsd = first.fdv;
-    kpis.liqUsd = pairs.reduce(
-      (sum: number, p: any) => sum + (p.liquidity?.usd || p.liqUsd || 0),
-      0
-    );
-    kpis.vol24hUsd = pairs.reduce(
-      (sum: number, p: any) => sum + (p.volume?.h24 || 0),
-      0
-    );
+    kpis.mcUsd = first.marketCap;
     kpis.priceChange24hPct = first.priceChange?.h24;
-  }
-  if (ageSec !== undefined) {
-    kpis.ageDays = ageSec / 86400;
-    kpis.ageHours = ageSec / 3600;
+    if (first.pairCreatedAt) {
+      const diff = Date.now() - Number(first.pairCreatedAt);
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      kpis.age = { days, hours };
+    }
   }
 
   if (CG_API_BASE && CG_API_KEY) {
@@ -242,20 +192,8 @@ export const handler: Handler = async (event) => {
         kpis.mcUsd = Number(attr.market_cap_usd);
       if (kpis.fdvUsd === undefined && attr?.fully_diluted_valuation_usd !== undefined)
         kpis.fdvUsd = Number(attr.fully_diluted_valuation_usd);
-      if (kpis.liqUsd === undefined && attr?.liquidity_usd !== undefined)
-        kpis.liqUsd = Number(attr.liquidity_usd);
-      if (kpis.vol24hUsd === undefined && attr?.volume_24h_usd !== undefined)
-        kpis.vol24hUsd = Number(attr.volume_24h_usd);
       if (kpis.priceChange24hPct === undefined && priceChange?.h24 !== undefined)
         kpis.priceChange24hPct = Number(priceChange.h24);
-      if (!meta) {
-        meta = {
-          address,
-          symbol: attr?.symbol || '',
-          name: attr?.name || '',
-          icon: attr?.image_url || undefined,
-        };
-      }
       if (!provider) provider = 'cg';
       log('cg token');
     } catch {
@@ -263,38 +201,17 @@ export const handler: Handler = async (event) => {
     }
   }
 
-  if (!links.explorer) {
-    const EXPLORER: Record<string, string> = {
-      ethereum: 'https://etherscan.io/token/{addr}',
-      arbitrum: 'https://arbiscan.io/token/{addr}',
-      polygon: 'https://polygonscan.com/token/{addr}',
-      bsc: 'https://bscscan.com/token/{addr}',
-      base: 'https://basescan.org/token/{addr}',
-      optimism: 'https://optimistic.etherscan.io/token/{addr}',
-      avalanche: 'https://snowtrace.io/token/{addr}',
-    };
-    if (EXPLORER[chain]) {
-      links.explorer = EXPLORER[chain].replace('{addr}', address);
-    }
-  }
-
-  if (meta) {
+  if (pools.length) {
     headers['x-provider'] = provider || 'none';
     headers['x-fallbacks-tried'] = attempted.join(',');
-    headers['x-items'] = String(pairs.length);
+    headers['x-items'] = String(pools.length);
     const bodyRes: TokenResponse = {
-      meta,
-      imageUrl,
-      headerUrl,
-      description,
-      websites,
-      socials,
+      info,
       kpis,
-      links,
-      pairs,
+      pools,
       provider: provider || 'cg',
     };
-    log('response', event.rawUrl, 200, pairs.length, provider || 'none');
+    log('response', event.rawUrl, 200, pools.length, provider || 'none');
     return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
   }
 
@@ -303,4 +220,3 @@ export const handler: Handler = async (event) => {
   log('response', event.rawUrl, 500, 0, provider || 'none');
   return { statusCode: 500, headers, body: JSON.stringify(body) };
 };
-

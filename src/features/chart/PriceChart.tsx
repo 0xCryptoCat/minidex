@@ -54,11 +54,12 @@ export default function PriceChart({
   const [hoveredMarkers, setHoveredMarkers] = useState<TradeMarkerCluster[] | null>(null);
   const [provider, setProvider] = useState<string>('');
   const [degraded, setDegraded] = useState(false);
-  const [hasData, setHasData] = useState(true);
+  const [hasData, setHasData] = useState(false);
   const [effectiveTf, setEffectiveTf] = useState<Timeframe | undefined>();
   const [meta, setMeta] = useState<FetchMeta | null>(null);
   const loggedRef = useRef(false);
   const sampleCandlesLoggedRef = useRef(false);
+  const rangeRafRef = useRef<number | null>(null);
   const DEBUG = (import.meta as any).env?.DEBUG === 'true';
 
   const explorerTemplate = useMemo(() => {
@@ -114,10 +115,24 @@ export default function PriceChart({
   }, [onXDomainChange]);
 
   useEffect(() => {
-    if (xDomain && chartRef.current) {
-      chartRef.current.timeScale().setVisibleRange({ from: xDomain[0] as any, to: xDomain[1] as any });
-    }
-  }, [xDomain]);
+    if (!chartRef.current || !xDomain || !hasData) return;
+    const [from, to] = xDomain;
+    if (!Number.isFinite(from) || !Number.isFinite(to) || from >= to) return;
+    const chart = chartRef.current;
+    rangeRafRef.current = requestAnimationFrame(() => {
+      try {
+        chart.timeScale().setVisibleRange({ from: from as any, to: to as any });
+      } catch {
+        // ignore if chart was destroyed
+      }
+    });
+    return () => {
+      if (rangeRafRef.current) {
+        cancelAnimationFrame(rangeRafRef.current);
+        rangeRafRef.current = null;
+      }
+    };
+  }, [xDomain, hasData]);
 
   useEffect(() => {
     markersMapRef.current.clear();
@@ -157,14 +172,15 @@ export default function PriceChart({
         candles = rollupCandles(candles, data.tf, tf);
       }
       setEffectiveTf(data.effectiveTf);
-      const c = toLWCandles(candles).map((cd) => ({
-        time: cd.time as UTCTimestamp,
-        open: cd.open,
-        high: cd.high,
-        low: cd.low,
-        close: cd.close,
-      }));
-      if (c.length > 0) {
+      const cleaned = toLWCandles(candles);
+      if (candles.length > 0 && cleaned.length === candles.length) {
+        const c = cleaned.map((cd) => ({
+          time: cd.time as UTCTimestamp,
+          open: cd.open,
+          high: cd.high,
+          low: cd.low,
+          close: cd.close,
+        }));
         const v = c.map((cd) => {
           const src = candles.find((k) => Math.floor(Number(k.t)) === cd.time);
           const vol = src && Number.isFinite(Number(src.v)) ? Number(src.v) : 0;

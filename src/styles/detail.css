@@ -1,0 +1,23 @@
+.detail { font-size:0.875rem; }
+.detail-header { width:100%; max-height:120px; object-fit:cover; margin-bottom:0.5rem; }
+.detail-top { display:flex; align-items:center; gap:0.5rem; }
+.detail-avatar img { width:40px; height:40px; border-radius:50%; }
+.detail-letter { width:40px; height:40px; border-radius:50%; background:#ccc; display:flex; align-items:center; justify-content:center; font-weight:bold; }
+.detail-title { font-size:1rem; }
+.detail-badges .badge { font-size:0.75rem; border:1px solid #999; padding:0 0.25rem; margin-right:0.25rem; }
+.detail-desc { margin-top:0.5rem; font-size:0.75rem; }
+.detail-more { margin-left:0.25rem; font-size:0.75rem; color:#4ea3ff; }
+.detail-links { margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:0.5rem; }
+.detail-links a { font-size:1rem; text-decoration:none; }
+.detail-kpis { margin-top:0.5rem; display:grid; grid-template-columns:repeat(2,1fr); gap:0.5rem; }
+.detail-kpis span { display:block; font-size:0.75rem; color:#666; }
+.pool-item { margin-top:0.5rem; font-size:0.75rem; }
+.pool-item summary { cursor:pointer; }
+.pool-body { margin-top:0.25rem; }
+.pool-metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:0.25rem; }
+.pool-metrics span { display:block; color:#666; }
+.pool-links { margin-top:0.25rem; display:flex; flex-wrap:wrap; gap:0.5rem; }
+.pool-links a, .pool-links button { font-size:0.75rem; }
+.pool-note { margin-top:0.25rem; font-size:0.7rem; color:#a33; }
+.pool-switcher { margin-top:0.5rem; display:flex; flex-direction:column; gap:0.25rem; }
+.pool-switcher button { font-size:0.75rem; }

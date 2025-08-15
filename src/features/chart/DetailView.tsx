@@ -49,11 +49,18 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
 
   const active = detail.pools.find((p) => p.pairId === pairId) || detail.pools[0];
   const info = detail.info || {};
-  const kpis = detail.kpis || {};
+  const kpis = {
+    priceUsd: active.priceUsd ?? detail.kpis?.priceUsd,
+    priceNative: active.priceNative ?? detail.kpis?.priceNative,
+    liqUsd: active.liquidity?.usd ?? detail.kpis?.liqUsd,
+    fdvUsd: active.fdv ?? detail.kpis?.fdvUsd,
+    mcUsd: active.marketCap ?? detail.kpis?.mcUsd,
+    priceChange24hPct: active.priceChange?.h24 ?? detail.kpis?.priceChange24hPct,
+  };
   const ageText = active?.pairCreatedAt
     ? formatAge(Math.floor(active.pairCreatedAt / 1000))
-    : kpis.age
-    ? `${kpis.age.days}d ${kpis.age.hours}h`
+    : detail.kpis?.age
+    ? `${detail.kpis.age.days}d ${detail.kpis.age.hours}h`
     : '-';
 
   const linkItems: { key: string; url: string }[] = [];
@@ -98,6 +105,30 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
           )}
         </div>
       </div>
+
+      {pools.length > 1 && (
+        <div className="pool-header" style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>
+          Active pool: {active.dex} {active.version && `(${active.version})`} — {active.baseToken.symbol}/{active.quoteToken.symbol}
+          {pools.length > 3 && (
+            <select
+              value={pairId}
+              onChange={(e) => {
+                const sel = pools.find((p) => p.pairId === e.target.value);
+                if (sel) onSwitch(sel);
+              }}
+              style={{ marginLeft: '0.5rem', fontSize: '0.75rem' }}
+            >
+              {pools.map((p) => (
+                <option key={p.pairId} value={p.pairId} style={{ opacity: p.gtSupported === false ? 0.5 : 1 }}>
+                  {p.dex}
+                  {p.version ? ` (${p.version})` : ''} — {p.base}/{p.quote}
+                  {p.gtSupported === false ? ' — Limited' : ''}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
 
       {linkItems.length > 0 && (
         <div className="detail-links">
@@ -173,17 +204,19 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
       {otherPools.length > 0 && (
         <div className="detail-pools">
           {otherPools.map((p) => (
-            <div key={p.pairId} className="pool-item">
-              <div className="pool-header">
+            <details key={p.pairId} className="pool-item">
+              <summary>
                 {p.dex} {p.version && `(${p.version})`} — {p.baseToken.symbol}/{p.quoteToken.symbol} — liq ${
                   p.liquidity?.usd ? formatCompact(p.liquidity.usd) : '-'
                 }
                 {!p.gtSupported && <span className="badge limited">Limited</span>}
+              </summary>
+              <div className="pool-body">
+                <div className="pool-switcher">
+                  <button onClick={() => onSwitch(p)}>Switch</button>
+                </div>
               </div>
-              <button className="switch-btn" onClick={() => onSwitch(p)}>
-                Switch to this pool
-              </button>
-            </div>
+            </details>
           ))}
         </div>
       )}

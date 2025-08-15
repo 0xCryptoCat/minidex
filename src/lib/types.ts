@@ -203,12 +203,45 @@ export interface ApiError {
   provider: 'none' | Provider;
 }
 
+/* ---------- Response metadata ---------- */
+export interface FetchMeta {
+  provider?: string | null;
+  tried?: string | null;
+  effectiveTf?: string | null;
+  remapped?: string | null;
+  items?: string | null;
+  token?: string | null;
+  priceSource?: string | null;
+  invalidPool?: string | null;
+  cgAuth?: string | null;
+}
+
+export interface ApiResult<T> {
+  data: T;
+  meta: FetchMeta;
+}
+
 /* ---------- Client cache shapes ---------- */
-export interface CacheSearchEntry { response: SearchResponse; ts: UnixSeconds; }
-export interface CachePairsEntry { response: PairsResponse; ts: UnixSeconds; }
-export interface CacheOHLCEntry  { response: OHLCResponse; ts: UnixSeconds; }
-export interface CacheTradesEntry { response: TradesResponse; ts: UnixSeconds; }
-export interface CacheTokenEntry { response: TokenResponse; ts: UnixSeconds; }
+export interface CacheSearchEntry {
+  response: ApiResult<SearchResponse>;
+  ts: UnixSeconds;
+}
+export interface CachePairsEntry {
+  response: ApiResult<PairsResponse>;
+  ts: UnixSeconds;
+}
+export interface CacheOHLCEntry {
+  response: ApiResult<OHLCResponse>;
+  ts: UnixSeconds;
+}
+export interface CacheTradesEntry {
+  response: ApiResult<TradesResponse>;
+  ts: UnixSeconds;
+}
+export interface CacheTokenEntry {
+  response: ApiResult<TokenResponse>;
+  ts: UnixSeconds;
+}
 
 /* ---------- Marker + metric types (UI) ---------- */
 export interface TradeMarker {

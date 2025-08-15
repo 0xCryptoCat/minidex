@@ -9,6 +9,7 @@ import type {
   TradesResponse,
   CacheTokenEntry,
   TokenResponse,
+  ApiResult,
 } from './types';
 
 const searchCache = new Map<string, CacheSearchEntry>();
@@ -67,42 +68,42 @@ function setMapEntry<T>(map: Map<string, { response: T; ts: number }>, key: stri
 }
 
 // Search
-export function getSearchCache(query: string): SearchResponse | undefined {
+export function getSearchCache(query: string): ApiResult<SearchResponse> | undefined {
   return getMapEntry(searchCache, `search:${query}`);
 }
-export function setSearchCache(query: string, response: SearchResponse) {
+export function setSearchCache(query: string, response: ApiResult<SearchResponse>) {
   setMapEntry(searchCache, `search:${query}`, response);
 }
 
 // Pairs
-export function getPairsCache(key: string): PairsResponse | undefined {
+export function getPairsCache(key: string): ApiResult<PairsResponse> | undefined {
   return getMapEntry(pairsCache, `pairs:${key}`);
 }
-export function setPairsCache(key: string, response: PairsResponse) {
+export function setPairsCache(key: string, response: ApiResult<PairsResponse>) {
   setMapEntry(pairsCache, `pairs:${key}`, response);
 }
 
 // OHLC
-export function getOHLCCache(key: string): OHLCResponse | undefined {
+export function getOHLCCache(key: string): ApiResult<OHLCResponse> | undefined {
   return getMapEntry(ohlcCache, `ohlc:${key}`);
 }
-export function setOHLCCache(key: string, response: OHLCResponse) {
+export function setOHLCCache(key: string, response: ApiResult<OHLCResponse>) {
   setMapEntry(ohlcCache, `ohlc:${key}`, response);
 }
 
 // Trades
-export function getTradesCache(key: string): TradesResponse | undefined {
+export function getTradesCache(key: string): ApiResult<TradesResponse> | undefined {
   return getMapEntry(tradesCache, `trades:${key}`);
 }
-export function setTradesCache(key: string, response: TradesResponse) {
+export function setTradesCache(key: string, response: ApiResult<TradesResponse>) {
   setMapEntry(tradesCache, `trades:${key}`, response);
 }
 
 // Token metrics
-export function getTokenCache(key: string): TokenResponse | undefined {
+export function getTokenCache(key: string): ApiResult<TokenResponse> | undefined {
   return getMapEntry(tokenCache, `token:${key}`);
 }
-export function setTokenCache(key: string, response: TokenResponse) {
+export function setTokenCache(key: string, response: ApiResult<TokenResponse>) {
   setMapEntry(tokenCache, `token:${key}`, response);
 }
 

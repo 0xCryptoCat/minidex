@@ -32,6 +32,7 @@ export default function ChartOnlyView({
   const [tf, setTf] = useState<Timeframe | null>(null);
   const [meta, setMeta] = useState<FetchMeta | null>(null);
   const loggedRef = useRef(false);
+  const DEBUG = (import.meta as any).env?.DEBUG === 'true';
 
   useEffect(() => {
     const cached = getCachedTf(pairId, provider);
@@ -45,8 +46,8 @@ export default function ChartOnlyView({
       for (const t of order) {
         try {
           const res = await ohlc({ pairId, chain, poolAddress, tf: t });
-          if (res.candles.length > 0 || res.effectiveTf) {
-            const eff = res.effectiveTf || t;
+          if (res.data.candles.length > 0 || res.data.effectiveTf) {
+            const eff = res.data.effectiveTf || t;
             setTf(eff);
             setCachedTf(pairId, provider, eff);
             break;
@@ -69,13 +70,13 @@ export default function ChartOnlyView({
       if (poolAddress) parts.push(poolAddress);
       parts.push(tokenAddress);
       const key = parts.join(':');
-      const cached = getTradesCache(key) as any;
-      setMeta(cached?._meta);
+      const cached = getTradesCache(key);
+      setMeta(cached?.meta || null);
     }
   }, [pairId, chain, poolAddress, tokenAddress, showMarkers]);
 
   useEffect(() => {
-    if (showMarkers && noTrades && meta && !loggedRef.current && (import.meta as any).env?.DEV) {
+    if (showMarkers && noTrades && meta && !loggedRef.current && DEBUG) {
       console.log('no-trades meta', meta);
       loggedRef.current = true;
     }

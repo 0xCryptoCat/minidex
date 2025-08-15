@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, ReactNode, CSSProperties } from 'react';
+import { useEffect, useState, useMemo, ReactNode, CSSProperties, useRef } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import type { Trade } from '../../lib/types';
 import { trades } from '../../lib/api';
@@ -55,15 +55,30 @@ export default function TradesOnlyView({
   const [meta, setMeta] = useState<FetchMeta | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('time');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const DEBUG = (import.meta as any).env?.DEBUG === 'true';
+  const sampleTradesLoggedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     trades({ pairId, chain, poolAddress, tokenAddress })
-      .then((data: any) => {
+      .then(({ data, meta }) => {
         if (cancelled) return;
         setRows(data.trades || []);
         setNoTrades(!data.trades || data.trades.length === 0);
-        setMeta(data._meta);
+        setMeta(meta);
+        if (!sampleTradesLoggedRef.current && DEBUG && data.trades?.length) {
+          console.log(
+            'sample trades',
+            data.trades.slice(0, 2).map((t) => ({
+              ts: t.ts,
+              side: t.side,
+              price: t.price,
+              amountBase: t.amountBase,
+              amountQuote: t.amountQuote,
+            }))
+          );
+          sampleTradesLoggedRef.current = true;
+        }
       })
       .catch(() => {
         if (!cancelled) setNoTrades(true);

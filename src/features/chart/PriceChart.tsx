@@ -59,6 +59,7 @@ export default function PriceChart({
   const [meta, setMeta] = useState<FetchMeta | null>(null);
   const loggedRef = useRef(false);
   const sampleCandlesLoggedRef = useRef(false);
+  const DEBUG = (import.meta as any).env?.DEBUG === 'true';
 
   const explorerTemplate = useMemo(() => {
     if (!chain) return undefined;
@@ -149,8 +150,8 @@ export default function PriceChart({
     volumeSeriesRef.current?.setData([]);
 
     const poller = createPoller(async () => {
-      const data = await ohlc({ pairId, tf, chain, poolAddress });
-      setMeta((data as any)._meta);
+      const { data, meta } = await ohlc({ pairId, tf, chain, poolAddress });
+      setMeta(meta);
       candles = data.candles;
       if (data.rollupHint === 'client' && data.tf !== tf) {
         candles = rollupCandles(candles, data.tf, tf);
@@ -176,7 +177,7 @@ export default function PriceChart({
         candleSeriesRef.current?.setData(c);
         volumeSeriesRef.current?.setData(v);
         setHasData(true);
-        if (!sampleCandlesLoggedRef.current && (import.meta as any).env?.DEV) {
+        if (!sampleCandlesLoggedRef.current && DEBUG) {
           console.log('sample candles', candles.slice(0, 2).map((cd) => ({ t: cd.t, o: cd.o, h: cd.h, l: cd.l, c: cd.c })));
           sampleCandlesLoggedRef.current = true;
         }
@@ -191,7 +192,7 @@ export default function PriceChart({
     poller.start();
 
     const tradesPoller = createPoller(async () => {
-      const tr = await trades({ pairId, chain, poolAddress, tokenAddress });
+      const { data: tr } = await trades({ pairId, chain, poolAddress, tokenAddress });
       if (tr && Array.isArray(tr.trades) && tr.trades.length > 0) {
         // noop: data is cached in trades() and used elsewhere
       }
@@ -208,7 +209,7 @@ export default function PriceChart({
   }, [pairId, tf, chain, poolAddress, tokenAddress]);
 
   useEffect(() => {
-    if (!hasData && meta && !loggedRef.current && (import.meta as any).env?.DEV) {
+    if (!hasData && meta && !loggedRef.current && DEBUG) {
       console.log('no-data meta', meta);
       loggedRef.current = true;
     }

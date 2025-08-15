@@ -62,8 +62,8 @@ export default function MetricsPanel({ pairId, tf }: Props) {
     Partial<Record<MetricKey, MetricSeries>
   >>({});
 
-  const candles = getOHLCCache(`${pairId}:${tf}`)?.candles || [];
-  const trades = getTradesCache(pairId)?.trades || [];
+  const candles = getOHLCCache(`${pairId}:${tf}`)?.data.candles || [];
+  const trades = getTradesCache(pairId)?.data.trades || [];
 
   function toggle(key: MetricKey) {
     if (enabled.includes(key)) {

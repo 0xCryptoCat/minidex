@@ -42,9 +42,9 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
 
   useEffect(() => {
     let cancelled = false;
-    fetchToken(chain, address).then((res) => {
+    fetchToken(chain, address).then(({ data }) => {
       if (cancelled) return;
-      if (!('error' in res)) setDetail(res);
+      if (!('error' in data)) setDetail(data);
     });
     return () => {
       cancelled = true;

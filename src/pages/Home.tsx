@@ -9,12 +9,12 @@ export default function Home() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: '0.5rem',
-        padding: '1rem',
+        gap: 'calc(var(--padding) / 2)',
+        padding: 'var(--padding)',
       }}
     >
       <SearchInput autoFocus large />
-      <p style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>Search tokens or paste address</p>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Search tokens or paste address</p>
     </div>
   );
 }

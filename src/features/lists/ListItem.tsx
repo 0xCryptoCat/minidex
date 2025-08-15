@@ -27,31 +27,31 @@ export default function ListItem({ item, rank }: Props) {
     ? Math.floor((Date.now() / 1000 - item.createdAt) / 86400)
     : undefined;
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={handleClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') handleClick();
-      }}
-      className="list-item-row"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-        gap: '0.5rem',
-        padding: '0.5rem',
-        cursor: 'pointer',
-        borderBottom: '1px solid var(--border)',
-        background: item.promoted ? 'rgba(163,255,18,0.1)' : undefined,
-        minHeight: 40,
-      }}
-    >
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') handleClick();
+        }}
+        className="list-item-row"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+          gap: 'calc(var(--padding) / 2)',
+          padding: 'calc(var(--padding) / 2)',
+          cursor: 'pointer',
+          borderBottom: '1px solid var(--border)',
+          background: item.promoted ? 'rgba(140,255,0,0.1)' : undefined,
+          minHeight: 40,
+        }}
+      >
       <div>{rank}</div>
       <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.token.symbol}</strong>
-        <span style={{ fontSize: '0.75rem', color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {pair}
-        </span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {pair}
+          </span>
       </div>
       <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {ageDays !== undefined ? `${ageDays}d` : '-'}
@@ -74,16 +74,16 @@ export default function ListItem({ item, rank }: Props) {
 
 export function ListItemSkeleton() {
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-        gap: '0.5rem',
-        padding: '0.5rem',
-        borderBottom: '1px solid var(--border)',
-        minHeight: 40,
-      }}
-    >
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+          gap: 'calc(var(--padding) / 2)',
+          padding: 'calc(var(--padding) / 2)',
+          borderBottom: '1px solid var(--border)',
+          minHeight: 40,
+        }}
+      >
       {Array.from({ length: 7 }).map((_, i) => (
         <div
           key={i}

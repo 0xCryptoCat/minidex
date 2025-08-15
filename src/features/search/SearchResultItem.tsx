@@ -104,7 +104,7 @@ export default function SearchResultItem({ result }: Props) {
           <span
             style={{
               fontSize: '0.75rem',
-              color: 'var(--muted)',
+              color: 'var(--text-muted)',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',

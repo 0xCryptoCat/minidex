@@ -87,7 +87,7 @@ export const handler: Handler = async (event) => {
     let provider: 'ds' | 'cg' | undefined;
     const kpis: any = {};
 
-    if (DS_API_BASE) {
+    if (dsBase) {
       try {
         attempted.push('ds');
         const res = await fetch(`${dsBase}/token-pairs/v1/${chain}/${address.toLowerCase()}`);

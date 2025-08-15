@@ -4,6 +4,7 @@ import type { ListItem as Item, Window, ListsResponse, Provider } from '../../li
 import ListItem from './ListItem';
 import VirtualList from '../../components/VirtualList';
 import { createPoller } from '../../lib/polling';
+import { useProvider } from '../../lib/provider';
 
 const windows: Window[] = ['1h', '1d', '1w'];
 
@@ -14,6 +15,7 @@ export default function ListsPage() {
   const [provider, setProvider] = useState<(Provider | 'none') | undefined>();
   const [sortKey, setSortKey] = useState<keyof Item | 'rank'>('rank');
   const [sortAsc, setSortAsc] = useState(false);
+  const { setProvider: setGlobalProvider } = useProvider();
 
   const fetchLists = useCallback(async () => {
     if (!chain || !type) return;
@@ -29,14 +31,16 @@ export default function ListsPage() {
     const data = (await res.json()) as ListsResponse;
     setItems(data.items);
     setProvider(data.provider);
-  }, [chain, type, windowSel]);
+    setGlobalProvider(data.provider === 'none' ? '' : data.provider);
+  }, [chain, type, windowSel, setGlobalProvider]);
 
   useEffect(() => {
+    setGlobalProvider('');
     fetchLists();
     const poller = createPoller(fetchLists, 60000);
     poller.start();
     return () => poller.stop();
-  }, [fetchLists]);
+  }, [fetchLists, setGlobalProvider]);
 
   function handleSort(key: keyof Item | 'rank') {
     if (sortKey === key) {

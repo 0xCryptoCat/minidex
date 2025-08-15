@@ -1,19 +1,20 @@
 import SearchInput from '../features/search/SearchInput';
+import { useProvider } from '../lib/provider';
 
 export default function Header() {
+  const { provider } = useProvider();
   return (
     <header className="header" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-      <div style={{ width: 24 }} />
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1 }} />
+      <div style={{ flex: 2, maxWidth: 600 }}>
         <SearchInput />
       </div>
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <a href="https://github.com/smol-ai/minidex" target="_blank" rel="noopener noreferrer">
-          GitHub
-        </a>
-        <a href="https://github.com/smol-ai/minidex#readme" target="_blank" rel="noopener noreferrer">
-          Docs
-        </a>
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+        {provider && (
+          <span className="provider-badge" aria-label={`data provider ${provider}`}>
+            {provider}
+          </span>
+        )}
       </div>
     </header>
   );

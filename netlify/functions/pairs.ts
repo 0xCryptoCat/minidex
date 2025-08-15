@@ -9,6 +9,7 @@ import type {
 } from '../../src/lib/types';
 import fs from 'fs/promises';
 import { isGtSupported } from '../shared/dex-allow';
+import { toGTNetwork } from '../shared/chains';
 
 const GT_FIXTURE = '../../fixtures/pairs-gt.json';
 
@@ -90,6 +91,7 @@ export const handler: Handler = async (event) => {
     'x-provider': 'none',
     'x-fallbacks-tried': '',
     'x-items': '0',
+    'x-gt-network': 'none',
   };
   const attempted: string[] = [];
   let provider: Provider | 'none' = 'none';
@@ -114,6 +116,17 @@ export const handler: Handler = async (event) => {
     logError('unsupported network', chain);
     log('response', event.rawUrl, 200, 0, provider);
     return { statusCode: 200, headers, body: JSON.stringify(body) };
+  }
+
+  const markUnsupported = () => {
+    headers['x-gt-network'] = 'none';
+  };
+
+  const gt = toGTNetwork(chain);
+  if (!gt) {
+    markUnsupported();
+  } else {
+    headers['x-gt-network'] = gt;
   }
 
   try {
@@ -181,12 +194,17 @@ export const handler: Handler = async (event) => {
         return !isValidAddress(addr);
       });
       if (needsGtPools) {
-        const gtPoolsUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}/pools`;
-        try {
-          const gtPools = await fetchJson(gtPoolsUrl);
-          gtArr = Array.isArray(gtPools?.data) ? gtPools.data : [];
-        } catch (err) {
-          logError('gt pools fetch failed', gtPoolsUrl, err);
+        if (gt) {
+          attempted.push('gt');
+          const gtPoolsUrl = `${GT_API_BASE}/networks/${gt}/tokens/${address}/pools`;
+          try {
+            const gtPools = await fetchJson(gtPoolsUrl);
+            gtArr = Array.isArray(gtPools?.data) ? gtPools.data : [];
+          } catch (err) {
+            logError('gt pools fetch failed', gtPoolsUrl, err);
+          }
+        } else {
+          markUnsupported();
         }
       }
 
@@ -217,6 +235,9 @@ export const handler: Handler = async (event) => {
             poolAddr = match.attributes.pool_address;
           }
         }
+        if (!isValidAddress(poolAddr)) {
+          continue;
+        }
         if (match) {
           const attr = match.attributes || {};
           if (liqUsd === undefined) {
@@ -230,7 +251,7 @@ export const handler: Handler = async (event) => {
           base: p.baseToken?.symbol,
           quote: p.quoteToken?.symbol,
           chain: chainSlug,
-          poolAddress: isValidAddress(poolAddr) ? (poolAddr as Address) : undefined,
+          poolAddress: poolAddr as Address,
           liqUsd: liqUsd !== undefined ? Number(liqUsd) : undefined,
           gtSupported: isGtSupported(p.dexId, version),
         });
@@ -263,9 +284,16 @@ export const handler: Handler = async (event) => {
       return { statusCode: 500, headers, body: JSON.stringify(body) };
     }
     try {
+      if (!gt) {
+        markUnsupported();
+        headers['x-fallbacks-tried'] = attempted.join(',');
+        const body: ApiError = { error: 'upstream_error', provider: 'none' };
+        log('response', event.rawUrl, 500, 0, provider);
+        return { statusCode: 500, headers, body: JSON.stringify(body) };
+      }
       attempted.push('gt');
-      const tokenUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}`;
-      const poolsUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}/pools`;
+      const tokenUrl = `${GT_API_BASE}/networks/${gt}/tokens/${address}`;
+      const poolsUrl = `${GT_API_BASE}/networks/${gt}/tokens/${address}/pools`;
       log('try gt', tokenUrl, poolsUrl);
       const tokenResp = await fetchJson(tokenUrl);
       const poolsResp = await fetchJson(poolsUrl);
@@ -276,6 +304,8 @@ export const handler: Handler = async (event) => {
         const dex = attr.dex || attr.name || '';
         const version = attr.version || attr.dex_version;
         const liqUsd = attr.reserve_in_usd ?? attr.reserve_usd;
+        const poolAddr = attr.pool_address;
+        if (!isValidAddress(poolAddr)) continue;
         pools.push({
           pairId: d.id,
           dex,
@@ -283,7 +313,7 @@ export const handler: Handler = async (event) => {
           base: attr.base_token?.symbol,
           quote: attr.quote_token?.symbol,
           chain: chain as string,
-          poolAddress: attr.pool_address as Address,
+          poolAddress: poolAddr as Address,
           liqUsd: liqUsd !== undefined ? Number(liqUsd) : undefined,
           gtSupported: isGtSupported(dex, version),
         });

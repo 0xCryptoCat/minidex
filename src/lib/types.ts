@@ -89,9 +89,9 @@ export type TradeSide = 'buy' | 'sell';
 export interface Trade {
   ts: UnixSeconds;
   side: TradeSide;
-  price: number;            // price in USD (if available); otherwise calc client
-  amountBase?: number;      // filled base amount
-  amountQuote?: number;     // filled quote amount in USD (if available)
+  price: number;            // price in USD (token-centric)
+  amountBase?: number;      // filled amount of token of interest
+  amountQuote?: number;     // filled amount of counter token
   txHash?: TxHash;
   wallet?: Address;
 }

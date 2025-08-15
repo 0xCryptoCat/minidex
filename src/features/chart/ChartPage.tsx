@@ -9,7 +9,7 @@ import TradesOnlyView from './TradesOnlyView';
 import copy from '../../copy/en.json';
 
 // Views for chart page
-type View = 'chart' | 'depth' | 'trades' | 'detail';
+type View = 'chart' | 'trades' | 'detail';
 
 export default function ChartPage() {
   const { chain, address, pairId } = useParams<{ chain: string; address: string; pairId?: string }>();
@@ -19,7 +19,7 @@ export default function ChartPage() {
   const [currentPool, setCurrentPool] = useState<PoolSummary | null>(null);
   const [provider, setProvider] = useState<Provider | null>(null);
   const [searchParams] = useSearchParams();
-  const view = (searchParams.get('view') as View) || 'chart';
+  const view = (searchParams.get('view') as View) || 'detail';
   const [xDomain, setXDomain] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +115,7 @@ export default function ChartPage() {
             />
           )}
 
-          {view === 'chart' && currentPool && currentPool.poolAddress && provider && (
+          {view === 'chart' && currentPool && currentPool.poolAddress && provider && address && (
             <div style={{ marginTop: '1rem' }}>
               <ChartOnlyView
                 pairId={currentPool.pairId}
@@ -124,14 +124,16 @@ export default function ChartPage() {
                 provider={provider}
                 xDomain={xDomain}
                 onXDomainChange={setXDomain}
+                tokenAddress={address}
               />
             </div>
           )}
-          {view === 'trades' && currentPool && currentPool.poolAddress && (
+          {view === 'trades' && currentPool && currentPool.poolAddress && address && (
             <TradesOnlyView
               pairId={currentPool.pairId}
               chain={currentPool.chain}
               poolAddress={currentPool.poolAddress}
+              tokenAddress={address}
             />
           )}
           {view === 'detail' && currentPool && address && (

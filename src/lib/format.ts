@@ -8,6 +8,12 @@ export function formatCompact(value?: number): string {
   return formatter.format(value);
 }
 
+export function formatUsd(value?: number): string {
+  if (value === undefined || value === null || !Number.isFinite(value)) return '-';
+  if (Math.abs(value) >= 1000) return `$${formatCompact(value)}`;
+  return `$${value.toFixed(4)}`;
+}
+
 export function formatAge(createdTs?: number): string {
   if (!createdTs) return '-';
   const now = Math.floor(Date.now() / 1000);
@@ -26,6 +32,8 @@ export interface FetchMeta {
   effectiveTf?: string | null;
   remapped?: string | null;
   items?: string | null;
+  token?: string | null;
+  priceSource?: string | null;
 }
 
 export function formatFetchMeta(meta?: FetchMeta): string | undefined {
@@ -39,6 +47,8 @@ export function formatFetchMeta(meta?: FetchMeta): string | undefined {
   if (meta.effectiveTf) extras.push(`tf: ${meta.effectiveTf}`);
   if (meta.items) extras.push(`items: ${meta.items}`);
   if (meta.remapped) extras.push(`remap: ${meta.remapped !== '0' ? 'yes' : 'no'}`);
+  if (meta.token) extras.push(`token: ${meta.token}`);
+  if (meta.priceSource) extras.push(`src: ${meta.priceSource}`);
   if (extras.length > 0) parts.push(`(${extras.join(', ')})`);
   return parts.join(' ');
 }

@@ -10,6 +10,7 @@ import type {
 import fs from 'fs/promises';
 import { CHAIN_TO_GT_NETWORK } from '../shared/chains';
 import { buildCandlesFromTrades } from '../shared/agg';
+import { MAP_TF_GT, MAP_TF_CG, TF_SECONDS } from '../../src/lib/timeframes';
 
 const GT_FIXTURE = '../../fixtures/ohlc-gt-1m.json';
 const DS_FIXTURE = '../../fixtures/ohlc-ds-1m.json';
@@ -78,33 +79,6 @@ function sanitizeCandles(candles: Candle[]): Candle[] {
   }
   return deduped;
 }
-
-const MAP_TF_GT: Record<string, string> = {
-  '1m': 'minute',
-  '5m': '5m',
-  '15m': '15m',
-  '1h': 'hour',
-  '4h': '4h',
-  '1d': 'day',
-};
-
-const MAP_TF_CG: Record<string, string> = {
-  '1m': '1m',
-  '5m': '5m',
-  '15m': '15m',
-  '1h': '1h',
-  '4h': '4h',
-  '1d': '1d',
-};
-
-const TF_SECONDS: Record<string, number> = {
-  '1m': 60,
-  '5m': 300,
-  '15m': 900,
-  '1h': 3600,
-  '4h': 14400,
-  '1d': 86400,
-};
 
 export const handler: Handler = async (event) => {
   const pairId = event.queryStringParameters?.pairId;

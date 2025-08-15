@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { createChart, type IChartApi, type UTCTimestamp } from 'lightweight-charts';
 import type { Timeframe, Candle } from '../../lib/types';
 import { ohlc, trades } from '../../lib/api';
-import { formatFetchMeta, type FetchMeta } from '../../lib/format';
+import { formatFetchMeta, type FetchMeta, formatUsd } from '../../lib/format';
 import { createPoller } from '../../lib/polling';
 import { rollupCandles } from '../../lib/time';
 import type { TradeMarkerCluster } from '../trades/TradeMarkers';
@@ -33,6 +33,7 @@ interface Props {
   markers?: TradeMarkerCluster[];
   chain: string;
   poolAddress: string;
+  tokenAddress: string;
 }
 
 export default function PriceChart({
@@ -43,6 +44,7 @@ export default function PriceChart({
   markers = [],
   chain,
   poolAddress,
+  tokenAddress,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -189,7 +191,7 @@ export default function PriceChart({
     poller.start();
 
     const tradesPoller = createPoller(async () => {
-      const tr = await trades({ pairId, chain, poolAddress });
+      const tr = await trades({ pairId, chain, poolAddress, tokenAddress });
       if (tr && Array.isArray(tr.trades) && tr.trades.length > 0) {
         // noop: data is cached in trades() and used elsewhere
       }
@@ -203,7 +205,7 @@ export default function PriceChart({
       poller.stop();
       tradesPoller.stop();
     };
-  }, [pairId, tf, chain, poolAddress]);
+  }, [pairId, tf, chain, poolAddress, tokenAddress]);
 
   useEffect(() => {
     if (!hasData && meta && !loggedRef.current && (import.meta as any).env?.DEV) {
@@ -273,7 +275,7 @@ export default function PriceChart({
             return (
               <div key={i} style={{ marginBottom: 4 }}>
                 <div style={{ color: m.side === 'buy' ? 'lime' : 'magenta' }}>
-                  {m.side} {m.size?.toFixed(2)} @ ${m.price.toFixed(4)}
+                  {m.side} {m.size?.toFixed(2)} @ {formatUsd(m.price)}
                   {m.clusterSize && m.clusterSize > 1 ? ` (${m.clusterSize})` : ''}
                 </div>
                 {m.walletShort && m.clusterSize === 1 && <div>{m.walletShort}</div>}
@@ -321,6 +323,15 @@ export default function PriceChart({
           {provider}
         </div>
       )}
+      <div
+        style={{
+          fontSize: '10px',
+          textAlign: 'center',
+          marginTop: 4,
+        }}
+      >
+        UTC | TF: {effectiveTf || tf}
+      </div>
     </div>
   );
 }

@@ -14,9 +14,18 @@ interface Props {
   provider: Provider;
   xDomain: [number, number] | null;
   onXDomainChange?: (d: [number, number]) => void;
+  tokenAddress: string;
 }
 
-export default function ChartOnlyView({ pairId, chain, poolAddress, provider, xDomain, onXDomainChange }: Props) {
+export default function ChartOnlyView({
+  pairId,
+  chain,
+  poolAddress,
+  provider,
+  xDomain,
+  onXDomainChange,
+  tokenAddress,
+}: Props) {
   const [showMarkers, setShowMarkers] = useState(false);
   const [markers, setMarkers] = useState<TradeMarkerCluster[]>([]);
   const [noTrades, setNoTrades] = useState(false);
@@ -51,18 +60,19 @@ export default function ChartOnlyView({ pairId, chain, poolAddress, provider, xD
 
   useEffect(() => {
     if (showMarkers) {
-      const m = getTradeMarkers(pairId, chain, poolAddress);
+      const m = getTradeMarkers(pairId, chain, poolAddress, tokenAddress);
       setMarkers(m);
       setNoTrades(m.length === 0);
       const parts: string[] = [];
       if (chain) parts.push(chain);
       parts.push(pairId);
       if (poolAddress) parts.push(poolAddress);
+      parts.push(tokenAddress);
       const key = parts.join(':');
       const cached = getTradesCache(key) as any;
       setMeta(cached?._meta);
     }
-  }, [pairId, chain, poolAddress, showMarkers]);
+  }, [pairId, chain, poolAddress, tokenAddress, showMarkers]);
 
   useEffect(() => {
     if (showMarkers && noTrades && meta && !loggedRef.current && (import.meta as any).env?.DEV) {
@@ -75,7 +85,7 @@ export default function ChartOnlyView({ pairId, chain, poolAddress, provider, xD
     setShowMarkers((v) => {
       const next = !v;
       if (next) {
-        setMarkers(getTradeMarkers(pairId, chain, poolAddress));
+        setMarkers(getTradeMarkers(pairId, chain, poolAddress, tokenAddress));
       } else {
         setMarkers([]);
       }
@@ -110,6 +120,7 @@ export default function ChartOnlyView({ pairId, chain, poolAddress, provider, xD
         markers={showMarkers ? markers : []}
         chain={chain}
         poolAddress={poolAddress}
+        tokenAddress={tokenAddress}
       />
     </div>
   );

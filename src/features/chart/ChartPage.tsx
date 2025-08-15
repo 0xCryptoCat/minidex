@@ -83,6 +83,12 @@ export default function ChartPage() {
     setNoData(!p.poolAddress);
   }
 
+  const tradeSymbols = currentPool && token
+    ? token.symbol === currentPool.base
+      ? { baseSymbol: currentPool.base, quoteSymbol: currentPool.quote }
+      : { baseSymbol: currentPool.quote, quoteSymbol: currentPool.base }
+    : null;
+
   return (
     <div style={{ padding: '1rem' }}>
       {token && (
@@ -134,8 +140,8 @@ export default function ChartPage() {
               chain={currentPool.chain}
               poolAddress={currentPool.poolAddress}
               tokenAddress={address}
-              baseSymbol={currentPool.base}
-              quoteSymbol={currentPool.quote}
+              baseSymbol={tradeSymbols?.baseSymbol || currentPool.base}
+              quoteSymbol={tradeSymbols?.quoteSymbol || currentPool.quote}
             />
           )}
           {view === 'detail' && currentPool && address && (

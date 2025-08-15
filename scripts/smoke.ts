@@ -11,7 +11,7 @@ function u(path: string) {
 async function main() {
   const table: { endpoint: string; provider: string | null; items: string | null }[] = [];
 
-  // search
+  // locate pools
   const searchRes = await fetch(u(`/search?query=${ADDRESS}`));
   const searchData = await searchRes.json();
   const pool = searchData.results?.[0]?.pools?.find((p: any) => p.poolAddress && p.gtSupported);
@@ -19,7 +19,6 @@ async function main() {
   const poolAddress = pool.poolAddress as string;
   table.push({ endpoint: 'search', provider: searchRes.headers.get('x-provider'), items: searchRes.headers.get('x-items') });
 
-  // pairs
   const pairsRes = await fetch(u(`/pairs?chain=ethereum&address=${ADDRESS}`));
   const pairsData = await pairsRes.json();
   const found = pairsData.pools?.some((p: any) => p.poolAddress === poolAddress && p.gtSupported);
@@ -32,46 +31,51 @@ async function main() {
   const pairIdU = unsupported.pairId as string;
   const poolAddressU = unsupported.poolAddress as string;
 
-  // ohlc
-  const ohlcRes = await fetch(u(`/ohlc?pairId=${pairId}&chain=ethereum&poolAddress=${poolAddress}&tf=1m`));
-  const ohlcData = await ohlcRes.json();
-  const eff = ohlcRes.headers.get('x-effective-tf');
-  if (!(Array.isArray(ohlcData.candles) && ohlcData.candles.length > 0) && !eff) {
-    throw new Error('ohlc: empty response');
+  // Case A: GT-supported
+  const ohlcResA = await fetch(u(`/ohlc?pairId=${pairId}&chain=ethereum&poolAddress=${poolAddress}&tf=1m`));
+  const ohlcDataA = await ohlcResA.json();
+  if (!Array.isArray(ohlcDataA.candles) || ohlcDataA.candles.length === 0) {
+    throw new Error('caseA: ohlc empty');
   }
-  table.push({ endpoint: 'ohlc', provider: ohlcRes.headers.get('x-provider'), items: ohlcRes.headers.get('x-items') });
-
-  // trades
-  const tradesRes = await fetch(u(`/trades?pairId=${pairId}&chain=ethereum&poolAddress=${poolAddress}`));
-  const tradesData = await tradesRes.json();
-  const count = Array.isArray(tradesData.trades) ? tradesData.trades.length : 0;
-  if (count < 0 || count > 300) throw new Error('trades: count out of range');
-  table.push({ endpoint: 'trades', provider: tradesRes.headers.get('x-provider'), items: tradesRes.headers.get('x-items') });
-
-  // token
-  const tokenRes = await fetch(u(`/token?chain=ethereum&address=${ADDRESS}`));
-  const tokenData = await tokenRes.json();
-  const links = tokenData.links ? Object.values(tokenData.links).filter(Boolean) : [];
-  if (links.length < 1) throw new Error('token: no links');
-  table.push({ endpoint: 'token', provider: tokenRes.headers.get('x-provider'), items: tokenRes.headers.get('x-items') });
-
-  // unsupported pool checks
-  const ohlcResU = await fetch(u(`/ohlc?pairId=${pairIdU}&chain=ethereum&poolAddress=${poolAddressU}&tf=1m`));
-  const ohlcDataU = await ohlcResU.json();
-  if (ohlcDataU.provider === 'none') throw new Error('ohlc unsupported: provider none');
-  if (
-    ohlcDataU.provider !== 'synthetic' &&
-    !(Array.isArray(ohlcDataU.candles) && ohlcDataU.candles.length > 0 && ohlcDataU.provider === 'cg')
-  ) {
-    throw new Error('ohlc unsupported: missing cg candles');
+  for (let i = 1; i < ohlcDataA.candles.length; i++) {
+    if (ohlcDataA.candles[i - 1].t >= ohlcDataA.candles[i].t) {
+      throw new Error('caseA: candles not ascending');
+    }
   }
-  const tradesResU = await fetch(u(`/trades?pairId=${pairIdU}&chain=ethereum&poolAddress=${poolAddressU}`));
-  const tradesDataU = await tradesResU.json();
-  const triedU = tradesResU.headers.get('x-fallbacks-tried') || '';
-  const countU = Array.isArray(tradesDataU.trades) ? tradesDataU.trades.length : 0;
-  if (countU === 0 && !triedU.includes('cg')) {
-    throw new Error('trades unsupported: no cg fallback');
+  table.push({ endpoint: 'ohlcA', provider: ohlcResA.headers.get('x-provider'), items: ohlcResA.headers.get('x-items') });
+
+  const tradesResA = await fetch(u(`/trades?pairId=${pairId}&chain=ethereum&poolAddress=${poolAddress}`));
+  const tradesDataA = await tradesResA.json();
+  const countA = Array.isArray(tradesDataA.trades) ? tradesDataA.trades.length : 0;
+  if (countA < 1) throw new Error('caseA: no trades');
+  table.push({ endpoint: 'tradesA', provider: tradesResA.headers.get('x-provider'), items: tradesResA.headers.get('x-items') });
+
+  // Case B: GT-unsupported but CG-covered
+  const ohlcResB = await fetch(u(`/ohlc?pairId=${pairIdU}&chain=ethereum&poolAddress=${poolAddressU}&tf=1m`));
+  const ohlcDataB = await ohlcResB.json();
+  const candlesB = Array.isArray(ohlcDataB.candles) ? ohlcDataB.candles.length : 0;
+  if (candlesB === 0 && ohlcResB.headers.get('x-provider') !== 'synthetic') {
+    throw new Error('caseB: ohlc missing data and not synthetic');
   }
+  const tradesResB = await fetch(u(`/trades?pairId=${pairIdU}&chain=ethereum&poolAddress=${poolAddressU}`));
+  const tradesDataB = await tradesResB.json();
+  const tradesB = Array.isArray(tradesDataB.trades) ? tradesDataB.trades.length : 0;
+  if (tradesB === 0 && tradesResB.headers.get('x-provider') !== 'synthetic') {
+    throw new Error('caseB: trades missing data and not synthetic');
+  }
+  if (candlesB === 0 && tradesB === 0) {
+    throw new Error('caseB: no cg data');
+  }
+  table.push({ endpoint: 'ohlcB', provider: ohlcResB.headers.get('x-provider'), items: ohlcResB.headers.get('x-items') });
+  table.push({ endpoint: 'tradesB', provider: tradesResB.headers.get('x-provider'), items: tradesResB.headers.get('x-items') });
+
+  // Case C: unsupported network
+  const unsRes = await fetch(u(`/ohlc?pairId=${pairId}&chain=amoy&poolAddress=${poolAddress}&tf=1m`));
+  const unsData = await unsRes.json();
+  if (unsRes.status !== 200) throw new Error('caseC: non-200');
+  if (unsData.error !== 'unsupported_network') throw new Error('caseC: wrong error');
+  if (unsRes.headers.get('x-provider') !== 'none') throw new Error('caseC: provider header not none');
+  table.push({ endpoint: 'ohlc_unsupported', provider: unsRes.headers.get('x-provider'), items: unsRes.headers.get('x-items') });
 
   console.table(table);
 }

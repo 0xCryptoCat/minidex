@@ -46,17 +46,25 @@ export interface PoolSummary {
 }
 
 /* ---------- /api/search ---------- */
-export interface SearchResult {
-  chain: ChainSlug;
-  token: TokenMeta;
-  core: CoreFinance;
-  pools: PoolSummary[];
+export interface SearchTokenSummary {
+  address: Address;
+  symbol: string;
+  name: string;
+  icon?: string;
+  priceUsd: number;
+  liqUsd: number;
+  vol24hUsd: number;
+  chainIcons: string[]; // up to 3 chains by liquidity
+  poolCount: number;
+  gtSupported: boolean; // true if any pool is supported
   provider: Provider;
+  chainCount?: number; // total distinct chains
+  pools?: PoolSummary[]; // underlying pools for navigation
 }
 
 export interface SearchResponse {
   query: string;           // original user input (address)
-  results: SearchResult[];
+  results: SearchTokenSummary[];
 }
 
 /* ---------- /api/pairs ---------- */

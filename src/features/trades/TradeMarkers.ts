@@ -50,12 +50,14 @@ export function getTradeMarkers(
   pairId: string,
   chain?: string,
   poolAddress?: string,
+  tokenAddress?: string,
   limit = MAX_MARKERS
 ): TradeMarkerCluster[] {
   const parts = [] as string[];
   if (chain) parts.push(chain);
   parts.push(pairId);
   if (poolAddress) parts.push(poolAddress);
+  if (tokenAddress) parts.push(tokenAddress);
   const key = parts.join(':');
   const cached = getTradesCache(key);
   if (!cached) return [];

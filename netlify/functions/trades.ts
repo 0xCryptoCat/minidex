@@ -30,12 +30,16 @@ export const handler: Handler = async (event) => {
   const pairId = event.queryStringParameters?.pairId;
   const chain = event.queryStringParameters?.chain;
   const poolAddress = event.queryStringParameters?.poolAddress;
+  const tokenParam = event.queryStringParameters?.token;
   const limit = Number(event.queryStringParameters?.limit) || 200;
   const windowH = Number(event.queryStringParameters?.window) || 24;
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
   const gtSupported = event.queryStringParameters?.gtSupported !== 'false';
   const gtNetwork = chain ? CHAIN_TO_GT_NETWORK[chain] : undefined;
   const validPool = /^0x[0-9a-fA-F]{40}$/.test(poolAddress || '');
+  const tokenOfInterest = tokenParam && /^0x[0-9a-fA-F]{40}$/.test(tokenParam)
+    ? tokenParam.toLowerCase()
+    : undefined;
 
   const SUPPORTED_CHAINS = new Set([
     'ethereum',
@@ -67,7 +71,7 @@ export const handler: Handler = async (event) => {
     return { statusCode: 200, headers, body: JSON.stringify(body) };
   }
 
-  log('params', { pairId, chain, poolAddress, forceProvider, limit, windowH, gtSupported, gtNetwork });
+  log('params', { pairId, chain, poolAddress, tokenOfInterest, forceProvider, limit, windowH, gtSupported, gtNetwork });
 
   if (!gtNetwork) {
     log('skip gt: invalid network', chain);
@@ -97,6 +101,7 @@ export const handler: Handler = async (event) => {
 
   let trades: Trade[] = [];
   let provider: Provider | 'none' = 'none';
+  let priceSourceHeader: 'from' | 'to' | '' = '';
   const cutoff = Date.now() - windowH * 3600 * 1000;
 
   if (
@@ -113,12 +118,42 @@ export const handler: Handler = async (event) => {
         const list = Array.isArray(gtData.data) ? gtData.data : [];
         const tradesGt = list.map((t: any) => {
           const attrs = t.attributes || {};
+          const ts = Math.floor(Date.parse(attrs.block_timestamp) / 1000);
+          const side = String(attrs.kind).toLowerCase() === 'buy' ? 'buy' : 'sell';
+          const toAddr = String(attrs.to_token_address || '').toLowerCase();
+          const fromAddr = String(attrs.from_token_address || '').toLowerCase();
+          let price = 0;
+          let amountBase = 0;
+          let amountQuote = 0;
+          let src: 'from' | 'to' = 'to';
+          if (tokenOfInterest && tokenOfInterest === toAddr) {
+            price = Number(attrs.price_to_in_usd ?? 0);
+            amountBase = Number(attrs.to_token_amount ?? 0);
+            amountQuote = Number(attrs.from_token_amount ?? 0);
+            src = 'to';
+          } else if (tokenOfInterest && tokenOfInterest === fromAddr) {
+            price = Number(attrs.price_from_in_usd ?? 0);
+            amountBase = Number(attrs.from_token_amount ?? 0);
+            amountQuote = Number(attrs.to_token_amount ?? 0);
+            src = 'from';
+          } else if (attrs.price_to_in_usd !== undefined) {
+            price = Number(attrs.price_to_in_usd ?? 0);
+            amountBase = Number(attrs.to_token_amount ?? 0);
+            amountQuote = Number(attrs.from_token_amount ?? 0);
+            src = 'to';
+          } else {
+            price = Number(attrs.price_from_in_usd ?? 0);
+            amountBase = Number(attrs.from_token_amount ?? 0);
+            amountQuote = Number(attrs.to_token_amount ?? 0);
+            src = 'from';
+          }
+          if (!priceSourceHeader) priceSourceHeader = src;
           return {
-            ts: Math.floor(Date.parse(attrs.block_timestamp) / 1000),
-            side: String(attrs.kind).toLowerCase() === 'buy' ? 'buy' : 'sell',
-            price: Number(attrs.price_to_in_usd ?? attrs.price_from_in_usd ?? '0'),
-            amountBase: Number(attrs.to_token_amount ?? attrs.from_token_amount ?? '0'),
-            amountQuote: Number(attrs.volume_in_usd ?? '0'),
+            ts,
+            side,
+            price,
+            amountBase,
+            amountQuote,
             txHash: attrs.tx_hash,
             wallet: attrs.tx_from_address,
           } as Trade;
@@ -164,31 +199,84 @@ export const handler: Handler = async (event) => {
             ts = Math.floor(Date.parse(String(tsRaw)) / 1000);
           }
           const sideRaw = attrs.kind ?? attrs.trade_type ?? attrs.side ?? attrs.type ?? '';
-          return {
-            ts,
-            side: String(sideRaw).toLowerCase() === 'sell' ? 'sell' : 'buy',
-            price: Number(
+          const toAddr = String(attrs.to_token_address || '').toLowerCase();
+          const fromAddr = String(attrs.from_token_address || '').toLowerCase();
+          let price = 0;
+          let amountBase = 0;
+          let amountQuote = 0;
+          let src: 'from' | 'to' = 'to';
+          if (tokenOfInterest && tokenOfInterest === toAddr) {
+            price = Number(
               attrs.price_to_in_usd ??
-                attrs.price_from_in_usd ??
                 attrs.price_usd ??
                 attrs.priceUsd ??
                 attrs.price ??
                 attrs[1] ??
-                '0'
-            ),
-            amountBase: Number(
-              attrs.to_token_amount ??
-                attrs.from_token_amount ??
-                attrs.amount_base ??
-                attrs.amount_base_token ??
-                '0'
-            ),
-            amountQuote: Number(
-              attrs.volume_in_usd ??
-                attrs.amount_quote ??
-                attrs.amount_quote_token ??
-                '0'
-            ),
+                0
+            );
+            amountBase = Number(
+              attrs.to_token_amount ?? attrs.amount_base ?? attrs.amount_base_token ?? 0
+            );
+            amountQuote = Number(
+              attrs.from_token_amount ?? attrs.amount_quote ?? attrs.amount_quote_token ?? 0
+            );
+            src = 'to';
+          } else if (tokenOfInterest && tokenOfInterest === fromAddr) {
+            price = Number(
+              attrs.price_from_in_usd ??
+                attrs.price_usd ??
+                attrs.priceUsd ??
+                attrs.price ??
+                attrs[1] ??
+                0
+            );
+            amountBase = Number(
+              attrs.from_token_amount ?? attrs.amount_base ?? attrs.amount_base_token ?? 0
+            );
+            amountQuote = Number(
+              attrs.to_token_amount ?? attrs.amount_quote ?? attrs.amount_quote_token ?? 0
+            );
+            src = 'from';
+          } else if (attrs.price_to_in_usd !== undefined) {
+            price = Number(
+              attrs.price_to_in_usd ??
+                attrs.price_usd ??
+                attrs.priceUsd ??
+                attrs.price ??
+                attrs[1] ??
+                0
+            );
+            amountBase = Number(
+              attrs.to_token_amount ?? attrs.amount_base ?? attrs.amount_base_token ?? 0
+            );
+            amountQuote = Number(
+              attrs.from_token_amount ?? attrs.amount_quote ?? attrs.amount_quote_token ?? 0
+            );
+            src = 'to';
+          } else {
+            price = Number(
+              attrs.price_from_in_usd ??
+                attrs.price_usd ??
+                attrs.priceUsd ??
+                attrs.price ??
+                attrs[1] ??
+                0
+            );
+            amountBase = Number(
+              attrs.from_token_amount ?? attrs.amount_base ?? attrs.amount_base_token ?? 0
+            );
+            amountQuote = Number(
+              attrs.to_token_amount ?? attrs.amount_quote ?? attrs.amount_quote_token ?? 0
+            );
+            src = 'from';
+          }
+          if (!priceSourceHeader) priceSourceHeader = src;
+          return {
+            ts,
+            side: String(sideRaw).toLowerCase() === 'sell' ? 'sell' : 'buy',
+            price,
+            amountBase,
+            amountQuote,
             txHash: attrs.tx_hash || attrs.txHash,
             wallet: attrs.tx_from_address || attrs.wallet || attrs.address,
           } as Trade;
@@ -210,6 +298,8 @@ export const handler: Handler = async (event) => {
   headers['x-provider'] = provider;
   headers['x-fallbacks-tried'] = attempted.join(',');
   headers['x-items'] = String(trades.length);
+  if (tokenOfInterest) headers['x-token'] = tokenOfInterest;
+  if (priceSourceHeader) headers['x-price-source'] = priceSourceHeader;
   log('response', event.rawUrl, 200, trades.length, provider);
   return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
 };

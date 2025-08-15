@@ -1,15 +1,16 @@
 import { useEffect, useState, useRef } from 'react';
 import type { Trade } from '../../lib/types';
 import { trades } from '../../lib/api';
-import { formatFetchMeta, type FetchMeta } from '../../lib/format';
+import { formatFetchMeta, type FetchMeta, formatUsd } from '../../lib/format';
 
 interface Props {
   pairId: string;
   chain: string;
   poolAddress: string;
+  tokenAddress: string;
 }
 
-export default function TradesOnlyView({ pairId, chain, poolAddress }: Props) {
+export default function TradesOnlyView({ pairId, chain, poolAddress, tokenAddress }: Props) {
   const [rows, setRows] = useState<Trade[]>([]);
   const [noTrades, setNoTrades] = useState(false);
   const [meta, setMeta] = useState<FetchMeta | null>(null);
@@ -17,7 +18,7 @@ export default function TradesOnlyView({ pairId, chain, poolAddress }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    trades({ pairId, chain, poolAddress })
+    trades({ pairId, chain, poolAddress, tokenAddress })
       .then((data) => {
         if (cancelled) return;
         setRows(data.trades || []);
@@ -30,7 +31,7 @@ export default function TradesOnlyView({ pairId, chain, poolAddress }: Props) {
     return () => {
         cancelled = true;
     };
-  }, [pairId, chain, poolAddress]);
+  }, [pairId, chain, poolAddress, tokenAddress]);
 
   useEffect(() => {
     if (noTrades && meta && !loggedRef.current && (import.meta as any).env?.DEV) {
@@ -56,7 +57,7 @@ export default function TradesOnlyView({ pairId, chain, poolAddress }: Props) {
             <tr style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
               <th>Time</th>
               <th>Side</th>
-              <th>Price</th>
+              <th>Price $</th>
             </tr>
           </thead>
           <tbody>
@@ -71,7 +72,7 @@ export default function TradesOnlyView({ pairId, chain, poolAddress }: Props) {
               >
                 <td>{new Date(t.ts * 1000).toLocaleTimeString()}</td>
                 <td>{t.side}</td>
-                <td>${t.price.toFixed(4)}</td>
+                <td>{formatUsd(t.price)}</td>
               </tr>
             ))}
           </tbody>

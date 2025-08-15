@@ -33,6 +33,8 @@ function readMeta(res: Response): FetchMeta {
     effectiveTf: res.headers.get('x-effective-tf'),
     remapped: res.headers.get('x-remapped-pool'),
     items: res.headers.get('x-items'),
+    token: res.headers.get('x-token'),
+    priceSource: res.headers.get('x-price-source'),
   };
 }
 
@@ -119,12 +121,13 @@ export async function trades(params: {
   pairId: string;
   poolAddress: string;
   chain: string;
+  tokenAddress?: string;
   limit?: number;
   window?: number;
   provider?: string;
 }): Promise<TradesResponse> {
-  const { pairId, poolAddress, chain, provider, limit, window: windowH } = params;
-  const key = `${chain}:${pairId}:${poolAddress}`;
+  const { pairId, poolAddress, chain, tokenAddress, provider, limit, window: windowH } = params;
+  const key = `${chain}:${pairId}:${poolAddress}:${tokenAddress || ''}`;
   const cached = getTradesCache(key);
   if (cached) return cached;
 
@@ -132,6 +135,7 @@ export async function trades(params: {
   url.searchParams.set('pairId', pairId);
   url.searchParams.set('chain', chain);
   url.searchParams.set('poolAddress', poolAddress);
+  if (tokenAddress) url.searchParams.set('token', tokenAddress);
   if (provider) url.searchParams.set('provider', provider);
   if (limit) url.searchParams.set('limit', String(limit));
   if (windowH) url.searchParams.set('window', String(windowH));

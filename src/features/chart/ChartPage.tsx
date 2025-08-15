@@ -125,6 +125,12 @@ export default function ChartPage() {
             />
           )}
 
+          {(view === 'chart' || view === 'trades') && currentPool?.gtSupported === false && (
+            <div style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+              Chart/Trades not available on this DEX; limited metrics shown.
+            </div>
+          )}
+
           {view === 'chart' && currentPool && currentPool.poolAddress && provider && address && (
             <div style={{ marginTop: '1rem' }}>
               <ChartOnlyView

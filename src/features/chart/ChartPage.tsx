@@ -87,12 +87,14 @@ export default function ChartPage() {
   }, [chain, address]);
 
   function handlePoolSwitch(p: PoolSummary) {
+    const scroll = window.scrollY;
     setCurrentPool(p);
     setXDomain((d) => d);
     if (address) {
       navigate(`/t/${p.chain}/${address}/${p.pairId}`, { replace: true });
     }
     setNoData(!p.poolAddress);
+    requestAnimationFrame(() => window.scrollTo(0, scroll));
   }
 
   const tradeSymbols = currentPool && token
@@ -125,7 +127,7 @@ export default function ChartPage() {
 
       {!loading && !error && pools.length > 0 && (
         <>
-          {view !== 'detail' && pools.length > 1 && (
+          {view !== 'detail' && pools.length > 1 && pools.length <= 3 && (
             <PoolSwitcher
               pools={pools}
               current={currentPool?.pairId}

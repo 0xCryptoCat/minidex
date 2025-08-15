@@ -7,6 +7,8 @@ import {
   formatAmount,
   formatShortAddr,
   formatTimeUTC,
+  formatFetchMeta,
+  type FetchMeta,
 } from '../../lib/format';
 import '../../styles/trades.css';
 
@@ -47,16 +49,18 @@ export default function TradesOnlyView({
 }: Props) {
   const [rows, setRows] = useState<Trade[]>([]);
   const [noTrades, setNoTrades] = useState(false);
+  const [meta, setMeta] = useState<FetchMeta | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('time');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     let cancelled = false;
     trades({ pairId, chain, poolAddress, tokenAddress })
-      .then((data) => {
+      .then((data: any) => {
         if (cancelled) return;
         setRows(data.trades || []);
         setNoTrades(!data.trades || data.trades.length === 0);
+        setMeta(data._meta);
       })
       .catch(() => {
         if (!cancelled) setNoTrades(true);
@@ -203,7 +207,14 @@ export default function TradesOnlyView({
   };
 
   if (rows.length === 0 && noTrades) {
-    return <div>No recent trades (24h)</div>;
+    return (
+      <div>
+        <div>No recent trades (24h)</div>
+        {meta && formatFetchMeta(meta) && (
+          <div style={{ fontSize: '0.75rem' }}>{formatFetchMeta(meta)}</div>
+        )}
+      </div>
+    );
   }
 
   if (rows.length === 0) {

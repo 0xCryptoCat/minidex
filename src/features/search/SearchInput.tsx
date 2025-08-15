@@ -89,7 +89,13 @@ export default function SearchInput({ autoFocus, large }: Props) {
         aria-label="Search tokens or paste address"
         style={{ width: '100%', ...sizeStyle }}
       />
-      {error && <div style={{ position: 'absolute', top: '100%', left: 0, fontSize: '0.75rem', color: 'red' }}>Error</div>}
+      {error && (
+        <div
+          style={{ position: 'absolute', top: '100%', left: 0, fontSize: '0.75rem', color: 'var(--accent-magenta)' }}
+        >
+          Error
+        </div>
+      )}
       {!error && (loading || results.length > 0) && (
         <ul
           style={{
@@ -100,7 +106,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
             top: '100%',
             left: 0,
             right: 0,
-            background: '#fff',
+            background: 'var(--bg-elev)',
             zIndex: 50,
           }}
         >

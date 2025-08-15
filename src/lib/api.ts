@@ -35,6 +35,8 @@ function readMeta(res: Response): FetchMeta {
     items: res.headers.get('x-items'),
     token: res.headers.get('x-token'),
     priceSource: res.headers.get('x-price-source'),
+    invalidPool: res.headers.get('x-invalid-pool'),
+    cgAuth: res.headers.get('x-cg-auth'),
   };
 }
 

@@ -14,7 +14,7 @@ export default function Home() {
       }}
     >
       <SearchInput autoFocus large />
-      <p style={{ color: '#666', fontSize: '0.875rem' }}>Search tokens or paste address</p>
+      <p style={{ color: 'var(--muted)', fontSize: '0.875rem' }}>Search tokens or paste address</p>
     </div>
   );
 }

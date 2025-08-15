@@ -81,11 +81,6 @@ export const handler: Handler = async (event) => {
     'base',
   ]);
 
-  if (!isValidAddress(query)) {
-    const body: ApiError = { error: 'invalid_address', provider: 'none' };
-    return { statusCode: 400, body: JSON.stringify(body) };
-  }
-
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'Cache-Control': 'public, max-age=30, stale-while-revalidate=60',
@@ -93,6 +88,10 @@ export const handler: Handler = async (event) => {
     'x-fallbacks-tried': '',
     'x-items': '0',
   };
+  if (!isValidAddress(query)) {
+    const body: ApiError = { error: 'invalid_address', provider: 'none' };
+    return { statusCode: 400, headers, body: JSON.stringify(body) };
+  }
   const attempted: string[] = [];
   let provider: Provider | 'none' = 'none';
   if (chain && !SUPPORTED_CHAINS.has(chain)) {

@@ -26,8 +26,8 @@ export default function SearchInput({ autoFocus, large }: Props) {
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  function runSearch(q: string) {
-    if (!q || (!isAddress(q) && q.length < 4)) {
+  function runSearch(q: string, force = false) {
+    if (!q || (!force && !isAddress(q) && q.length < 4)) {
       setResults([]);
       return;
     }
@@ -64,7 +64,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
   function handleKey(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
       if (timer.current) clearTimeout(timer.current);
-      runSearch(query);
+      runSearch(query, true);
     }
   }
 
@@ -78,7 +78,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
     const newValue = value.slice(0, start) + pasted + value.slice(end);
     setQuery(newValue);
     if (timer.current) clearTimeout(timer.current);
-    runSearch(newValue);
+    runSearch(newValue, true);
   }
 
   function handleSelect(r: SearchTokenSummary) {

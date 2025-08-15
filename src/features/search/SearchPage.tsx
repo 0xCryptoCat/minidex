@@ -42,7 +42,7 @@ export default function SearchPage() {
     setError(null);
     setProvider('');
     setHasSearched(true);
-    const data = await search(query);
+    const { data } = await search(query);
     setLoading(false);
     if ('error' in data) {
       setResults([]);

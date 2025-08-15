@@ -61,6 +61,6 @@ export function getTradeMarkers(
   const key = parts.join(':');
   const cached = getTradesCache(key);
   if (!cached) return [];
-  return computeTradeMarkers(cached.trades, limit);
+  return computeTradeMarkers(cached.data.trades, limit);
 }
 

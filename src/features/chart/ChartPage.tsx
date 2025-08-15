@@ -48,7 +48,7 @@ export default function ChartPage() {
     setProvider(null);
     setGlobalProvider('');
     pairs(chain, address)
-      .then((data) => {
+      .then(({ data }) => {
         if (cancelled) return;
         if ('error' in data) {
           if (data.error === 'unsupported_network') {

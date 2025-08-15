@@ -105,17 +105,8 @@ export function formatAge(createdTs?: number): string {
   return `${hours}h ${minutes}m`;
 }
 
-export interface FetchMeta {
-  provider?: string | null;
-  tried?: string | null;
-  effectiveTf?: string | null;
-  remapped?: string | null;
-  items?: string | null;
-  token?: string | null;
-  priceSource?: string | null;
-  invalidPool?: string | null;
-  cgAuth?: string | null;
-}
+import type { FetchMeta } from './types';
+export type { FetchMeta } from './types';
 
 export function formatFetchMeta(meta?: FetchMeta): string | undefined {
   if (!meta) return undefined;
@@ -131,8 +122,11 @@ export function formatFetchMeta(meta?: FetchMeta): string | undefined {
     let base = `Tried: ${provs.join('→')}`;
     if (meta.effectiveTf) base += ` (tf: ${meta.effectiveTf})`;
     parts.push(base);
+  } else if (meta.effectiveTf) {
+    parts.push(`TF: ${meta.effectiveTf}`);
   }
-  if (meta.items) parts.push(`items: ${meta.items}`);
+  if (meta.provider) parts.push(`Provider: ${meta.provider}`);
+  if (meta.items) parts.push(`Items: ${meta.items}`);
   if (reason) parts.push(`reason: ${reason}`);
   if (meta.remapped && meta.remapped !== '0') parts.push('remap: yes');
   if (meta.invalidPool) parts.push(`invalid-pool: ${meta.invalidPool}`);

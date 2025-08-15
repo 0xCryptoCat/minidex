@@ -42,35 +42,50 @@ async function main() {
       throw new Error('caseA: candles not ascending');
     }
   }
+  for (const c of ohlcDataA.candles) {
+    if (![c.t, c.o, c.h, c.l, c.c].every((v: any) => typeof v === 'number' && !Number.isNaN(v))) {
+      throw new Error('caseA: NaN candle');
+    }
+  }
+  if (ohlcResA.headers.get('x-provider') !== 'gt') throw new Error('caseA: ohlc provider not gt');
   table.push({ endpoint: 'ohlcA', provider: ohlcResA.headers.get('x-provider'), items: ohlcResA.headers.get('x-items') });
 
   const tradesResA = await fetch(u(`/trades?pairId=${pairId}&chain=ethereum&poolAddress=${poolAddress}`));
   const tradesDataA = await tradesResA.json();
   const countA = Array.isArray(tradesDataA.trades) ? tradesDataA.trades.length : 0;
   if (countA < 1) throw new Error('caseA: no trades');
+  if (tradesResA.headers.get('x-provider') !== 'gt') throw new Error('caseA: trades provider not gt');
   table.push({ endpoint: 'tradesA', provider: tradesResA.headers.get('x-provider'), items: tradesResA.headers.get('x-items') });
 
   // Case B: GT-unsupported but CG-covered
   const ohlcResB = await fetch(u(`/ohlc?pairId=${pairIdU}&chain=ethereum&poolAddress=${poolAddressU}&tf=1m`));
   const ohlcDataB = await ohlcResB.json();
+  const providerBO = ohlcResB.headers.get('x-provider');
+  if (providerBO !== 'cg' && providerBO !== 'synthetic') {
+    throw new Error('caseB: ohlc wrong provider');
+  }
   const candlesB = Array.isArray(ohlcDataB.candles) ? ohlcDataB.candles.length : 0;
-  if (candlesB === 0 && ohlcResB.headers.get('x-provider') !== 'synthetic') {
+  if (candlesB === 0 && providerBO !== 'synthetic') {
     throw new Error('caseB: ohlc missing data and not synthetic');
   }
   const tradesResB = await fetch(u(`/trades?pairId=${pairIdU}&chain=ethereum&poolAddress=${poolAddressU}`));
   const tradesDataB = await tradesResB.json();
+  const providerBT = tradesResB.headers.get('x-provider');
+  if (providerBT !== 'cg' && providerBT !== 'synthetic') {
+    throw new Error('caseB: trades wrong provider');
+  }
   const tradesB = Array.isArray(tradesDataB.trades) ? tradesDataB.trades.length : 0;
-  if (tradesB === 0 && tradesResB.headers.get('x-provider') !== 'synthetic') {
+  if (tradesB === 0 && providerBT !== 'synthetic') {
     throw new Error('caseB: trades missing data and not synthetic');
   }
   if (candlesB === 0 && tradesB === 0) {
     throw new Error('caseB: no cg data');
   }
-  table.push({ endpoint: 'ohlcB', provider: ohlcResB.headers.get('x-provider'), items: ohlcResB.headers.get('x-items') });
-  table.push({ endpoint: 'tradesB', provider: tradesResB.headers.get('x-provider'), items: tradesResB.headers.get('x-items') });
+  table.push({ endpoint: 'ohlcB', provider: providerBO, items: ohlcResB.headers.get('x-items') });
+  table.push({ endpoint: 'tradesB', provider: providerBT, items: tradesResB.headers.get('x-items') });
 
   // Case C: unsupported network
-  const unsRes = await fetch(u(`/ohlc?pairId=${pairId}&chain=amoy&poolAddress=${poolAddress}&tf=1m`));
+  const unsRes = await fetch(u(`/ohlc?pairId=${pairId}&chain=hyperevm&poolAddress=${poolAddress}&tf=1m`));
   const unsData = await unsRes.json();
   if (unsRes.status !== 200) throw new Error('caseC: non-200');
   if (unsData.error !== 'unsupported_network') throw new Error('caseC: wrong error');

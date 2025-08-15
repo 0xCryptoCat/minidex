@@ -9,6 +9,8 @@ import type {
   ListType,
   Window,
   TokenResponse,
+  ApiResult,
+  FetchMeta,
 } from './types';
 import {
   getSearchCache,
@@ -22,9 +24,20 @@ import {
   getTokenCache,
   setTokenCache,
 } from './cache';
-import type { FetchMeta } from './format';
 
 const BASE = '/.netlify/functions';
+
+const EMPTY_META: FetchMeta = {
+  provider: 'none',
+  tried: null,
+  effectiveTf: null,
+  remapped: null,
+  items: null,
+  token: null,
+  priceSource: null,
+  invalidPool: null,
+  cgAuth: null,
+};
 
 function readMeta(res: Response): FetchMeta {
   return {
@@ -40,7 +53,10 @@ function readMeta(res: Response): FetchMeta {
   };
 }
 
-export async function search(query: string, provider?: string): Promise<SearchResponse | ApiError> {
+export async function search(
+  query: string,
+  provider?: string
+): Promise<ApiResult<SearchResponse | ApiError>> {
   const cached = getSearchCache(query);
   if (cached) return cached;
 
@@ -49,18 +65,22 @@ export async function search(query: string, provider?: string): Promise<SearchRe
   if (provider) url.searchParams.set('provider', provider);
   try {
     const res = await fetch(url.toString());
-    const data = await res.json();
-    (data as any)._meta = readMeta(res);
+    const json = await res.json();
+    const meta = readMeta(res);
     if (!res.ok) {
-      if (res.status === 429) {
-        return { error: 'rate_limit', provider: 'none' };
-      }
-      return data.error ? data : { error: 'upstream_error', provider: 'none' };
+      const data: ApiError =
+        res.status === 429
+          ? { error: 'rate_limit', provider: 'none' }
+          : json.error
+          ? json
+          : { error: 'upstream_error', provider: 'none' };
+      return { data, meta };
     }
-    setSearchCache(query, data);
-    return data;
+    const data = json as SearchResponse;
+    setSearchCache(query, { data, meta });
+    return { data, meta };
   } catch {
-    return { error: 'upstream_error', provider: 'none' };
+    return { data: { error: 'upstream_error', provider: 'none' }, meta: EMPTY_META };
   }
 }
 
@@ -68,7 +88,7 @@ export async function pairs(
   chain: string,
   address: string,
   provider?: string
-): Promise<PairsResponse | ApiError> {
+): Promise<ApiResult<PairsResponse | ApiError>> {
   const key = `${chain}:${address}`;
   const cached = getPairsCache(key);
   if (cached) return cached;
@@ -79,10 +99,15 @@ export async function pairs(
   if (provider) url.searchParams.set('provider', provider);
 
   const res = await fetch(url.toString());
-  const data = await res.json();
-  (data as any)._meta = readMeta(res);
-  if (res.ok) setPairsCache(key, data);
-  return data;
+  const json = await res.json();
+  const meta = readMeta(res);
+  if (res.ok) {
+    const data = json as PairsResponse;
+    setPairsCache(key, { data, meta });
+    return { data, meta };
+  }
+  const data: ApiError = json.error ? json : { error: 'upstream_error', provider: 'none' };
+  return { data, meta };
 }
 
 export async function ohlc(params: {
@@ -91,7 +116,7 @@ export async function ohlc(params: {
   chain: string;
   tf: Timeframe;
   provider?: string;
-}): Promise<OHLCResponse> {
+}): Promise<ApiResult<OHLCResponse>> {
   const { pairId, poolAddress, chain, tf, provider } = params;
   const key = `${chain}:${pairId}:${poolAddress}:${tf}`;
   const cached = getOHLCCache(key);
@@ -105,18 +130,19 @@ export async function ohlc(params: {
   if (provider) url.searchParams.set('provider', provider);
 
   const res = await fetch(url.toString());
-  const data = await res.json();
-  (data as any)._meta = readMeta(res);
+  const json = await res.json();
+  const meta = readMeta(res);
   if (!res.ok) {
     const err: any = new Error('api error');
     err.status = res.status;
     throw err;
   }
-  if (!Array.isArray((data as any).candles)) {
-    (data as any).candles = [];
+  if (!Array.isArray((json as any).candles)) {
+    (json as any).candles = [];
   }
-  setOHLCCache(key, data);
-  return data as OHLCResponse;
+  const data = json as OHLCResponse;
+  setOHLCCache(key, { data, meta });
+  return { data, meta };
 }
 
 export async function trades(params: {
@@ -127,7 +153,7 @@ export async function trades(params: {
   limit?: number;
   window?: number;
   provider?: string;
-}): Promise<TradesResponse> {
+}): Promise<ApiResult<TradesResponse>> {
   const { pairId, poolAddress, chain, tokenAddress, provider, limit, window: windowH } = params;
   const key = `${chain}:${pairId}:${poolAddress}:${tokenAddress || ''}`;
   const cached = getTradesCache(key);
@@ -143,24 +169,25 @@ export async function trades(params: {
   if (windowH) url.searchParams.set('window', String(windowH));
 
   const res = await fetch(url.toString());
-  const data = await res.json();
-  (data as any)._meta = readMeta(res);
+  const json = await res.json();
+  const meta = readMeta(res);
   if (!res.ok) {
     const err: any = new Error('api error');
     err.status = res.status;
     throw err;
   }
-  if (!Array.isArray((data as any).trades)) {
-    (data as any).trades = [];
+  if (!Array.isArray((json as any).trades)) {
+    (json as any).trades = [];
   }
-  setTradesCache(key, data);
-  return data as TradesResponse;
+  const data = json as TradesResponse;
+  setTradesCache(key, { data, meta });
+  return { data, meta };
 }
 
 export async function token(
   chain: string,
   address: string
-): Promise<TokenResponse | ApiError> {
+): Promise<ApiResult<TokenResponse | ApiError>> {
   const key = `${chain}:${address}`;
   const cached = getTokenCache(key);
   if (cached) return cached;
@@ -171,21 +198,25 @@ export async function token(
 
   try {
     const res = await fetch(url.toString());
-    const data = await res.json();
-    (data as any)._meta = readMeta(res);
+    const json = await res.json();
+    const meta = readMeta(res);
     if (!res.ok) {
-      return data.error ? data : { error: 'upstream_error', provider: 'none' };
+      const data: ApiError = json.error
+        ? json
+        : { error: 'upstream_error', provider: 'none' };
+      return { data, meta };
     }
-    setTokenCache(key, data);
-    return data as TokenResponse;
+    const data = json as TokenResponse;
+    setTokenCache(key, { data, meta });
+    return { data, meta };
   } catch {
-    return { error: 'upstream_error', provider: 'none' };
+    return { data: { error: 'upstream_error', provider: 'none' }, meta: EMPTY_META };
   }
 }
 
 export async function lists(
   params: { chain: string; type: ListType; window: Window; limit?: number }
-): Promise<ListsResponse | ApiError> {
+): Promise<ApiResult<ListsResponse | ApiError>> {
   const url = new URL(`${BASE}/lists`, window.location.origin);
   url.searchParams.set('chain', params.chain);
   url.searchParams.set('type', params.type);
@@ -193,14 +224,18 @@ export async function lists(
   if (params.limit) url.searchParams.set('limit', params.limit.toString());
   try {
     const res = await fetch(url.toString());
-    const data = await res.json();
-    (data as any)._meta = readMeta(res);
+    const json = await res.json();
+    const meta = readMeta(res);
     if (!res.ok) {
-      return data.error ? data : { error: 'upstream_error', provider: 'none' };
+      const data: ApiError = json.error
+        ? json
+        : { error: 'upstream_error', provider: 'none' };
+      return { data, meta };
     }
-    return data as ListsResponse;
+    const data = json as ListsResponse;
+    return { data, meta };
   } catch {
-    return { error: 'upstream_error', provider: 'none' };
+    return { data: { error: 'upstream_error', provider: 'none' }, meta: EMPTY_META };
   }
 }
 

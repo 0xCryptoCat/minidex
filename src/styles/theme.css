@@ -8,6 +8,13 @@
   --accent-magenta: #ff2ed1;
   --accent-cyan: #00e0ff;
   --border: #282c34;
-  --card-radius: 12px;
-  --padding: 16px;
+  --radius: 12px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+
+  /* legacy tokens */
+  --card-radius: var(--radius);
+  --padding: var(--space-4);
 }

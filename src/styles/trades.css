@@ -49,11 +49,9 @@
 
 .tr-row.buy {
   background: rgba(140,255,0,0.06);
-  color: var(--accent-lime);
 }
 .tr-row.sell {
   background: rgba(255,46,209,0.06);
-  color: var(--accent-magenta);
 }
 .tr-row.buy:hover {
   background: rgba(140,255,0,0.12);
@@ -63,7 +61,7 @@
 }
 
 .tr-cell {
-  padding: calc(var(--padding) / 4) calc(var(--padding) / 2);
+  padding: var(--space-1) var(--space-2);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -87,7 +85,14 @@
 
 .tr-pill {
   background: var(--border);
-  border-radius: var(--card-radius);
-  padding: 0 calc(var(--padding) / 2);
+  border-radius: var(--radius);
+  padding: 0 var(--space-2);
   font-size: 0.75rem;
+}
+
+.tr-row.buy .tr-cell.type {
+  color: var(--accent-lime);
+}
+.tr-row.sell .tr-cell.type {
+  color: var(--accent-magenta);
 }

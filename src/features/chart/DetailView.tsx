@@ -3,7 +3,7 @@ import type { PoolSummary, TokenResponse } from '../../lib/types';
 import { token as fetchToken } from '../../lib/api';
 import { formatUsd, formatCompact, formatAge } from '../../lib/format';
 import CopyButton from '../../components/CopyButton';
-import { explorer } from '../../lib/explorer';
+import { addressUrl } from '../../lib/explorer';
 import '../../styles/detail.css';
 
 interface Props {
@@ -67,9 +67,11 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
   info.websites?.forEach((w) => linkItems.push({ key: (w.label || 'website').toLowerCase(), url: w.url }));
   info.socials?.forEach((s) => linkItems.push({ key: (s.type || '').toLowerCase(), url: s.url }));
 
-  const pairExplorer = explorer(chain, active.pairAddress);
-  const baseExplorer = explorer(chain, active.baseToken.address);
-  const quoteExplorer = explorer(chain, active.quoteToken.address);
+  const pairExplorer = active.pairAddress
+    ? addressUrl(chain as any, active.pairAddress)
+    : undefined;
+  const baseExplorer = addressUrl(chain as any, active.baseToken.address as any);
+  const quoteExplorer = addressUrl(chain as any, active.quoteToken.address as any);
 
   const otherPools = detail.pools.filter((p) => p.pairId !== active.pairId);
 
@@ -146,7 +148,22 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
         <div><span>Liquidity $</span><strong>{formatUsd(kpis.liqUsd)}</strong></div>
         <div><span>FDV $</span><strong>{formatUsd(kpis.fdvUsd)}</strong></div>
         <div><span>MC $</span><strong>{formatUsd(kpis.mcUsd)}</strong></div>
-        <div><span>24h %</span><strong>{kpis.priceChange24hPct !== undefined ? `${kpis.priceChange24hPct.toFixed(2)}%` : '-'}</strong></div>
+        <div>
+          <span>24h %</span>
+          <strong
+            className={
+              kpis.priceChange24hPct !== undefined
+                ? kpis.priceChange24hPct < 0
+                  ? 'neg'
+                  : 'pos'
+                : undefined
+            }
+          >
+            {kpis.priceChange24hPct !== undefined
+              ? `${kpis.priceChange24hPct.toFixed(2)}%`
+              : '-'}
+          </strong>
+        </div>
         <div><span>Age</span><strong>{ageText}</strong></div>
       </div>
 
@@ -174,8 +191,8 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
           <div>
             Pair: {active.pairAddress}
             <CopyButton text={active.pairAddress} />
-            {pairExplorer.address && (
-              <a href={pairExplorer.address} target="_blank" rel="noopener noreferrer">
+            {pairExplorer && (
+              <a href={pairExplorer} target="_blank" rel="noopener noreferrer">
                 ↗
               </a>
             )}
@@ -184,8 +201,8 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
         <div>
           {active.baseToken.symbol}: {active.baseToken.address}
           <CopyButton text={active.baseToken.address} />
-          {baseExplorer.address && (
-            <a href={baseExplorer.address} target="_blank" rel="noopener noreferrer">
+          {baseExplorer && (
+            <a href={baseExplorer} target="_blank" rel="noopener noreferrer">
               ↗
             </a>
           )}
@@ -193,8 +210,8 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
         <div>
           {active.quoteToken.symbol}: {active.quoteToken.address}
           <CopyButton text={active.quoteToken.address} />
-          {quoteExplorer.address && (
-            <a href={quoteExplorer.address} target="_blank" rel="noopener noreferrer">
+          {quoteExplorer && (
+            <a href={quoteExplorer} target="_blank" rel="noopener noreferrer">
               ↗
             </a>
           )}

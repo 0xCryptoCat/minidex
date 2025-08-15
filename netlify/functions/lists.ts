@@ -26,6 +26,10 @@ function log(...args: any[]) {
   if (DEBUG) console.log('[lists]', ...args);
 }
 
+function logError(...args: any[]) {
+  console.error('[lists]', ...args);
+}
+
 function isValidType(t?: string): t is ListType {
   return t === 'trending' || t === 'discovery' || t === 'leaderboard';
 }
@@ -46,6 +50,9 @@ async function fetchJson(url: string, init?: RequestInit): Promise<any> {
     const res = await fetch(url, { signal: controller.signal, ...(init || {}) });
     if (!res.ok) throw new Error('status');
     return await res.json();
+  } catch (err) {
+    logError('fetch error', url, err);
+    throw err;
   } finally {
     clearTimeout(id);
   }
@@ -119,6 +126,7 @@ export const handler: Handler = async (event) => {
     return { statusCode: 400, headers, body: JSON.stringify(body) };
   }
   const attempted: string[] = [];
+  try {
 
   if (!chain) {
     const bodyRes: ListsResponse = { chain: '', type: type!, window: window!, items: [], provider: 'none' };
@@ -143,7 +151,8 @@ export const handler: Handler = async (event) => {
       rank(data.items);
       if (limit !== undefined) data.items = data.items.slice(0, limit);
       return { statusCode: 200, headers, body: JSON.stringify(data) };
-    } catch {
+    } catch (err) {
+      logError('fixture read failed', err);
       const body: ApiError = { error: 'upstream_error', provider: 'none' };
       return { statusCode: 500, headers, body: JSON.stringify(body) };
     }
@@ -207,7 +216,8 @@ export const handler: Handler = async (event) => {
         provider = 'gt';
         log('gt items', items.length);
       }
-    } catch {
+    } catch (err) {
+      logError('gt fetch failed', err);
       // noop, will fall back to DS
     }
   }
@@ -262,7 +272,8 @@ export const handler: Handler = async (event) => {
         provider = 'cg';
         log('cg items', items.length);
       }
-    } catch {
+    } catch (err) {
+      logError('cg fetch failed', err);
       // ignore, fall through
     }
   }
@@ -312,7 +323,8 @@ export const handler: Handler = async (event) => {
               ? Math.floor(new Date(first.pairCreatedAt).getTime() / 1000)
               : undefined,
         });
-      } catch {
+      } catch (err) {
+        logError('ds fetch failed', addr, err);
         // ignore individual failures
       }
     }
@@ -323,11 +335,16 @@ export const handler: Handler = async (event) => {
     }
   }
 
-  const limited = limit !== undefined ? items.slice(0, limit) : items;
-  const bodyRes: ListsResponse = { chain, type, window, items: limited, provider };
-  headers['x-provider'] = provider;
-  headers['x-fallbacks-tried'] = attempted.join(',');
-  headers['x-items'] = String(limited.length);
-  log('response', event.rawUrl, 200, limited.length, provider);
-  return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+    const limited = limit !== undefined ? items.slice(0, limit) : items;
+    const bodyRes: ListsResponse = { chain, type, window, items: limited, provider };
+    headers['x-provider'] = provider;
+    headers['x-fallbacks-tried'] = attempted.join(',');
+    headers['x-items'] = String(limited.length);
+    log('response', event.rawUrl, 200, limited.length, provider);
+    return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+  } catch (err) {
+    logError('handler error', err);
+    const body: ApiError = { error: 'internal_error', provider: 'none' };
+    return { statusCode: 500, headers, body: JSON.stringify(body) };
+  }
 };

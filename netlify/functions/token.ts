@@ -12,6 +12,10 @@ function log(...args: any[]) {
   if (DEBUG) console.log('[token]', ...args);
 }
 
+function logError(...args: any[]) {
+  console.error('[token]', ...args);
+}
+
 function isValidChain(chain?: string): chain is string {
   return !!chain;
 }
@@ -31,7 +35,8 @@ async function fetchCgToken(chain: string, address: string): Promise<any> {
         headers: { 'x-cg-pro-api-key': CG_API_KEY },
       });
       if (res.ok) return await res.json();
-    } catch {
+    } catch (err) {
+      logError('cg token fetch failed', url, err);
       // try next
     }
   }
@@ -74,150 +79,157 @@ export const handler: Handler = async (event) => {
 
   log('params', { chain, address });
 
-  let info: any = undefined;
-  let pools: any[] = [];
-  let provider: 'ds' | 'cg' | undefined;
-  const kpis: any = {};
+  try {
+    let info: any = undefined;
+    let pools: any[] = [];
+    let provider: 'ds' | 'cg' | undefined;
+    const kpis: any = {};
 
-  if (DS_API_BASE) {
-    try {
-      attempted.push('ds');
-      const res = await fetch(`${dsBase}/token-pairs/v1/${chain}/${address}`);
-      if (res.ok) {
-        const ds = await res.json();
-        info = ds.info;
-        headers['x-ds-info'] = info ? 'present' : 'missing';
-        pools = Array.isArray(ds.pairs)
-          ? ds.pairs.map((p: any) => {
-              const tx = p.txns || {};
-              const mapTx = (t: any) =>
-                t ? { buys: Number(t.buys || 0), sells: Number(t.sells || 0) } : undefined;
-              return {
-                pairId: p.pairId || p.pairAddress,
-                dex: p.dexId,
-                version: p.dexVersion || p.version,
-                chain,
-                pairAddress: p.pairAddress,
-                pairUrl: p.url,
-                baseToken: {
-                  address: p.baseToken?.address,
-                  symbol: p.baseToken?.symbol,
-                  name: p.baseToken?.name,
-                },
-                quoteToken: {
-                  address: p.quoteToken?.address,
-                  symbol: p.quoteToken?.symbol,
-                  name: p.quoteToken?.name,
-                },
-                priceNative:
-                  p.priceNative !== undefined
-                    ? Number(p.priceNative)
-                    : p.price_native !== undefined
-                    ? Number(p.price_native)
-                    : undefined,
-                priceUsd:
-                  p.priceUsd !== undefined
-                    ? Number(p.priceUsd)
-                    : p.price_usd !== undefined
-                    ? Number(p.price_usd)
-                    : undefined,
-                liquidity: {
-                  usd:
-                    p.liquidity?.usd !== undefined
-                      ? Number(p.liquidity.usd)
-                      : p.liquidityUsd !== undefined
-                      ? Number(p.liquidityUsd)
+    if (DS_API_BASE) {
+      try {
+        attempted.push('ds');
+        const res = await fetch(`${dsBase}/token-pairs/v1/${chain}/${address}`);
+        if (res.ok) {
+          const ds = await res.json();
+          info = ds.info;
+          headers['x-ds-info'] = info ? 'present' : 'missing';
+          pools = Array.isArray(ds.pairs)
+            ? ds.pairs.map((p: any) => {
+                const tx = p.txns || {};
+                const mapTx = (t: any) =>
+                  t ? { buys: Number(t.buys || 0), sells: Number(t.sells || 0) } : undefined;
+                return {
+                  pairId: p.pairId || p.pairAddress,
+                  dex: p.dexId,
+                  version: p.dexVersion || p.version,
+                  chain,
+                  pairAddress: p.pairAddress,
+                  pairUrl: p.url,
+                  baseToken: {
+                    address: p.baseToken?.address,
+                    symbol: p.baseToken?.symbol,
+                    name: p.baseToken?.name,
+                  },
+                  quoteToken: {
+                    address: p.quoteToken?.address,
+                    symbol: p.quoteToken?.symbol,
+                    name: p.quoteToken?.name,
+                  },
+                  priceNative:
+                    p.priceNative !== undefined
+                      ? Number(p.priceNative)
+                      : p.price_native !== undefined
+                      ? Number(p.price_native)
                       : undefined,
-                  base: p.liquidity?.base !== undefined ? Number(p.liquidity.base) : undefined,
-                  quote: p.liquidity?.quote !== undefined ? Number(p.liquidity.quote) : undefined,
-                },
-                fdv: p.fdv !== undefined ? Number(p.fdv) : undefined,
-                marketCap: p.marketCap !== undefined ? Number(p.marketCap) : undefined,
-                labels: Array.isArray(p.labels) ? p.labels : undefined,
-                txns: {
-                  m5: mapTx(tx.m5),
-                  h1: mapTx(tx.h1),
-                  h6: mapTx(tx.h6),
-                  h24: mapTx(tx.h24),
-                },
-                volume: {
-                  m5: p.volume?.m5 !== undefined ? Number(p.volume.m5) : undefined,
-                  h1: p.volume?.h1 !== undefined ? Number(p.volume.h1) : undefined,
-                  h6: p.volume?.h6 !== undefined ? Number(p.volume.h6) : undefined,
-                  h24: p.volume?.h24 !== undefined ? Number(p.volume.h24) : undefined,
-                },
-                priceChange: {
-                  m5: p.priceChange?.m5 !== undefined ? Number(p.priceChange.m5) : undefined,
-                  h1: p.priceChange?.h1 !== undefined ? Number(p.priceChange.h1) : undefined,
-                  h6: p.priceChange?.h6 !== undefined ? Number(p.priceChange.h6) : undefined,
-                  h24: p.priceChange?.h24 !== undefined ? Number(p.priceChange.h24) : undefined,
-                },
-                pairCreatedAt: p.pairCreatedAt ? Number(p.pairCreatedAt) : undefined,
-                gtSupported: isGtSupported(p.dexId, p.dexVersion || p.version),
-              };
-            })
-          : [];
-        provider = 'ds';
-        log('ds token');
+                  priceUsd:
+                    p.priceUsd !== undefined
+                      ? Number(p.priceUsd)
+                      : p.price_usd !== undefined
+                      ? Number(p.price_usd)
+                      : undefined,
+                  liquidity: {
+                    usd:
+                      p.liquidity?.usd !== undefined
+                        ? Number(p.liquidity.usd)
+                        : p.liquidityUsd !== undefined
+                        ? Number(p.liquidityUsd)
+                        : undefined,
+                    base: p.liquidity?.base !== undefined ? Number(p.liquidity.base) : undefined,
+                    quote: p.liquidity?.quote !== undefined ? Number(p.liquidity.quote) : undefined,
+                  },
+                  fdv: p.fdv !== undefined ? Number(p.fdv) : undefined,
+                  marketCap: p.marketCap !== undefined ? Number(p.marketCap) : undefined,
+                  labels: Array.isArray(p.labels) ? p.labels : undefined,
+                  txns: {
+                    m5: mapTx(tx.m5),
+                    h1: mapTx(tx.h1),
+                    h6: mapTx(tx.h6),
+                    h24: mapTx(tx.h24),
+                  },
+                  volume: {
+                    m5: p.volume?.m5 !== undefined ? Number(p.volume.m5) : undefined,
+                    h1: p.volume?.h1 !== undefined ? Number(p.volume.h1) : undefined,
+                    h6: p.volume?.h6 !== undefined ? Number(p.volume.h6) : undefined,
+                    h24: p.volume?.h24 !== undefined ? Number(p.volume.h24) : undefined,
+                  },
+                  priceChange: {
+                    m5: p.priceChange?.m5 !== undefined ? Number(p.priceChange.m5) : undefined,
+                    h1: p.priceChange?.h1 !== undefined ? Number(p.priceChange.h1) : undefined,
+                    h6: p.priceChange?.h6 !== undefined ? Number(p.priceChange.h6) : undefined,
+                    h24: p.priceChange?.h24 !== undefined ? Number(p.priceChange.h24) : undefined,
+                  },
+                  pairCreatedAt: p.pairCreatedAt ? Number(p.pairCreatedAt) : undefined,
+                  gtSupported: isGtSupported(p.dexId, p.dexVersion || p.version),
+                };
+              })
+            : [];
+          provider = 'ds';
+          log('ds token');
+        }
+      } catch (err) {
+        logError('ds token fetch failed', err);
       }
-    } catch {
-      // ignore
     }
-  }
 
-  if (pools.length) {
-    const first = pools[0];
-    kpis.priceUsd = first.priceUsd;
-    kpis.priceNative = first.priceNative;
-    kpis.liqUsd = first.liquidity?.usd;
-    kpis.fdvUsd = first.fdv;
-    kpis.mcUsd = first.marketCap;
-    kpis.priceChange24hPct = first.priceChange?.h24;
-    if (first.pairCreatedAt) {
-      const diff = Date.now() - Number(first.pairCreatedAt);
-      const days = Math.floor(diff / 86400000);
-      const hours = Math.floor((diff % 86400000) / 3600000);
-      kpis.age = { days, hours };
+    if (pools.length) {
+      const first = pools[0];
+      kpis.priceUsd = first.priceUsd;
+      kpis.priceNative = first.priceNative;
+      kpis.liqUsd = first.liquidity?.usd;
+      kpis.fdvUsd = first.fdv;
+      kpis.mcUsd = first.marketCap;
+      kpis.priceChange24hPct = first.priceChange?.h24;
+      if (first.pairCreatedAt) {
+        const diff = Date.now() - Number(first.pairCreatedAt);
+        const days = Math.floor(diff / 86400000);
+        const hours = Math.floor((diff % 86400000) / 3600000);
+        kpis.age = { days, hours };
+      }
     }
-  }
 
-  if (CG_API_BASE && CG_API_KEY) {
-    attempted.push('cg');
-    try {
-      const cg = await fetchCgToken(chain, address);
-      const attr = cg?.data?.attributes || cg?.data || cg;
-      const priceChange = attr?.price_change_percentage || {};
-      if (kpis.priceUsd === undefined && attr?.price_usd !== undefined)
-        kpis.priceUsd = Number(attr.price_usd);
-      if (kpis.mcUsd === undefined && attr?.market_cap_usd !== undefined)
-        kpis.mcUsd = Number(attr.market_cap_usd);
-      if (kpis.fdvUsd === undefined && attr?.fully_diluted_valuation_usd !== undefined)
-        kpis.fdvUsd = Number(attr.fully_diluted_valuation_usd);
-      if (kpis.priceChange24hPct === undefined && priceChange?.h24 !== undefined)
-        kpis.priceChange24hPct = Number(priceChange.h24);
-      if (!provider) provider = 'cg';
-      log('cg token');
-    } catch {
-      // ignore
+    if (CG_API_BASE && CG_API_KEY) {
+      attempted.push('cg');
+      try {
+        const cg = await fetchCgToken(chain, address);
+        const attr = cg?.data?.attributes || cg?.data || cg;
+        const priceChange = attr?.price_change_percentage || {};
+        if (kpis.priceUsd === undefined && attr?.price_usd !== undefined)
+          kpis.priceUsd = Number(attr.price_usd);
+        if (kpis.mcUsd === undefined && attr?.market_cap_usd !== undefined)
+          kpis.mcUsd = Number(attr.market_cap_usd);
+        if (kpis.fdvUsd === undefined && attr?.fully_diluted_valuation_usd !== undefined)
+          kpis.fdvUsd = Number(attr.fully_diluted_valuation_usd);
+        if (kpis.priceChange24hPct === undefined && priceChange?.h24 !== undefined)
+          kpis.priceChange24hPct = Number(priceChange.h24);
+        if (!provider) provider = 'cg';
+        log('cg token');
+      } catch (err) {
+        logError('cg token fetch failed', err);
+      }
     }
-  }
 
-  if (pools.length) {
-    headers['x-provider'] = provider || 'none';
+    if (pools.length) {
+      headers['x-provider'] = provider || 'none';
+      headers['x-fallbacks-tried'] = attempted.join(',');
+      headers['x-items'] = String(pools.length);
+      const bodyRes: TokenResponse = {
+        info,
+        kpis,
+        pools,
+        provider: provider || 'cg',
+      };
+      log('response', event.rawUrl, 200, pools.length, provider || 'none');
+      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+    }
+
     headers['x-fallbacks-tried'] = attempted.join(',');
-    headers['x-items'] = String(pools.length);
-    const bodyRes: TokenResponse = {
-      info,
-      kpis,
-      pools,
-      provider: provider || 'cg',
-    };
-    log('response', event.rawUrl, 200, pools.length, provider || 'none');
-    return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+    const body: ApiError = { error: 'upstream_error', provider: 'none' };
+    log('response', event.rawUrl, 500, 0, provider || 'none');
+    return { statusCode: 500, headers, body: JSON.stringify(body) };
+  } catch (err) {
+    logError('handler error', err);
+    headers['x-fallbacks-tried'] = attempted.join(',');
+    const body: ApiError = { error: 'internal_error', provider: 'none' };
+    return { statusCode: 500, headers, body: JSON.stringify(body) };
   }
-
-  headers['x-fallbacks-tried'] = attempted.join(',');
-  const body: ApiError = { error: 'upstream_error', provider: 'none' };
-  log('response', event.rawUrl, 500, 0, provider || 'none');
-  return { statusCode: 500, headers, body: JSON.stringify(body) };
 };

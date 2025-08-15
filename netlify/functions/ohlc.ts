@@ -25,6 +25,10 @@ function log(...args: any[]) {
   if (DEBUG) console.log('[ohlc]', ...args);
 }
 
+function logError(...args: any[]) {
+  console.error('[ohlc]', ...args);
+}
+
 function isValidPair(id?: string): id is string {
   return !!id;
 }
@@ -118,8 +122,8 @@ export const handler: Handler = async (event) => {
     log('response', event.rawUrl, 200, 0, 'none');
     return { statusCode: 200, headers, body: JSON.stringify(body) };
   }
-
-  if (USE_FIXTURES) {
+  try {
+    if (USE_FIXTURES) {
     try {
       if (forceProvider !== 'gt') {
         const ds = await readFixture(DS_FIXTURE);
@@ -130,7 +134,8 @@ export const handler: Handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify(ds) };
       }
       throw new Error('force gt');
-    } catch {
+    } catch (err) {
+      logError('ds fixture failed', err);
       try {
         const gt = await readFixture(GT_FIXTURE);
         gt.pairId = pairId;
@@ -138,7 +143,8 @@ export const handler: Handler = async (event) => {
           gt.rollupHint = 'client';
         }
         return { statusCode: 200, headers, body: JSON.stringify(gt) };
-      } catch {
+      } catch (err2) {
+        logError('gt fixture failed', err2);
         const body: ApiError = { error: 'upstream_error', provider: 'none' };
         return { statusCode: 500, headers, body: JSON.stringify(body) };
       }
@@ -193,7 +199,8 @@ export const handler: Handler = async (event) => {
           effectiveTf = t as Timeframe;
           break;
         }
-      } catch {
+      } catch (err) {
+        logError('gt ohlc fetch failed', err);
         // ignore
       }
     }
@@ -246,7 +253,8 @@ export const handler: Handler = async (event) => {
           log('cg candles', candles.length);
         }
       }
-    } catch {
+    } catch (err) {
+      logError('cg ohlc fetch failed', err);
       // ignore
     }
   }
@@ -300,7 +308,8 @@ export const handler: Handler = async (event) => {
             } as Trade;
           });
         }
-      } catch {
+      } catch (err) {
+        logError('cg trades fetch failed', err);
         // ignore
       }
     }
@@ -324,7 +333,8 @@ export const handler: Handler = async (event) => {
             } as Trade;
           });
         }
-      } catch {
+      } catch (err) {
+        logError('gt trades fetch failed', err);
         // ignore
       }
     }
@@ -348,5 +358,10 @@ export const handler: Handler = async (event) => {
   headers['x-effective-tf'] = effectiveTf || tf;
   log('response', event.rawUrl, 200, candles.length, provider);
   return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+  } catch (err) {
+    logError('handler error', err);
+    const body: ApiError = { error: 'internal_error', provider: 'none' };
+    return { statusCode: 500, headers, body: JSON.stringify(body) };
+  }
 };
 

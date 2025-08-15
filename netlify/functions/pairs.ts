@@ -21,6 +21,10 @@ function log(...args: any[]) {
   if (DEBUG) console.log('[pairs]', ...args);
 }
 
+function logError(...args: any[]) {
+  console.error('[pairs]', ...args);
+}
+
 // Map numeric chain IDs from Dexscreener to chain slugs used in the app.
 const CHAIN_ID_MAP: Record<string, string> = {
   '1': 'ethereum',
@@ -36,7 +40,7 @@ let SUPPORTED_CHAINS: Set<string> | null = null;
 try {
   SUPPORTED_CHAINS = new Set(Object.values(CHAIN_ID_MAP));
 } catch (err) {
-  log('failed to init supported chains', err);
+  logError('failed to init supported chains', err);
 }
 
 function mapChainId(id: unknown): string {
@@ -68,7 +72,7 @@ async function fetchJson(url: string): Promise<any> {
     if (!res.ok) throw new Error(`status ${res.status}`);
     return await res.json();
   } catch (err) {
-    log('fetch error', url, err);
+    logError('fetch error', url, err);
     throw err;
   } finally {
     clearTimeout(id);
@@ -108,35 +112,36 @@ export const handler: Handler = async (event) => {
     log('response', event.rawUrl, 200, 0, provider);
     return { statusCode: 200, headers, body: JSON.stringify(body) };
   }
-
-  if (USE_FIXTURES) {
-    try {
-      if (forceProvider !== 'gt') {
-        attempted.push('ds');
-        // No DS fixture; fall through to error to mimic real behavior
-        throw new Error('no ds fixture');
-      }
-      throw new Error('force gt');
-    } catch {
+  try {
+    if (USE_FIXTURES) {
       try {
-        attempted.push('gt');
-        const gt = await readFixture(GT_FIXTURE);
-        provider = 'gt';
-        headers['x-provider'] = provider;
-        headers['x-fallbacks-tried'] = attempted.join(',');
-        headers['x-items'] = String(gt.pools.length);
-        log('response', event.rawUrl, 200, gt.pools.length, provider);
-        return { statusCode: 200, headers, body: JSON.stringify(gt) };
-      } catch {
-        headers['x-fallbacks-tried'] = attempted.join(',');
-        const body: ApiError = { error: 'upstream_error', provider: 'none' };
-        log('response', event.rawUrl, 500, 0, provider);
-        return { statusCode: 500, headers, body: JSON.stringify(body) };
+        if (forceProvider !== 'gt') {
+          attempted.push('ds');
+          // No DS fixture; fall through to error to mimic real behavior
+          throw new Error('no ds fixture');
+        }
+        throw new Error('force gt');
+      } catch (err) {
+        logError('ds fixture failed', err);
+        try {
+          attempted.push('gt');
+          const gt = await readFixture(GT_FIXTURE);
+          provider = 'gt';
+          headers['x-provider'] = provider;
+          headers['x-fallbacks-tried'] = attempted.join(',');
+          headers['x-items'] = String(gt.pools.length);
+          log('response', event.rawUrl, 200, gt.pools.length, provider);
+          return { statusCode: 200, headers, body: JSON.stringify(gt) };
+        } catch (err2) {
+          logError('gt fixture failed', err2);
+          headers['x-fallbacks-tried'] = attempted.join(',');
+          const body: ApiError = { error: 'upstream_error', provider: 'none' };
+          log('response', event.rawUrl, 500, 0, provider);
+          return { statusCode: 500, headers, body: JSON.stringify(body) };
+        }
       }
     }
-  }
 
-  try {
     if (forceProvider !== 'gt') {
       attempted.push('ds');
       const dsUrl = `${DS_API_BASE}/dex/tokens/${address}`;
@@ -145,7 +150,7 @@ export const handler: Handler = async (event) => {
         log('try ds', dsUrl);
         ds = await fetchJson(dsUrl);
       } catch (err) {
-        log('ds request failed', dsUrl, err);
+        logError('ds request failed', dsUrl, err);
         ds = null;
       }
       if (!ds || !Array.isArray(ds.pairs) || ds.pairs.length === 0) {
@@ -176,7 +181,7 @@ export const handler: Handler = async (event) => {
           const gtPools = await fetchJson(gtPoolsUrl);
           gtArr = Array.isArray(gtPools?.data) ? gtPools.data : [];
         } catch (err) {
-          log('gt pools fetch failed', gtPoolsUrl, err);
+          logError('gt pools fetch failed', gtPoolsUrl, err);
         }
       }
 
@@ -243,7 +248,7 @@ export const handler: Handler = async (event) => {
     }
     throw new Error('force gt');
   } catch (err) {
-    log('ds branch failed', err);
+    logError('ds branch failed', err);
     if (forceProvider === 'ds') {
       headers['x-fallbacks-tried'] = attempted.join(',');
       const body: ApiError = { error: 'upstream_error', provider: 'none' };
@@ -299,12 +304,18 @@ export const handler: Handler = async (event) => {
       log('response', event.rawUrl, 200, pools.length, provider);
       return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
     } catch (err) {
-      log('gt branch failed', err);
+      logError('gt branch failed', err);
       headers['x-fallbacks-tried'] = attempted.join(',');
       const body: ApiError = { error: 'upstream_error', provider: 'none' };
       log('response', event.rawUrl, 500, 0, provider);
       return { statusCode: 500, headers, body: JSON.stringify(body) };
     }
+  }
+  } catch (err) {
+    logError('handler error', err);
+    headers['x-fallbacks-tried'] = attempted.join(',');
+    const body: ApiError = { error: 'internal_error', provider: 'none' };
+    return { statusCode: 500, headers, body: JSON.stringify(body) };
   }
 };
 

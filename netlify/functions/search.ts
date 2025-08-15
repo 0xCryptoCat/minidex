@@ -4,6 +4,7 @@ import type {
   Provider,
   SearchTokenSummary,
   PoolSummary,
+  ApiError,
 } from '../../src/lib/types';
 import { isGtSupported } from '../shared/dex-allow';
 import fs from 'fs/promises';
@@ -20,6 +21,10 @@ function log(...args: any[]) {
   if (DEBUG) console.log('[search]', ...args);
 }
 
+function logError(...args: any[]) {
+  console.error('[search]', ...args);
+}
+
 async function readFixture(path: string): Promise<SearchResponse> {
   const url = new URL(path, import.meta.url);
   const data = await fs.readFile(url, 'utf8');
@@ -33,6 +38,9 @@ async function fetchJson(url: string): Promise<any> {
     const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) throw new Error('status');
     return await res.json();
+  } catch (err) {
+    logError('fetch error', url, err);
+    throw err;
   } finally {
     clearTimeout(id);
   }
@@ -69,23 +77,25 @@ export const handler: Handler = async (event) => {
 
   const attempted: string[] = [];
   let provider: Provider | 'none' = 'none';
-
-  if (USE_FIXTURES) {
-    try {
-      const ds = await readFixture(DS_FIXTURE);
-      ds.query = query;
-      headers['x-provider'] = ds.results[0]?.provider || 'ds';
-      headers['x-items'] = String(ds.results.length);
-      return { statusCode: 200, headers, body: JSON.stringify(ds) };
-    } catch {}
-  }
-
   try {
-    attempted.push('ds');
-    const ds = await fetchJson(`${DS_API_BASE}/dex/tokens/${query}`);
-    const pairs = Array.isArray(ds?.pairs) ? ds.pairs : [];
-    if (pairs.length) {
-      const tokenMeta = ds.token || pairs[0]?.baseToken || {};
+    if (USE_FIXTURES) {
+      try {
+        const ds = await readFixture(DS_FIXTURE);
+        ds.query = query;
+        headers['x-provider'] = ds.results[0]?.provider || 'ds';
+        headers['x-items'] = String(ds.results.length);
+        return { statusCode: 200, headers, body: JSON.stringify(ds) };
+      } catch (err) {
+        logError('fixture read failed', err);
+      }
+    }
+
+    try {
+      attempted.push('ds');
+      const ds = await fetchJson(`${DS_API_BASE}/dex/tokens/${query}`);
+      const pairs = Array.isArray(ds?.pairs) ? ds.pairs : [];
+      if (pairs.length) {
+        const tokenMeta = ds.token || pairs[0]?.baseToken || {};
       const pools: PoolSummary[] = [];
       let totalLiq = 0;
       let totalVol = 0;
@@ -150,14 +160,14 @@ export const handler: Handler = async (event) => {
       return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
     }
     throw new Error('empty');
-  } catch (err) {
-    log('ds branch failed', err);
-  }
+    } catch (err) {
+      logError('ds branch failed', err);
+    }
 
-  try {
-    attempted.push('gt');
-    const gt = await fetchJson(`${GT_API_BASE}/search/pairs?query=${query}`);
-    const arr = Array.isArray(gt?.data) ? gt.data : [];
+    try {
+      attempted.push('gt');
+      const gt = await fetchJson(`${GT_API_BASE}/search/pairs?query=${query}`);
+      const arr = Array.isArray(gt?.data) ? gt.data : [];
     if (!arr.length) throw new Error('empty');
     const pools: PoolSummary[] = [];
     let totalLiq = 0;
@@ -235,12 +245,18 @@ export const handler: Handler = async (event) => {
     headers['x-items'] = '1';
     log('response', event.rawUrl, 200, 1, provider);
     return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+    } catch (err) {
+      logError('gt branch failed', err);
+    }
+    headers['x-fallbacks-tried'] = attempted.join(',');
+    const empty: SearchResponse = { query, results: [] };
+    log('response', event.rawUrl, 200, 0, 'none');
+    return { statusCode: 200, headers, body: JSON.stringify(empty) };
   } catch (err) {
-    log('gt branch failed', err);
+    logError('handler error', err);
+    headers['x-fallbacks-tried'] = attempted.join(',');
+    const body: ApiError = { error: 'internal_error', provider: 'none' };
+    return { statusCode: 500, headers, body: JSON.stringify(body) };
   }
-  headers['x-fallbacks-tried'] = attempted.join(',');
-  const empty: SearchResponse = { query, results: [] };
-  log('response', event.rawUrl, 200, 0, 'none');
-  return { statusCode: 200, headers, body: JSON.stringify(empty) };
 };
 

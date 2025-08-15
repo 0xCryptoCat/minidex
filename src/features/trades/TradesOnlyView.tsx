@@ -6,11 +6,13 @@ import {
   formatUsd,
   formatAmount,
   formatShortAddr,
-  formatTimeUTC,
+  formatDateTimeUTC,
   formatFetchMeta,
   type FetchMeta,
 } from '../../lib/format';
 import '../../styles/trades.css';
+
+const ROW_HEIGHT = 52;
 
 interface Props {
   pairId: string;
@@ -32,11 +34,12 @@ type SortKey =
   | 'tx'
   | 'txCount';
 
-interface Column {
+interface ColumnConfig {
   key: SortKey;
   header: string;
+  accessor: (t: Trade) => any;
   render: (t: Trade) => ReactNode;
-  sort: (a: Trade, b: Trade) => number;
+  comparator?: (a: any, b: any) => number;
 }
 
 export default function TradesOnlyView({
@@ -78,56 +81,63 @@ export default function TradesOnlyView({
     return m;
   }, [rows]);
 
-  const columns: Column[] = useMemo(
+  const columns: ColumnConfig[] = useMemo(
     () => [
       {
         key: 'time',
         header: 'Time',
+        accessor: (t) => t.ts,
         render: (t) => (
           <>
-            <div>{formatTimeUTC(t.ts)}</div>
+            <div>{formatDateTimeUTC(t.ts)}</div>
             {t.blockNumber !== undefined && (
               <div className="muted">#{t.blockNumber}</div>
             )}
           </>
         ),
-        sort: (a, b) => a.ts - b.ts,
+        comparator: (a: number, b: number) => a - b,
       },
       {
         key: 'side',
         header: 'Type',
+        accessor: (t) => t.side,
         render: (t) => t.side,
-        sort: (a, b) => a.side.localeCompare(b.side),
+        comparator: (a: string, b: string) => a.localeCompare(b),
       },
       {
         key: 'price',
         header: 'Price $',
-        render: (t) => formatUsd(t.price),
-        sort: (a, b) => (a.price || 0) - (b.price || 0),
+        accessor: (t) => t.price,
+        render: (t) => formatUsd(t.price, { compact: true }),
+        comparator: (a: number | undefined, b: number | undefined) =>
+          (a || 0) - (b || 0),
       },
       {
         key: 'total',
         header: 'Total $',
-        render: (t) => formatUsd((t.amountBase || 0) * (t.price || 0)),
-        sort: (a, b) =>
-          (a.amountBase || 0) * (a.price || 0) -
-          (b.amountBase || 0) * (b.price || 0),
+        accessor: (t) => (t.amountBase || 0) * (t.price || 0),
+        render: (t) =>
+          formatUsd((t.amountBase || 0) * (t.price || 0), { compact: true }),
+        comparator: (a: number, b: number) => a - b,
       },
       {
         key: 'amountBase',
         header: `Amount ${baseSymbol || '1'}`,
+        accessor: (t) => t.amountBase || 0,
         render: (t) => formatAmount(t.amountBase),
-        sort: (a, b) => (a.amountBase || 0) - (b.amountBase || 0),
+        comparator: (a: number, b: number) => a - b,
       },
       {
         key: 'amountQuote',
         header: `Amount ${quoteSymbol || '2'}`,
+        accessor: (t) => t.amountQuote || 0,
         render: (t) => formatAmount(t.amountQuote),
-        sort: (a, b) => (a.amountQuote || 0) - (b.amountQuote || 0),
+        comparator: (a: number, b: number) => a - b,
       },
       {
         key: 'wallet',
         header: 'Maker',
+        accessor: (t) => t.wallet || '',
         render: (t) =>
           t.wallet ? (
             <a
@@ -141,11 +151,12 @@ export default function TradesOnlyView({
           ) : (
             '-'
           ),
-        sort: (a, b) => (a.wallet || '').localeCompare(b.wallet || ''),
+        comparator: (a: string, b: string) => a.localeCompare(b),
       },
       {
         key: 'tx',
         header: 'TX',
+        accessor: (t) => t.txHash || '',
         render: (t) =>
           t.txHash ? (
             <a
@@ -159,15 +170,23 @@ export default function TradesOnlyView({
           ) : (
             '-'
           ),
-        sort: () => 0,
+        comparator: (a: string, b: string) => a.localeCompare(b),
       },
       {
         key: 'txCount',
         header: 'TX Sum',
-        render: (t) => (t.wallet ? counts.get(t.wallet) || 0 : '-'),
-        sort: (a, b) =>
-          (a.wallet ? counts.get(a.wallet) || 0 : 0) -
-          (b.wallet ? counts.get(b.wallet) || 0 : 0),
+        accessor: (t) => (t.wallet ? counts.get(t.wallet) || 0 : 0),
+        render: (t) => {
+          const cnt = t.wallet ? counts.get(t.wallet) || 0 : 0;
+          return t.wallet ? (
+            <span className="tr-pill">
+              {cnt} {cnt === 1 ? 'trade' : 'trades'}
+            </span>
+          ) : (
+            '-'
+          );
+        },
+        comparator: (a: number, b: number) => a - b,
       },
     ],
     [baseSymbol, quoteSymbol, counts]
@@ -177,7 +196,15 @@ export default function TradesOnlyView({
     const col = columns.find((c) => c.key === sortKey);
     if (!col) return rows;
     const arr = [...rows].sort((a, b) => {
-      const res = col.sort(a, b);
+      const av = col.accessor(a);
+      const bv = col.accessor(b);
+      const res = col.comparator
+        ? col.comparator(av, bv)
+        : av > bv
+        ? 1
+        : av < bv
+        ? -1
+        : 0;
       return sortDir === 'asc' ? res : -res;
     });
     return arr;
@@ -235,7 +262,7 @@ export default function TradesOnlyView({
             </div>
           ))}
         </div>
-        <List height={400} itemCount={sorted.length} itemSize={44} width={910}>
+        <List height={400} itemCount={sorted.length} itemSize={ROW_HEIGHT} width={910}>
           {Row}
         </List>
       </div>

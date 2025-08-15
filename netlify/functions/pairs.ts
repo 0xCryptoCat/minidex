@@ -115,211 +115,208 @@ export const handler: Handler = async (event) => {
     log('response', event.rawUrl, 200, 0, provider);
     return { statusCode: 200, headers, body: JSON.stringify(body) };
   }
+
   try {
-    try {
-      if (USE_FIXTURES) {
-        try {
-          if (forceProvider !== 'gt') {
-            attempted.push('ds');
-            // No DS fixture; fall through to error to mimic real behavior
-            throw new Error('no ds fixture');
-          }
-          throw new Error('force gt');
-        } catch (err) {
-          logError('ds fixture failed', err);
-          try {
-            attempted.push('gt');
-            const gt = await readFixture(GT_FIXTURE);
-            provider = 'gt';
-            headers['x-provider'] = provider;
-            headers['x-fallbacks-tried'] = attempted.join(',');
-            headers['x-items'] = String(gt.pools.length);
-            log('response', event.rawUrl, 200, gt.pools.length, provider);
-            return { statusCode: 200, headers, body: JSON.stringify(gt) };
-          } catch (err2) {
-            logError('gt fixture failed', err2);
-            headers['x-fallbacks-tried'] = attempted.join(',');
-            const body: ApiError = { error: 'upstream_error', provider: 'none' };
-            log('response', event.rawUrl, 500, 0, provider);
-            return { statusCode: 500, headers, body: JSON.stringify(body) };
-          }
-        }
-      }
-
-      if (forceProvider !== 'gt') {
-        attempted.push('ds');
-        const dsUrl = `${DS_API_BASE}/dex/tokens/${address}`;
-        let ds: any;
-        try {
-          log('try ds', dsUrl);
-          ds = await fetchJson(dsUrl);
-        } catch (err) {
-          logError('ds request failed', dsUrl, err);
-          ds = null;
-        }
-        if (!ds || !Array.isArray(ds.pairs) || ds.pairs.length === 0) {
-          throw new Error('empty');
-        }
-
-        const tokenMeta = ds.token || ds.pairs[0]?.baseToken || {};
-        const token: TokenMeta = {
-          address: tokenMeta.address || address,
-          symbol: tokenMeta.symbol || '',
-          name: tokenMeta.name || '',
-          icon: tokenMeta.icon || tokenMeta.imageUrl || undefined,
-        };
-
-        const pools: PoolSummary[] = [];
-        let gtArr: any[] = [];
-        const needsGtPools = ds.pairs.some((p: any) => {
-          const addr =
-            p.pairAddress ||
-            p.liquidityPoolAddress ||
-            p.pair?.contract ||
-            p.pair?.address;
-          return !isValidAddress(addr);
-        });
-        if (needsGtPools) {
-          const gtPoolsUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}/pools`;
-          try {
-            const gtPools = await fetchJson(gtPoolsUrl);
-            gtArr = Array.isArray(gtPools?.data) ? gtPools.data : [];
-          } catch (err) {
-            logError('gt pools fetch failed', gtPoolsUrl, err);
-          }
-        }
-
-        for (const p of ds.pairs) {
-          const chainSlug = mapChainId(p.chainId);
-          let poolAddr =
-            p.pairAddress ||
-            p.liquidityPoolAddress ||
-            p.pair?.contract ||
-            p.pair?.address;
-          let liqUsd = p.liquidity?.usd ?? p.liquidityUsd;
-          const version = p.dexVersion || p.version;
-          const pairId = p.pairId || p.pair?.id || p.pairAddress || '';
-
-          let match: any;
-          if (gtArr.length) {
-            match = gtArr.find((d) => {
-              const attr = d.attributes || {};
-              return (
-                (attr.dex || '').toLowerCase() === (p.dexId || '').toLowerCase() &&
-                attr.base_token?.symbol === p.baseToken?.symbol &&
-                attr.quote_token?.symbol === p.quoteToken?.symbol
-              );
-            });
-          }
-          if (!isValidAddress(poolAddr)) {
-            if (match && isValidAddress(match.attributes?.pool_address)) {
-              poolAddr = match.attributes.pool_address;
-            }
-          }
-          if (match) {
-            const attr = match.attributes || {};
-            if (liqUsd === undefined) {
-              liqUsd = attr.reserve_in_usd ?? attr.reserve_usd;
-            }
-          }
-          pools.push({
-            pairId: pairId,
-            dex: p.dexId,
-            version,
-            base: p.baseToken?.symbol,
-            quote: p.quoteToken?.symbol,
-            chain: chainSlug,
-            poolAddress: isValidAddress(poolAddr) ? (poolAddr as Address) : undefined,
-            liqUsd: liqUsd !== undefined ? Number(liqUsd) : undefined,
-            gtSupported: isGtSupported(p.dexId, version),
-          });
-        }
-
-        pools.sort((a, b) => {
-          const sup = Number(!!b.gtSupported) - Number(!!a.gtSupported);
-          if (sup !== 0) return sup;
-          return (b.liqUsd || 0) - (a.liqUsd || 0);
-        });
-
-        provider = 'ds';
-        headers['x-provider'] = provider;
-        headers['x-fallbacks-tried'] = attempted.join(',');
-        headers['x-items'] = String(pools.length);
-        log('dexscreener pools', pools.length);
-        log('response', event.rawUrl, 200, pools.length, provider);
-        const bodyRes: PairsResponse = { token, pools, provider: 'ds' };
-        return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
-      }
-      throw new Error('force gt');
-    } catch (err) {
-      logError('ds branch failed', err);
-      if (forceProvider === 'ds') {
-        headers['x-fallbacks-tried'] = attempted.join(',');
-        const body: ApiError = { error: 'upstream_error', provider: 'none' };
-        log('response', event.rawUrl, 500, 0, provider);
-        return { statusCode: 500, headers, body: JSON.stringify(body) };
-      }
+    if (USE_FIXTURES) {
       try {
-        attempted.push('gt');
-        const tokenUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}`;
-        const poolsUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}/pools`;
-        log('try gt', tokenUrl, poolsUrl);
-        const tokenResp = await fetchJson(tokenUrl);
-        const poolsResp = await fetchJson(poolsUrl);
-        const pools: PoolSummary[] = [];
-        const arr = Array.isArray(poolsResp?.data) ? poolsResp.data : [];
-        for (const d of arr) {
-          const attr = d.attributes || {};
-          const dex = attr.dex || attr.name || '';
-          const version = attr.version || attr.dex_version;
-          const liqUsd = attr.reserve_in_usd ?? attr.reserve_usd;
-          pools.push({
-            pairId: d.id,
-            dex,
-            version,
-            base: attr.base_token?.symbol,
-            quote: attr.quote_token?.symbol,
-            chain: chain as string,
-            poolAddress: attr.pool_address as Address,
-            liqUsd: liqUsd !== undefined ? Number(liqUsd) : undefined,
-            gtSupported: isGtSupported(dex, version),
-          });
+        if (forceProvider !== 'gt') {
+          attempted.push('ds');
+          // No DS fixture; fall through to error to mimic real behavior
+          throw new Error('no ds fixture');
         }
-
-        pools.sort((a, b) => {
-          const sup = Number(!!b.gtSupported) - Number(!!a.gtSupported);
-          if (sup !== 0) return sup;
-          return (b.liqUsd || 0) - (a.liqUsd || 0);
-        });
-        const attr = tokenResp.data?.attributes || {};
-        const token: TokenMeta = {
-          address: attr.address || address,
-          symbol: attr.symbol || '',
-          name: attr.name || '',
-          icon: attr.image_url || undefined,
-        };
-        provider = 'gt';
-        headers['x-provider'] = provider;
-        headers['x-fallbacks-tried'] = attempted.join(',');
-        headers['x-items'] = String(pools.length);
-        log('gt pools', pools.length);
-        const bodyRes: PairsResponse = { token, pools, provider: 'gt' };
-        if (!pools.length) throw new Error('empty');
-        log('response', event.rawUrl, 200, pools.length, provider);
-        return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+        throw new Error('force gt');
       } catch (err) {
-        logError('gt branch failed', err);
-        headers['x-fallbacks-tried'] = attempted.join(',');
-        const body: ApiError = { error: 'upstream_error', provider: 'none' };
-        log('response', event.rawUrl, 500, 0, provider);
-        return { statusCode: 500, headers, body: JSON.stringify(body) };
+        logError('ds fixture failed', err);
+        try {
+          attempted.push('gt');
+          const gt = await readFixture(GT_FIXTURE);
+          provider = 'gt';
+          headers['x-provider'] = provider;
+          headers['x-fallbacks-tried'] = attempted.join(',');
+          headers['x-items'] = String(gt.pools.length);
+          log('response', event.rawUrl, 200, gt.pools.length, provider);
+          return { statusCode: 200, headers, body: JSON.stringify(gt) };
+        } catch (err2) {
+          logError('gt fixture failed', err2);
+          headers['x-fallbacks-tried'] = attempted.join(',');
+          const body: ApiError = { error: 'upstream_error', provider: 'none' };
+          log('response', event.rawUrl, 500, 0, provider);
+          return { statusCode: 500, headers, body: JSON.stringify(body) };
+        }
       }
     }
+
+    // Try Dexscreener (ds) first
+    if (forceProvider !== 'gt') {
+      attempted.push('ds');
+      const dsUrl = `${DS_API_BASE}/dex/tokens/${address}`;
+      let ds: any;
+      try {
+        log('try ds', dsUrl);
+        ds = await fetchJson(dsUrl);
+      } catch (err) {
+        logError('ds request failed', dsUrl, err);
+        ds = null;
+      }
+      if (!ds || !Array.isArray(ds.pairs) || ds.pairs.length === 0) {
+        throw new Error('empty');
+      }
+
+      const tokenMeta = ds.token || ds.pairs[0]?.baseToken || {};
+      const token: TokenMeta = {
+        address: tokenMeta.address || address,
+        symbol: tokenMeta.symbol || '',
+        name: tokenMeta.name || '',
+        icon: tokenMeta.icon || tokenMeta.imageUrl || undefined,
+      };
+
+      const pools: PoolSummary[] = [];
+      let gtArr: any[] = [];
+      const needsGtPools = ds.pairs.some((p: any) => {
+        const addr =
+          p.pairAddress ||
+          p.liquidityPoolAddress ||
+          p.pair?.contract ||
+          p.pair?.address;
+        return !isValidAddress(addr);
+      });
+      if (needsGtPools) {
+        const gtPoolsUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}/pools`;
+        try {
+          const gtPools = await fetchJson(gtPoolsUrl);
+          gtArr = Array.isArray(gtPools?.data) ? gtPools.data : [];
+        } catch (err) {
+          logError('gt pools fetch failed', gtPoolsUrl, err);
+        }
+      }
+
+      for (const p of ds.pairs) {
+        const chainSlug = mapChainId(p.chainId);
+        let poolAddr =
+          p.pairAddress ||
+          p.liquidityPoolAddress ||
+          p.pair?.contract ||
+          p.pair?.address;
+        let liqUsd = p.liquidity?.usd ?? p.liquidityUsd;
+        const version = p.dexVersion || p.version;
+        const pairId = p.pairId || p.pair?.id || p.pairAddress || '';
+
+        let match: any;
+        if (gtArr.length) {
+          match = gtArr.find((d) => {
+            const attr = d.attributes || {};
+            return (
+              (attr.dex || '').toLowerCase() === (p.dexId || '').toLowerCase() &&
+              attr.base_token?.symbol === p.baseToken?.symbol &&
+              attr.quote_token?.symbol === p.quoteToken?.symbol
+            );
+          });
+        }
+        if (!isValidAddress(poolAddr)) {
+          if (match && isValidAddress(match.attributes?.pool_address)) {
+            poolAddr = match.attributes.pool_address;
+          }
+        }
+        if (match) {
+          const attr = match.attributes || {};
+          if (liqUsd === undefined) {
+            liqUsd = attr.reserve_in_usd ?? attr.reserve_usd;
+          }
+        }
+        pools.push({
+          pairId: pairId,
+          dex: p.dexId,
+          version,
+          base: p.baseToken?.symbol,
+          quote: p.quoteToken?.symbol,
+          chain: chainSlug,
+          poolAddress: isValidAddress(poolAddr) ? (poolAddr as Address) : undefined,
+          liqUsd: liqUsd !== undefined ? Number(liqUsd) : undefined,
+          gtSupported: isGtSupported(p.dexId, version),
+        });
+      }
+
+      pools.sort((a, b) => {
+        const sup = Number(!!b.gtSupported) - Number(!!a.gtSupported);
+        if (sup !== 0) return sup;
+        return (b.liqUsd || 0) - (a.liqUsd || 0);
+      });
+
+      provider = 'ds';
+      headers['x-provider'] = provider;
+      headers['x-fallbacks-tried'] = attempted.join(',');
+      headers['x-items'] = String(pools.length);
+      log('dexscreener pools', pools.length);
+      log('response', event.rawUrl, 200, pools.length, provider);
+      const bodyRes: PairsResponse = { token, pools, provider: 'ds' };
+      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+    }
+
+    // Try GT provider
+    throw new Error('force gt');
   } catch (err) {
-    logError('handler error', err);
-    headers['x-fallbacks-tried'] = attempted.join(',');
-    const body: ApiError = { error: 'internal_error', provider: 'none' };
-    return { statusCode: 500, headers, body: JSON.stringify(body) };
+    logError('ds branch failed', err);
+    if (forceProvider === 'ds') {
+      headers['x-fallbacks-tried'] = attempted.join(',');
+      const body: ApiError = { error: 'upstream_error', provider: 'none' };
+      log('response', event.rawUrl, 500, 0, provider);
+      return { statusCode: 500, headers, body: JSON.stringify(body) };
+    }
+    try {
+      attempted.push('gt');
+      const tokenUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}`;
+      const poolsUrl = `${GT_API_BASE}/networks/${chain}/tokens/${address}/pools`;
+      log('try gt', tokenUrl, poolsUrl);
+      const tokenResp = await fetchJson(tokenUrl);
+      const poolsResp = await fetchJson(poolsUrl);
+      const pools: PoolSummary[] = [];
+      const arr = Array.isArray(poolsResp?.data) ? poolsResp.data : [];
+      for (const d of arr) {
+        const attr = d.attributes || {};
+        const dex = attr.dex || attr.name || '';
+        const version = attr.version || attr.dex_version;
+        const liqUsd = attr.reserve_in_usd ?? attr.reserve_usd;
+        pools.push({
+          pairId: d.id,
+          dex,
+          version,
+          base: attr.base_token?.symbol,
+          quote: attr.quote_token?.symbol,
+          chain: chain as string,
+          poolAddress: attr.pool_address as Address,
+          liqUsd: liqUsd !== undefined ? Number(liqUsd) : undefined,
+          gtSupported: isGtSupported(dex, version),
+        });
+      }
+
+      pools.sort((a, b) => {
+        const sup = Number(!!b.gtSupported) - Number(!!a.gtSupported);
+        if (sup !== 0) return sup;
+        return (b.liqUsd || 0) - (a.liqUsd || 0);
+      });
+
+      const attr = tokenResp.data?.attributes || {};
+      const token: TokenMeta = {
+        address: attr.address || address,
+        symbol: attr.symbol || '',
+        name: attr.name || '',
+        icon: attr.image_url || undefined,
+      };
+      provider = 'gt';
+      headers['x-provider'] = provider;
+      headers['x-fallbacks-tried'] = attempted.join(',');
+      headers['x-items'] = String(pools.length);
+      log('gt pools', pools.length);
+      const bodyRes: PairsResponse = { token, pools, provider: 'gt' };
+      if (!pools.length) throw new Error('empty');
+      log('response', event.rawUrl, 200, pools.length, provider);
+      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+    } catch (err) {
+      logError('gt branch failed', err);
+      headers['x-fallbacks-tried'] = attempted.join(',');
+      const body: ApiError = { error: 'upstream_error', provider: 'none' };
+      log('response', event.rawUrl, 500, 0, provider);
+      return { statusCode: 500, headers, body: JSON.stringify(body) };
+    }
   }
 };
-

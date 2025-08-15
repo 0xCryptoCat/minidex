@@ -96,6 +96,7 @@ export const handler: Handler = async (event) => {
 
   if (!SUPPORTED_CHAINS) {
     const body: ApiError = { error: 'config_error', provider: 'none' };
+    logError('config error: supported chains missing');
     log('response', event.rawUrl, 500, 0, provider);
     return { statusCode: 500, headers, body: JSON.stringify(body) };
   }
@@ -104,11 +105,13 @@ export const handler: Handler = async (event) => {
 
   if (!isValidChain(chain) || !isValidAddress(address)) {
     const body: ApiError = { error: 'invalid_request', provider: 'none' };
+    logError('invalid request', { chain, address });
     log('response', event.rawUrl, 400, 0, provider);
     return { statusCode: 400, headers, body: JSON.stringify(body) };
   }
   if (!SUPPORTED_CHAINS.has(chain)) {
     const body: ApiError = { error: 'unsupported_network', provider: 'none' };
+    logError('unsupported network', chain);
     log('response', event.rawUrl, 200, 0, provider);
     return { statusCode: 200, headers, body: JSON.stringify(body) };
   }

@@ -55,7 +55,8 @@ function readMeta(res: Response): FetchMeta {
 
 export async function search(
   query: string,
-  provider?: string
+  provider?: string,
+  signal?: AbortSignal
 ): Promise<ApiResult<SearchResponse | ApiError>> {
   const cached = getSearchCache(query);
   if (cached) return cached;
@@ -64,7 +65,7 @@ export async function search(
   url.searchParams.set('query', query);
   if (provider) url.searchParams.set('provider', provider);
   try {
-    const res = await fetch(url.toString());
+    const res = await fetch(url.toString(), { signal });
     const json = await res.json();
     const meta = readMeta(res);
     if (!res.ok) {

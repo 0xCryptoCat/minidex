@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import type { SearchTokenSummary, PoolSummary } from '../../lib/types';
-import { formatCompact } from '../../lib/format';
+import { formatUsd } from '../../lib/format';
 
 interface Props { result: SearchTokenSummary }
 
@@ -35,6 +35,7 @@ export default function SearchResultItem({ result }: Props) {
     pools,
     provider,
   } = result;
+  const displayedChains = (chainIcons || []).slice(0, 3);
 
   const supportedPool = (pools || []).reduce<PoolSummary | undefined>((acc, p) => {
     if (p.gtSupported) {
@@ -115,48 +116,31 @@ export default function SearchResultItem({ result }: Props) {
         </div>
       </td>
       <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {priceUsd !== undefined ? `$${priceUsd.toFixed(4)}` : '-'}
+        {formatUsd(priceUsd)}
       </td>
       <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {formatCompact(liqUsd)}
+        {formatUsd(liqUsd)}
       </td>
       <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {formatCompact(vol24hUsd)}
+        {formatUsd(vol24hUsd)}
       </td>
       <td>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          {chainIcons?.map((c, i) => (
+        <div className="chain-icons">
+          {displayedChains.map((c, i) => (
             <img
               key={c}
               src={`https://icons.llamao.fi/icons/chains/rsz_${c}.jpg`}
               alt={c}
-              style={{
-                width: 16,
-                height: 16,
-                borderRadius: '50%',
-                marginLeft: i === 0 ? 0 : -8,
-                border: '2px solid var(--bg)',
-                zIndex: chainIcons.length - i,
-              }}
+              style={{ zIndex: displayedChains.length - i }}
             />
           ))}
-          {chainCount && chainCount > chainIcons.length && (
-            <span
-              style={{
-                marginLeft: 4,
-                fontSize: '0.75rem',
-                background: 'var(--bg-elev)',
-                padding: '0 4px',
-                borderRadius: 4,
-              }}
-            >
-              +{chainCount - chainIcons.length}
-            </span>
+          {chainCount && chainCount > displayedChains.length && (
+            <span className="chain-more">+{chainCount - displayedChains.length}</span>
           )}
         </div>
       </td>
       <td style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        {poolCount}
+        <span className="pool-count-chip">{poolCount} pools</span>
         <span className="provider-badge" aria-label={`data provider ${provider}`}>
           {provider}
         </span>

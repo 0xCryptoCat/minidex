@@ -17,18 +17,24 @@ export default function SearchInput({ autoFocus, large }: Props) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchTokenSummary[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (autoFocus) inputRef.current?.focus();
   }, [autoFocus]);
 
+  useEffect(() => () => abortRef.current?.abort(), []);
+
   function runSearch(q: string) {
     if (!q || (!isAddress(q) && q.length < 4)) {
       setResults([]);
       return;
     }
-    apiSearch(q)
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    apiSearch(q, undefined, controller.signal)
       .then((data) => {
         if ('results' in data) {
           setResults(Array.isArray(data.results) ? data.results : []);
@@ -41,7 +47,15 @@ export default function SearchInput({ autoFocus, large }: Props) {
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => runSearch(query), 500);
+    if (isAddress(query)) {
+      runSearch(query);
+      return () => {};
+    }
+    if (query.length >= 4) {
+      timer.current = setTimeout(() => runSearch(query), 500);
+    } else {
+      setResults([]);
+    }
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
@@ -52,6 +66,19 @@ export default function SearchInput({ autoFocus, large }: Props) {
       if (timer.current) clearTimeout(timer.current);
       runSearch(query);
     }
+  }
+
+  function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text');
+    const target = e.currentTarget;
+    const start = target.selectionStart ?? 0;
+    const end = target.selectionEnd ?? 0;
+    const value = target.value;
+    const newValue = value.slice(0, start) + pasted + value.slice(end);
+    setQuery(newValue);
+    if (timer.current) clearTimeout(timer.current);
+    runSearch(newValue);
   }
 
   function handleSelect(r: SearchTokenSummary) {
@@ -82,6 +109,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={handleKey}
+        onPaste={handlePaste}
         placeholder="Search tokens or paste address"
         aria-label="Search tokens or paste address"
         style={{ width: '100%', ...sizeStyle }}

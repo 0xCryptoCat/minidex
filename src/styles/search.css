@@ -1,0 +1,26 @@
+.chain-icons {
+  display: flex;
+  align-items: center;
+}
+.chain-icons img {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+}
+.chain-icons img + img {
+  margin-left: -8px;
+}
+.chain-more {
+  margin-left: 4px;
+  font-size: 0.75rem;
+  background: var(--bg-elev);
+  padding: 0 4px;
+  border-radius: 4px;
+}
+.pool-count-chip {
+  font-size: 0.75rem;
+  background: var(--bg-elev);
+  padding: 0 4px;
+  border-radius: 4px;
+}

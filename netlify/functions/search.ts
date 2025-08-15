@@ -1,7 +1,6 @@
 import type { Handler } from '@netlify/functions';
 import type {
   SearchResponse,
-  ApiError,
   Provider,
   SearchTokenSummary,
   PoolSummary,
@@ -19,10 +18,6 @@ const DEBUG = process.env.DEBUG_LOGS === 'true';
 
 function log(...args: any[]) {
   if (DEBUG) console.log('[search]', ...args);
-}
-
-function isValidAddress(addr?: string): addr is string {
-  return !!addr && /^0x[a-fA-F0-9]{40}$/.test(addr);
 }
 
 async function readFixture(path: string): Promise<SearchResponse> {
@@ -61,7 +56,8 @@ function mapChainId(id: unknown): string {
 export const handler: Handler = async (event) => {
   const query =
     event.queryStringParameters?.query ||
-    event.queryStringParameters?.address;
+    event.queryStringParameters?.address ||
+    '';
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -70,11 +66,6 @@ export const handler: Handler = async (event) => {
     'x-fallbacks-tried': '',
     'x-items': '0',
   };
-
-  if (!isValidAddress(query)) {
-    const body: ApiError = { error: 'invalid_address', provider: 'none' };
-    return { statusCode: 400, headers, body: JSON.stringify(body) };
-  }
 
   const attempted: string[] = [];
   let provider: Provider | 'none' = 'none';
@@ -246,9 +237,10 @@ export const handler: Handler = async (event) => {
     return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
   } catch (err) {
     log('gt branch failed', err);
-    headers['x-fallbacks-tried'] = attempted.join(',');
-    const body: ApiError = { error: 'upstream_error', provider: 'none' };
-    return { statusCode: 500, headers, body: JSON.stringify(body) };
   }
+  headers['x-fallbacks-tried'] = attempted.join(',');
+  const empty: SearchResponse = { query, results: [] };
+  log('response', event.rawUrl, 200, 0, 'none');
+  return { statusCode: 200, headers, body: JSON.stringify(empty) };
 };
 

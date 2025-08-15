@@ -12,15 +12,15 @@
   margin-left: -8px;
 }
 .chain-more {
-  margin-left: 4px;
+  margin-left: var(--space-1);
   font-size: 0.75rem;
   background: var(--bg-elev);
-  padding: 0 4px;
-  border-radius: 4px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius);
 }
 .pool-count-chip {
   font-size: 0.75rem;
   background: var(--bg-elev);
-  padding: 0 4px;
-  border-radius: 4px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius);
 }

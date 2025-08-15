@@ -27,7 +27,7 @@ a {
   height: 48px;
   display: flex;
   align-items: center;
-  padding: 0 1rem;
+  padding: 0 var(--space-4);
   background: var(--bg-elev);
   z-index: 10;
 }
@@ -86,13 +86,13 @@ body.home-no-header main {
 }
 
 .view-tabs {
-  margin-bottom: var(--padding);
+  margin-bottom: var(--space-4);
 }
 
 .view-tab {
-  margin-right: calc(var(--padding) / 2);
+  margin-right: var(--space-2);
   min-height: 44px;
-  padding: 0 calc(var(--padding) / 2);
+  padding: 0 var(--space-2);
 }
 
 .view-tab[aria-selected='true'] {
@@ -113,7 +113,7 @@ button:focus-visible {
 .search-results-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: calc(var(--padding) / 2);
+  margin-top: var(--space-2);
   table-layout: fixed;
 }
 
@@ -126,7 +126,7 @@ button:focus-visible {
 
 .search-results-table th,
 .search-results-table td {
-  padding: 0.75rem;
+  padding: var(--space-3);
   border-bottom: 1px solid var(--border);
   text-align: left;
   overflow: hidden;
@@ -153,14 +153,14 @@ tbody tr:nth-child(even) {
 .provider-badge {
   font-size: 0.75rem;
   border: 1px solid var(--border);
-  padding: 0 calc(var(--padding) / 4);
+  padding: 0 var(--space-1);
 }
 
 .error-banner {
   background: rgba(255, 46, 209, 0.1);
   color: var(--accent-magenta);
-  padding: calc(var(--padding) / 2);
-  margin-bottom: calc(var(--padding) / 2);
+  padding: var(--space-2);
+  margin-bottom: var(--space-2);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -168,9 +168,32 @@ tbody tr:nth-child(even) {
 
 .no-results {
   color: var(--text-muted);
-  margin-top: calc(var(--padding) / 2);
+  margin-top: var(--space-2);
 }
 
 .trending-section {
-  margin-top: var(--padding);
+  margin-top: var(--space-4);
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  margin-left: var(--space-1);
+  color: inherit;
+}
+
+.copy-btn .tooltip {
+  position: absolute;
+  top: -1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-elev);
+  color: var(--text);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  pointer-events: none;
+  white-space: nowrap;
 }

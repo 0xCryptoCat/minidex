@@ -10,6 +10,7 @@ import {
   formatFetchMeta,
   type FetchMeta,
 } from '../../lib/format';
+import { addressUrl, txUrl } from '../../lib/explorer';
 import '../../styles/trades.css';
 
 const ROW_HEIGHT = 52;
@@ -40,6 +41,7 @@ interface ColumnConfig {
   accessor: (t: Trade) => any;
   render: (t: Trade) => ReactNode;
   comparator?: (a: any, b: any) => number;
+  className?: string;
 }
 
 export default function TradesOnlyView({
@@ -118,6 +120,7 @@ export default function TradesOnlyView({
         accessor: (t) => t.side,
         render: (t) => t.side,
         comparator: (a: string, b: string) => a.localeCompare(b),
+        className: 'type',
       },
       {
         key: 'price',
@@ -157,7 +160,7 @@ export default function TradesOnlyView({
           t.wallet ? (
             <a
               className="tr-link"
-              href={`https://etherscan.io/address/${t.wallet}`}
+              href={addressUrl(chain as any, t.wallet)!}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -176,7 +179,7 @@ export default function TradesOnlyView({
           t.txHash ? (
             <a
               className="tr-link"
-              href={`https://etherscan.io/tx/${t.txHash}`}
+              href={txUrl(chain as any, t.txHash)!}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -204,7 +207,7 @@ export default function TradesOnlyView({
         comparator: (a: number, b: number) => a - b,
       },
     ],
-    [baseSymbol, quoteSymbol, counts]
+    [baseSymbol, quoteSymbol, counts, chain]
   );
 
   const sorted = useMemo(() => {
@@ -240,7 +243,7 @@ export default function TradesOnlyView({
     return (
       <div style={style} className={`tr-row ${typeClass}`}>
         {columns.map((c) => (
-          <div key={c.key} className="tr-cell">
+          <div key={c.key} className={`tr-cell${c.className ? ' ' + c.className : ''}`}>
             {c.render(t)}
           </div>
         ))}

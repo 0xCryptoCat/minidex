@@ -94,6 +94,7 @@ export interface Trade {
   amountQuote?: number;     // filled amount of counter token
   txHash?: TxHash;
   wallet?: Address;
+  blockNumber?: number;
 }
 
 export interface TradesResponse {

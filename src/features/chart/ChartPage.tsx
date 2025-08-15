@@ -5,7 +5,7 @@ import { pairs } from '../../lib/api';
 import PoolSwitcher from './PoolSwitcher';
 import ChartOnlyView from './ChartOnlyView';
 import DetailView from './DetailView';
-import TradesOnlyView from './TradesOnlyView';
+import TradesOnlyView from '../trades/TradesOnlyView';
 import copy from '../../copy/en.json';
 
 // Views for chart page
@@ -134,6 +134,8 @@ export default function ChartPage() {
               chain={currentPool.chain}
               poolAddress={currentPool.poolAddress}
               tokenAddress={address}
+              baseSymbol={currentPool.base}
+              quoteSymbol={currentPool.quote}
             />
           )}
           {view === 'detail' && currentPool && address && (

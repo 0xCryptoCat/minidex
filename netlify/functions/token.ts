@@ -1,11 +1,13 @@
 import type { Handler } from '@netlify/functions';
 import type { TokenResponse, ApiError } from '../../src/lib/types';
 import { isGtSupported } from '../shared/dex-allow';
+import { toGTNetwork } from '../shared/chains';
+import { getJson } from '../shared/http';
 
 const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
 const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
-const DS_API_BASE = process.env.DS_API_BASE || '';
-const dsBase = DS_API_BASE.replace(/\/latest$/, '');
+const rawDs = process.env.DS_API_BASE || 'https://api.dexscreener.com';
+const dsBase = rawDs.replace(/\/+$/, '').replace(/\/latest$/, '');
 const DEBUG = process.env.DEBUG_LOGS === 'true';
 
 function log(...args: any[]) {
@@ -88,7 +90,7 @@ export const handler: Handler = async (event) => {
     if (DS_API_BASE) {
       try {
         attempted.push('ds');
-        const res = await fetch(`${dsBase}/token-pairs/v1/${chain}/${address}`);
+        const res = await fetch(`${dsBase}/token-pairs/v1/${chain}/${address.toLowerCase()}`);
         if (res.ok) {
           const ds = await res.json();
           info = ds.info;
@@ -166,8 +168,118 @@ export const handler: Handler = async (event) => {
           provider = 'ds';
           log('ds token');
         }
+
+        if (!pools.length) {
+          attempted.push('ds-search');
+          const search = await getJson(`${dsBase}/latest/dex/search?q=${address}`);
+          const list = Array.isArray(search?.pairs)
+            ? search.pairs
+            : Array.isArray(search)
+            ? search
+            : [];
+          const match = list.find((p: any) => {
+            const b = p.baseToken?.address?.toLowerCase();
+            const q = p.quoteToken?.address?.toLowerCase();
+            return b === address.toLowerCase() || q === address.toLowerCase();
+          });
+          if (match) {
+            const tx = match.txns || {};
+            const mapTx = (t: any) =>
+              t ? { buys: Number(t.buys || 0), sells: Number(t.sells || 0) } : undefined;
+            pools = [
+              {
+                pairId: match.pairId || match.pairAddress,
+                dex: match.dexId,
+                version: match.dexVersion || match.version,
+                chain,
+                pairAddress: match.pairAddress,
+                pairUrl: match.url,
+                baseToken: {
+                  address: match.baseToken?.address,
+                  symbol: match.baseToken?.symbol,
+                  name: match.baseToken?.name,
+                },
+                quoteToken: {
+                  address: match.quoteToken?.address,
+                  symbol: match.quoteToken?.symbol,
+                  name: match.quoteToken?.name,
+                },
+                priceNative: match.priceNative ? Number(match.priceNative) : undefined,
+                priceUsd: match.priceUsd ? Number(match.priceUsd) : undefined,
+                liquidity: {
+                  usd: match.liquidityUsd ? Number(match.liquidityUsd) : undefined,
+                  base: undefined,
+                  quote: undefined,
+                },
+                fdv: match.fdv ? Number(match.fdv) : undefined,
+                marketCap: match.marketCap ? Number(match.marketCap) : undefined,
+                labels: Array.isArray(match.labels) ? match.labels : undefined,
+                txns: {
+                  m5: mapTx(tx.m5),
+                  h1: mapTx(tx.h1),
+                  h6: mapTx(tx.h6),
+                  h24: mapTx(tx.h24),
+                },
+                volume: {
+                  m5: match.volume?.m5 !== undefined ? Number(match.volume.m5) : undefined,
+                  h1: match.volume?.h1 !== undefined ? Number(match.volume.h1) : undefined,
+                  h6: match.volume?.h6 !== undefined ? Number(match.volume.h6) : undefined,
+                  h24: match.volume?.h24 !== undefined ? Number(match.volume.h24) : undefined,
+                },
+                priceChange: {
+                  m5: match.priceChange?.m5 !== undefined ? Number(match.priceChange.m5) : undefined,
+                  h1: match.priceChange?.h1 !== undefined ? Number(match.priceChange.h1) : undefined,
+                  h6: match.priceChange?.h6 !== undefined ? Number(match.priceChange.h6) : undefined,
+                  h24: match.priceChange?.h24 !== undefined ? Number(match.priceChange.h24) : undefined,
+                },
+                pairCreatedAt: match.pairCreatedAt ? Number(match.pairCreatedAt) : undefined,
+                gtSupported: isGtSupported(match.dexId, match.dexVersion || match.version),
+              },
+            ];
+          }
+        }
       } catch (err) {
         logError('ds token fetch failed', err);
+      }
+    }
+
+    if (!pools.length) {
+      const gtNet = toGTNetwork(chain);
+      if (gtNet) {
+        attempted.push('gt');
+        try {
+          const gt = await getJson(
+            `https://api.geckoterminal.com/api/v2/networks/${gtNet}/tokens/${address.toLowerCase()}/pools`
+          );
+          const attrs = gt?.data?.[0]?.attributes;
+          if (attrs) {
+            info = info || {};
+            info.baseToken = info.baseToken || { symbol: attrs.base_token_symbol };
+            info.quoteToken = info.quoteToken || { symbol: attrs.quote_token_symbol };
+          }
+        } catch (err) {
+          logError('gt token fetch failed', err);
+        }
+      }
+
+      if (CG_API_BASE && CG_API_KEY) {
+        attempted.push('cg-info');
+        try {
+          const cgInfo = await getJson(
+            `${CG_API_BASE}/token-info-contract-address?chain=${chain}&address=${address.toLowerCase()}`,
+            { headers: { 'x-cg-pro-api-key': CG_API_KEY } }
+          );
+          const attr = cgInfo?.data?.attributes || cgInfo?.data || cgInfo;
+          if (attr) {
+            info = info || {};
+            if (!info.symbol && attr.symbol) info.symbol = attr.symbol;
+            if (!info.name && attr.name) info.name = attr.name;
+            if (!info.imageUrl && (attr.image || attr.logo || attr.image_url))
+              info.imageUrl = attr.image || attr.logo || attr.image_url;
+          }
+        } catch (err) {
+          logError('cg info fetch failed', err);
+        }
       }
     }
 
@@ -223,9 +335,16 @@ export const handler: Handler = async (event) => {
     }
 
     headers['x-fallbacks-tried'] = attempted.join(',');
-    const body: ApiError = { error: 'upstream_error', provider: 'none' };
-    log('response', event.rawUrl, 500, 0, provider || 'none');
-    return { statusCode: 500, headers, body: JSON.stringify(body) };
+    headers['x-items'] = '0';
+    const bodyRes: TokenResponse & { note: string } = {
+      info: info || {},
+      kpis: {},
+      pools: [],
+      provider: 'none',
+      note: 'no_upstream_data',
+    };
+    log('response', event.rawUrl, 200, 0, 'none');
+    return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
   } catch (err) {
     logError('handler error', err);
     headers['x-fallbacks-tried'] = attempted.join(',');

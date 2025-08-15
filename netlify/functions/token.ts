@@ -78,31 +78,32 @@ export const handler: Handler = async (event) => {
   let meta: any = null;
   let pairs: any[] = [];
   const links: any = {};
-  let infoBlock: any = null;
-  let ageDays: number | undefined;
+  let imageUrl: string | undefined;
+  let headerUrl: string | undefined;
+  let description: string | undefined;
+  let websites: any[] | undefined;
+  let socials: any[] | undefined;
+  let ageSec: number | undefined;
+  let provider: 'cg' | 'ds' | undefined;
+  const kpis: any = {};
 
   if (DS_API_BASE) {
     try {
-      const res = await fetch(`${DS_API_BASE}/dex/tokens/${address}`);
+      attempted.push('ds');
+      const res = await fetch(`${DS_API_BASE}/token-pairs/v1/${chain}/${address}`);
       if (res.ok) {
         const ds = await res.json();
-        const tokenMeta = ds.token || ds.pairs?.[0]?.baseToken || {};
+        const tokenMeta = ds.pairs?.[0]?.baseToken || {};
         meta = {
           address: tokenMeta.address || address,
           symbol: tokenMeta.symbol || '',
           name: tokenMeta.name || '',
-          icon: tokenMeta.icon || tokenMeta.imageUrl || undefined,
+          icon: tokenMeta.imageUrl || undefined,
         };
         pairs = Array.isArray(ds.pairs)
           ? ds.pairs.map((p: any) => {
-              if (!ageDays) {
-                const created = p.pairCreatedAt || p.createdAt;
-                if (created) {
-                  ageDays = (Date.now() / 1000 - Number(created)) / 86400;
-                }
-              }
               const tx = p.txns || {};
-              return {
+              const mapped: any = {
                 pairId: p.pairId || p.pairAddress,
                 dex: p.dexId,
                 version: p.dexVersion || p.version,
@@ -116,6 +117,19 @@ export const handler: Handler = async (event) => {
                     : p.liquidityUsd !== undefined
                     ? Number(p.liquidityUsd)
                     : undefined,
+                liquidity: {
+                  base: p.liquidity?.base !== undefined ? Number(p.liquidity.base) : undefined,
+                  quote: p.liquidity?.quote !== undefined ? Number(p.liquidity.quote) : undefined,
+                  usd:
+                    p.liquidity?.usd !== undefined
+                      ? Number(p.liquidity.usd)
+                      : p.liquidityUsd !== undefined
+                      ? Number(p.liquidityUsd)
+                      : undefined,
+                },
+                fdv: p.fdv !== undefined ? Number(p.fdv) : undefined,
+                marketCap: p.marketCap !== undefined ? Number(p.marketCap) : undefined,
+                labels: Array.isArray(p.labels) ? p.labels : undefined,
                 priceUsd:
                   p.priceUsd !== undefined
                     ? Number(p.priceUsd)
@@ -173,20 +187,22 @@ export const handler: Handler = async (event) => {
                 pairCreatedAt: p.pairCreatedAt || p.createdAt,
                 gtSupported: isGtSupported(p.dexId, p.dexVersion || p.version),
               };
+              return mapped;
             })
           : [];
-        const info = ds.token?.info || {};
-        links.website = info.website || info.websites?.[0];
-        links.twitter = info.twitter;
-        links.telegram = info.telegram;
-        links.explorer = info.explorer;
-        infoBlock = {
-          header: info.header,
-          imageUrl: info.imageUrl,
-          description: info.description,
-          websites: info.websites,
-          socials: info.socials,
-        };
+        const info = ds.info || {};
+        imageUrl = info.imageUrl;
+        headerUrl = info.header;
+        description = info.description;
+        websites = info.websites;
+        socials = info.socials;
+        const created = pairs.reduce((min: number, p: any) => {
+          return p.pairCreatedAt && p.pairCreatedAt < min ? p.pairCreatedAt : min;
+          }, Number.MAX_SAFE_INTEGER);
+        if (created !== Number.MAX_SAFE_INTEGER) {
+          ageSec = Math.max(0, Math.floor(Date.now() / 1000 - created));
+        }
+        provider = 'ds';
         log('ds token meta');
       }
     } catch {
@@ -194,8 +210,25 @@ export const handler: Handler = async (event) => {
     }
   }
 
-  let core: any = null;
-  let provider: 'cg' | 'ds' | undefined;
+  if (pairs.length) {
+    const first = pairs[0];
+    kpis.priceUsd = first.priceUsd;
+    kpis.mcUsd = first.marketCap;
+    kpis.fdvUsd = first.fdv;
+    kpis.liqUsd = pairs.reduce(
+      (sum: number, p: any) => sum + (p.liquidity?.usd || p.liqUsd || 0),
+      0
+    );
+    kpis.vol24hUsd = pairs.reduce(
+      (sum: number, p: any) => sum + (p.volume?.h24 || 0),
+      0
+    );
+    kpis.priceChange24hPct = first.priceChange?.h24;
+  }
+  if (ageSec !== undefined) {
+    kpis.ageDays = ageSec / 86400;
+    kpis.ageHours = ageSec / 3600;
+  }
 
   if (CG_API_BASE && CG_API_KEY) {
     attempted.push('cg');
@@ -203,78 +236,28 @@ export const handler: Handler = async (event) => {
       const cg = await fetchCgToken(chain, address);
       const attr = cg?.data?.attributes || cg?.data || cg;
       const priceChange = attr?.price_change_percentage || {};
-      core = {
-        priceUsd: attr?.price_usd !== undefined ? Number(attr.price_usd) : undefined,
-        mcUsd:
-          attr?.market_cap_usd !== undefined ? Number(attr.market_cap_usd) : undefined,
-        fdvUsd:
-          attr?.fully_diluted_valuation_usd !== undefined
-            ? Number(attr.fully_diluted_valuation_usd)
-            : undefined,
-        liqUsd:
-          attr?.liquidity_usd !== undefined ? Number(attr.liquidity_usd) : undefined,
-        vol24hUsd:
-          attr?.volume_24h_usd !== undefined ? Number(attr.volume_24h_usd) : undefined,
-        priceChange1hPct:
-          priceChange?.h1 !== undefined ? Number(priceChange.h1) : undefined,
-        priceChange24hPct:
-          priceChange?.h24 !== undefined ? Number(priceChange.h24) : undefined,
-      };
-      provider = 'cg';
-      log('cg token');
-    } catch {
-      // ignore
-    }
-  }
-
-  if (!core && DS_API_BASE) {
-    attempted.push('ds');
-    try {
-      const res = await fetch(`${DS_API_BASE}/dex/tokens/${address}`);
-      if (res.ok) {
-        const ds = await res.json();
-        const first = Array.isArray(ds.pairs) ? ds.pairs[0] : undefined;
-        if (first) {
-          core = {
-            priceUsd:
-              first.priceUsd !== undefined
-                ? Number(first.priceUsd)
-                : first.price_usd !== undefined
-                ? Number(first.price_usd)
-                : undefined,
-            fdvUsd:
-              first.fdv !== undefined
-                ? Number(first.fdv)
-                : first.fdvUsd !== undefined
-                ? Number(first.fdvUsd)
-                : undefined,
-            liqUsd:
-              first.liquidity?.usd !== undefined
-                ? Number(first.liquidity.usd)
-                : first.liquidityUsd !== undefined
-                ? Number(first.liquidityUsd)
-                : undefined,
-            vol24hUsd:
-              first.volume?.h24 !== undefined
-                ? Number(first.volume.h24)
-                : first.vol24hUsd !== undefined
-                ? Number(first.vol24hUsd)
-                : undefined,
-            priceChange1hPct:
-              first.priceChange?.h1 !== undefined
-                ? Number(first.priceChange.h1)
-                : undefined,
-            priceChange24hPct:
-              first.priceChange?.h24 !== undefined
-                ? Number(first.priceChange.h24)
-                : first.priceChange24hPct !== undefined
-                ? Number(first.priceChange24hPct)
-                : undefined,
-          };
-          provider = 'ds';
-          log('ds token metrics');
-        }
+      if (kpis.priceUsd === undefined && attr?.price_usd !== undefined)
+        kpis.priceUsd = Number(attr.price_usd);
+      if (kpis.mcUsd === undefined && attr?.market_cap_usd !== undefined)
+        kpis.mcUsd = Number(attr.market_cap_usd);
+      if (kpis.fdvUsd === undefined && attr?.fully_diluted_valuation_usd !== undefined)
+        kpis.fdvUsd = Number(attr.fully_diluted_valuation_usd);
+      if (kpis.liqUsd === undefined && attr?.liquidity_usd !== undefined)
+        kpis.liqUsd = Number(attr.liquidity_usd);
+      if (kpis.vol24hUsd === undefined && attr?.volume_24h_usd !== undefined)
+        kpis.vol24hUsd = Number(attr.volume_24h_usd);
+      if (kpis.priceChange24hPct === undefined && priceChange?.h24 !== undefined)
+        kpis.priceChange24hPct = Number(priceChange.h24);
+      if (!meta) {
+        meta = {
+          address,
+          symbol: attr?.symbol || '',
+          name: attr?.name || '',
+          icon: attr?.image_url || undefined,
+        };
       }
+      if (!provider) provider = 'cg';
+      log('cg token');
     } catch {
       // ignore
     }
@@ -295,17 +278,21 @@ export const handler: Handler = async (event) => {
     }
   }
 
-  if (meta && core) {
+  if (meta) {
     headers['x-provider'] = provider || 'none';
     headers['x-fallbacks-tried'] = attempted.join(',');
     headers['x-items'] = String(pairs.length);
     const bodyRes: TokenResponse = {
       meta,
-      kpis: { ...core, ageDays },
+      imageUrl,
+      headerUrl,
+      description,
+      websites,
+      socials,
+      kpis,
       links,
-      info: infoBlock || undefined,
       pairs,
-      provider: provider!,
+      provider: provider || 'cg',
     };
     log('response', event.rawUrl, 200, pairs.length, provider || 'none');
     return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };

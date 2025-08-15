@@ -50,10 +50,14 @@ export default function PoolSwitcher({ pools, current, onSwitch }: Props) {
             style={{ padding: '0.25rem', marginTop: '0.25rem' }}
           >
             {filtered.map((p) => (
-              <option key={p.pairId} value={p.pairId}>
+              <option
+                key={p.pairId}
+                value={p.pairId}
+                style={{ opacity: p.gtSupported === false ? 0.5 : 1 }}
+              >
                 {`${p.dex}${p.version ? ` (${p.version})` : ''} — ${p.base}/${p.quote}${
                   p.liqUsd ? ` — $${formatCompact(p.liqUsd)}` : ''
-                }`}
+                }${p.gtSupported === false ? ' — Limited' : ''}`}
               </option>
             ))}
           </select>
@@ -74,9 +78,25 @@ export default function PoolSwitcher({ pools, current, onSwitch }: Props) {
             border: '1px solid var(--border)',
             background: current === p.pairId ? 'var(--bg-elev)' : 'transparent',
             minHeight: 40,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            opacity: p.gtSupported === false ? 0.5 : 1,
           }}
         >
           {p.dex} {p.base}/{p.quote}
+          {p.gtSupported === false && (
+            <span
+              style={{
+                fontSize: '0.625rem',
+                background: 'var(--bg-elev)',
+                padding: '0 4px',
+                borderRadius: 4,
+              }}
+            >
+              Limited
+            </span>
+          )}
         </button>
       ))}
     </div>

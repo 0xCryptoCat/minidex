@@ -32,24 +32,26 @@ export default function SearchResultItem({ result }: Props) {
     chainIcons,
     chainCount,
     poolCount,
-    gtSupported,
     pools,
     provider,
   } = result;
 
-  const supportedPool = pools?.find((p) => p.gtSupported);
-  const fallbackPool = [...(pools || [])].sort(
-    (a: PoolSummary, b: PoolSummary) => (b.liqUsd || 0) - (a.liqUsd || 0)
-  )[0];
+  const supportedPool = (pools || []).reduce<PoolSummary | undefined>((acc, p) => {
+    if (p.gtSupported) {
+      if (!acc || (p.liqUsd || 0) > (acc.liqUsd || 0)) return p;
+    }
+    return acc;
+  }, undefined);
+  const fallbackPool = (pools || []).reduce<PoolSummary | undefined>((acc, p) => {
+    if (!acc || (p.liqUsd || 0) > (acc.liqUsd || 0)) return p;
+    return acc;
+  }, undefined);
   const targetPool = supportedPool || fallbackPool;
-  const isSupported = gtSupported;
+  const isSupported = pools?.some((p) => p.gtSupported);
 
   function handleClick() {
     const pairId = targetPool?.pairId;
     if (pairId) {
-      if (!isSupported) {
-        alert('Chart/Trades not available on this DEX; limited metrics shown.');
-      }
       navigate(
         `/t/${targetPool?.chain}/${address}/${pairId}?poolAddress=${
           targetPool?.poolAddress || ''

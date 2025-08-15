@@ -51,18 +51,19 @@ export default function SearchPage() {
       if (data.error === 'rate_limit') setBackoff(5);
     } else {
       const res = Array.isArray(data.results) ? data.results : [];
-      res.forEach((r) =>
+      res.forEach((r) => {
         r.pools?.sort((a, b) => {
           const sup = Number(!!b.gtSupported) - Number(!!a.gtSupported);
           if (sup !== 0) return sup;
           return (b.liqUsd || 0) - (a.liqUsd || 0);
-        })
-      );
+        });
+        (r as any).gtSupported = r.pools?.some((p) => p.gtSupported);
+      });
       const sorted = res.sort((a, b) => {
-        if (a.gtSupported === b.gtSupported) {
+        if ((a as any).gtSupported === (b as any).gtSupported) {
           return (b.liqUsd || 0) - (a.liqUsd || 0);
         }
-        return a.gtSupported ? -1 : 1;
+        return (a as any).gtSupported ? -1 : 1;
       });
       setResults(sorted);
       const first = sorted[0];

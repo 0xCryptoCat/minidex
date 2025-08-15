@@ -19,7 +19,7 @@ export default function ChartPage() {
   const [pools, setPools] = useState<PoolSummary[]>([]);
   const [currentPool, setCurrentPool] = useState<PoolSummary | null>(null);
   const [provider, setProvider] = useState<Provider | null>(null);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const view = (searchParams.get('view') as View) || 'detail';
   const [xDomain, setXDomain] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +27,14 @@ export default function ChartPage() {
   const [noData, setNoData] = useState(false);
   const [unsupported, setUnsupported] = useState(false);
   const { setProvider: setGlobalProvider } = useProvider();
+
+  useEffect(() => {
+    if (!searchParams.get('view')) {
+      const params = new URLSearchParams(searchParams);
+      params.set('view', 'detail');
+      setSearchParams(params, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!chain || !address) {

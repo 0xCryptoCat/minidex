@@ -246,7 +246,7 @@ export default function PriceChart({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--muted)',
+            color: 'var(--text-muted)',
             pointerEvents: 'none',
             flexDirection: 'column',
           }}

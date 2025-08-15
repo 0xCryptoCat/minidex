@@ -5,6 +5,7 @@ import { isGtSupported } from '../shared/dex-allow';
 const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
 const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
 const DS_API_BASE = process.env.DS_API_BASE || '';
+const dsBase = DS_API_BASE.replace(/\/latest$/, '');
 const DEBUG = process.env.DEBUG_LOGS === 'true';
 
 function log(...args: any[]) {
@@ -81,7 +82,7 @@ export const handler: Handler = async (event) => {
   if (DS_API_BASE) {
     try {
       attempted.push('ds');
-      const res = await fetch(`${DS_API_BASE}/token-pairs/v1/${chain}/${address}`);
+      const res = await fetch(`${dsBase}/token-pairs/v1/${chain}/${address}`);
       if (res.ok) {
         const ds = await res.json();
         info = ds.info;

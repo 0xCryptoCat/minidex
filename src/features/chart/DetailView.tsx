@@ -55,16 +55,22 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
     return <div className="detail">Loading…</div>;
   }
 
-  const { meta, kpis, info, provider, pairs } = detail;
-  const createdTs =
-    kpis.ageDays !== undefined ? Math.floor(Date.now() / 1000 - kpis.ageDays * 86400) : undefined;
+  const { meta, kpis, imageUrl, headerUrl, description, websites, socials, provider, pairs } = detail;
+  const ageSec =
+    kpis.ageHours !== undefined
+      ? kpis.ageHours * 3600
+      : kpis.ageDays !== undefined
+      ? kpis.ageDays * 86400
+      : undefined;
+  const createdTs = ageSec ? Math.floor(Date.now() / 1000 - ageSec) : undefined;
+  const currentPool = pools.find((p) => p.pairId === pairId);
 
   const renderLinks = () => {
     const items: { key: string; url: string }[] = [];
-    info?.websites?.forEach((w) => {
+    websites?.forEach((w) => {
       if (w?.url) items.push({ key: (w.label || 'website').toLowerCase(), url: w.url });
     });
-    info?.socials?.forEach((s) => {
+    socials?.forEach((s) => {
       if (s?.url) items.push({ key: (s.type || '').toLowerCase(), url: s.url });
     });
     if (!items.length) return null;
@@ -77,7 +83,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
               key={i}
               href={l.url}
               target="_blank"
-              rel="noreferrer nofollow"
+              rel="noopener"
               aria-label={l.key}
             >
               {icon}
@@ -104,12 +110,17 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
           p.priceChange.h24 ?? '-'
         }%`
       : '-';
+    const liqStr = p.liquidity
+      ? `${formatCompact(p.liquidity.base)} / ${formatCompact(p.liquidity.quote)} / ${formatCompact(
+          p.liquidity.usd
+        )}`
+      : '-';
     return (
-      <details key={p.pairId} className="pool-item">
+      <details key={p.pairId} className="pool-item" open={p.pairId === pairId}>
         <summary>
           {`${p.dex}${p.version ? ` (${p.version})` : ''} — ${p.base}/${p.quote} — liq $${
-            p.liqUsd ? formatCompact(p.liqUsd) : '-' }
-          `}
+            p.liqUsd ? formatCompact(p.liqUsd) : '-' }`}
+          {p.gtSupported === false && <span className="badge limited">Limited</span>}
         </summary>
         <div className="pool-body">
           <div className="pool-metrics">
@@ -118,11 +129,14 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
             <div><span>Txns m5/h1/h6/h24</span><strong>{txStr}</strong></div>
             <div><span>Vol m5/h1/h6/h24</span><strong>{volStr}</strong></div>
             <div><span>Δ m5/h1/h6/h24</span><strong>{pcStr}</strong></div>
+            <div><span>Liq base/quote/usd</span><strong>{liqStr}</strong></div>
+            <div><span>FDV</span><strong>{formatUsd(p.fdv)}</strong></div>
+            <div><span>MC</span><strong>{formatUsd(p.marketCap)}</strong></div>
             <div><span>Age</span><strong>{age}</strong></div>
           </div>
           <div className="pool-links">
             {p.pairUrl && (
-              <a href={p.pairUrl} target="_blank" rel="noreferrer nofollow">
+              <a href={p.pairUrl} target="_blank" rel="noopener">
                 DexScreener
               </a>
             )}
@@ -130,7 +144,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
               <button onClick={() => navigator.clipboard.writeText(p.poolAddress!)}>Copy</button>
             )}
             {explorer && (
-              <a href={explorer} target="_blank" rel="noreferrer nofollow">
+              <a href={explorer} target="_blank" rel="noopener">
                 Explorer
               </a>
             )}
@@ -143,16 +157,16 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
     );
   };
 
-  const desc = info?.description || '';
+  const desc = description || '';
   const shortDesc = desc.slice(0, 300);
 
   return (
     <div className="detail">
-      {info?.header && <img src={info.header} alt="" className="detail-header" />}
+      {headerUrl && <img src={headerUrl} alt="" className="detail-header" />}
       <div className="detail-top">
         <div className="detail-avatar">
-          {info?.imageUrl || meta.icon ? (
-            <img src={info?.imageUrl || meta.icon} alt="" />
+          {imageUrl || meta.icon ? (
+            <img src={imageUrl || meta.icon} alt="" />
           ) : (
             <div className="detail-letter">{meta.symbol?.[0] || '?'}</div>
           )}
@@ -164,6 +178,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
           <div className="detail-badges">
             <span className="badge">{chain}</span>
             {provider && <span className="badge">{provider}</span>}
+            {currentPool?.gtSupported === false && <span className="badge limited">Limited</span>}
           </div>
         </div>
       </div>

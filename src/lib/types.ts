@@ -146,14 +146,6 @@ export interface TokenLinks {
   telegram?: string;
 }
 
-export interface TokenInfoBlock {
-  header?: string;
-  imageUrl?: string;
-  description?: string;
-  websites?: { label?: string; url: string }[];
-  socials?: { type?: string; url: string }[];
-}
-
 export interface TokenPairInfo {
   pairId: PairId;
   dex: string;
@@ -163,6 +155,10 @@ export interface TokenPairInfo {
   base?: string;
   quote?: string;
   liqUsd?: number;
+  liquidity?: { base?: number; quote?: number; usd?: number };
+  fdv?: number;
+  marketCap?: number;
+  labels?: string[];
   priceUsd?: number;
   priceNative?: number;
   txns?: { m5?: number; h1?: number; h6?: number; h24?: number };
@@ -174,9 +170,13 @@ export interface TokenPairInfo {
 
 export interface TokenDetail {
   meta: TokenMeta;
-  kpis: CoreFinance & { ageDays?: number };
+  imageUrl?: string;
+  headerUrl?: string;
+  description?: string;
+  websites?: { label?: string; url: string }[];
+  socials?: { type?: string; url: string }[];
+  kpis: CoreFinance & { ageDays?: number; ageHours?: number };
   links: TokenLinks;
-  info?: TokenInfoBlock;
   pairs: TokenPairInfo[];
   provider: Provider;
 }

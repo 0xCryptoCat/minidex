@@ -7,12 +7,13 @@ import BottomTabs from '../components/BottomTabs';
 function Shell() {
   const location = useLocation();
   const showTabs = location.pathname.startsWith('/t/');
+  const showHeader = location.pathname !== '/';
 
   return (
     <>
-      <Header />
-      <main className={showTabs ? 'with-tabs' : ''}>
-        <Suspense fallback={<div />}> 
+      {showHeader && <Header />}
+      <main className={`${showTabs ? 'with-tabs' : ''} ${showHeader ? '' : 'no-header'}`}>
+        <Suspense fallback={<div />}>
           <Routes>
             {routes.map((r) => (
               <Route key={r.path} path={r.path} element={r.element} />

@@ -76,12 +76,16 @@ main {
   padding-top: 48px;
 }
 
+main.no-header {
+  padding-top: 0;
+}
+
 main.with-tabs {
   padding-bottom: calc(56px + env(safe-area-inset-bottom));
 }
 
 .bottom-tabs {
-  position: fixed;
+  position: sticky;
   bottom: 0;
   left: 0;
   right: 0;

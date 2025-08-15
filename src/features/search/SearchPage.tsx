@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import type { SearchResult, Provider } from '../../lib/types';
+import type { SearchTokenSummary, Provider } from '../../lib/types';
 import { search } from '../../lib/api';
 import copy from '../../copy/en.json';
 import SearchResultItem, { SearchResultSkeleton } from './SearchResultItem';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<SearchTokenSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [provider, setProvider] = useState<Provider | ''>('');
@@ -52,21 +52,17 @@ export default function SearchPage() {
     } else {
       const res = Array.isArray(data.results) ? data.results : [];
       res.forEach((r) =>
-        r.pools.sort((a, b) => {
+        r.pools?.sort((a, b) => {
           const sup = Number(!!b.gtSupported) - Number(!!a.gtSupported);
           if (sup !== 0) return sup;
           return (b.liqUsd || 0) - (a.liqUsd || 0);
         })
       );
       const sorted = res.sort((a, b) => {
-        const aSup = a.pools.some((p) => p.gtSupported);
-        const bSup = b.pools.some((p) => p.gtSupported);
-        if (aSup === bSup) {
-          const aL = a.pools[0]?.liqUsd || 0;
-          const bL = b.pools[0]?.liqUsd || 0;
-          return bL - aL;
+        if (a.gtSupported === b.gtSupported) {
+          return (b.liqUsd || 0) - (a.liqUsd || 0);
         }
-        return aSup ? -1 : 1;
+        return a.gtSupported ? -1 : 1;
       });
       setResults(sorted);
       const first = sorted[0];
@@ -126,18 +122,18 @@ export default function SearchPage() {
             <tr style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
               <th></th>
               <th>Token</th>
-              <th>Chain</th>
               <th>Price</th>
               <th>Liq</th>
               <th>Vol24h</th>
-              <th>%</th>
+              <th>Chains</th>
+              <th>Pools</th>
             </tr>
           </thead>
           <tbody>
             {loading
               ? Array.from({ length: 5 }).map((_, i) => <SearchResultSkeleton key={i} />)
               : results.map((r) => (
-                  <SearchResultItem key={r.token.address + r.chain} result={r} />
+                  <SearchResultItem key={r.address} result={r} />
                 ))}
           </tbody>
         </table>

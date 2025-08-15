@@ -3,21 +3,18 @@
   "query": "0xabc...",
   "results": [
     {
-      "chain": "ethereum",
-      "token": {
-        "address": "0xabc...",
-        "symbol": "ABC",
-        "name": "Token ABC",
-        "icon": "https://example.com/abc.png"
-      },
-      "core": {
-        "priceUsd": 1.23,
-        "fdvUsd": 1000000,
-        "liqUsd": 50000,
-        "vol24hUsd": 120000,
-        "priceChange1hPct": 2.5,
-        "priceChange24hPct": 10.1
-      },
+      "address": "0xabc...",
+      "symbol": "ABC",
+      "name": "Token ABC",
+      "icon": "https://example.com/abc.png",
+      "priceUsd": 1.23,
+      "liqUsd": 50000,
+      "vol24hUsd": 120000,
+      "chainIcons": ["ethereum"],
+      "poolCount": 2,
+      "gtSupported": true,
+      "provider": "gt",
+      "chainCount": 1,
       "pools": [
         {
           "pairId": "uniswap_v2_abc_weth",
@@ -25,7 +22,10 @@
           "version": "v2",
           "base": "ABC",
           "quote": "WETH",
-          "chain": "ethereum"
+          "chain": "ethereum",
+          "poolAddress": "0xpool1",
+          "liqUsd": 30000,
+          "gtSupported": true
         },
         {
           "pairId": "uniswap_v3_abc_usdc",
@@ -33,10 +33,12 @@
           "version": "v3",
           "base": "ABC",
           "quote": "USDC",
-          "chain": "ethereum"
+          "chain": "ethereum",
+          "poolAddress": "0xpool2",
+          "liqUsd": 20000,
+          "gtSupported": true
         }
-      ],
-      "provider": "gt"
+      ]
     }
   ]
 }

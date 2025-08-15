@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import type { SearchResult, PoolSummary } from '../../lib/types';
+import type { SearchTokenSummary, PoolSummary } from '../../lib/types';
 import { formatCompact } from '../../lib/format';
 
-interface Props { result: SearchResult }
+interface Props { result: SearchTokenSummary }
 
 export function SearchResultSkeleton() {
   return (
@@ -21,14 +21,28 @@ export function SearchResultSkeleton() {
 
 export default function SearchResultItem({ result }: Props) {
   const navigate = useNavigate();
-  const { token, core, pools, chain } = result;
+  const {
+    address,
+    symbol,
+    name,
+    icon,
+    priceUsd,
+    liqUsd,
+    vol24hUsd,
+    chainIcons,
+    chainCount,
+    poolCount,
+    gtSupported,
+    pools,
+    provider,
+  } = result;
 
-  const supportedPool = pools.find((p) => p.gtSupported);
-  const fallbackPool = [...pools].sort(
+  const supportedPool = pools?.find((p) => p.gtSupported);
+  const fallbackPool = [...(pools || [])].sort(
     (a: PoolSummary, b: PoolSummary) => (b.liqUsd || 0) - (a.liqUsd || 0)
   )[0];
   const targetPool = supportedPool || fallbackPool;
-  const isSupported = !!supportedPool;
+  const isSupported = gtSupported;
 
   function handleClick() {
     const pairId = targetPool?.pairId;
@@ -36,7 +50,11 @@ export default function SearchResultItem({ result }: Props) {
       if (!isSupported) {
         alert('Chart/Trades not available on this DEX; limited metrics shown.');
       }
-      navigate(`/t/${chain}/${token.address}/${pairId}`);
+      navigate(
+        `/t/${targetPool?.chain}/${address}/${pairId}?poolAddress=${
+          targetPool?.poolAddress || ''
+        }`
+      );
     }
   }
 
@@ -57,8 +75,8 @@ export default function SearchResultItem({ result }: Props) {
       }}
     >
       <td>
-        {token.icon ? (
-          <img src={token.icon} alt={`${token.symbol} logo`} style={{ width: 24, height: 24 }} />
+        {icon ? (
+          <img src={icon} alt={`${symbol} logo`} style={{ width: 24, height: 24 }} />
         ) : (
           <div style={{ width: 24, height: 24, background: 'var(--bg-elev)', borderRadius: 4 }} />
         )}
@@ -66,7 +84,7 @@ export default function SearchResultItem({ result }: Props) {
       <td>
         <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
-            <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{token.symbol}</strong>
+            <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{symbol}</strong>
             {!isSupported && (
               <span
                 style={{
@@ -90,24 +108,56 @@ export default function SearchResultItem({ result }: Props) {
               whiteSpace: 'nowrap',
             }}
           >
-            {token.name}
+            {name}
           </span>
         </div>
       </td>
-      <td style={{ fontSize: '0.875rem', color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {chain}
+      <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {priceUsd !== undefined ? `$${priceUsd.toFixed(4)}` : '-'}
       </td>
       <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {core.priceUsd !== undefined ? `$${core.priceUsd.toFixed(4)}` : '-'}
+        {formatCompact(liqUsd)}
       </td>
       <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {formatCompact(core.liqUsd)}
+        {formatCompact(vol24hUsd)}
       </td>
-      <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {formatCompact(core.vol24hUsd)}
+      <td>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {chainIcons?.map((c, i) => (
+            <img
+              key={c}
+              src={`https://icons.llamao.fi/icons/chains/rsz_${c}.jpg`}
+              alt={c}
+              style={{
+                width: 16,
+                height: 16,
+                borderRadius: '50%',
+                marginLeft: i === 0 ? 0 : -8,
+                border: '2px solid var(--bg)',
+                zIndex: chainIcons.length - i,
+              }}
+            />
+          ))}
+          {chainCount && chainCount > chainIcons.length && (
+            <span
+              style={{
+                marginLeft: 4,
+                fontSize: '0.75rem',
+                background: 'var(--bg-elev)',
+                padding: '0 4px',
+                borderRadius: 4,
+              }}
+            >
+              +{chainCount - chainIcons.length}
+            </span>
+          )}
+        </div>
       </td>
-      <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {core.priceChange24hPct !== undefined ? `${core.priceChange24hPct.toFixed(2)}%` : '-'}
+      <td style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        {poolCount}
+        <span className="provider-badge" aria-label={`data provider ${provider}`}>
+          {provider}
+        </span>
       </td>
     </tr>
   );

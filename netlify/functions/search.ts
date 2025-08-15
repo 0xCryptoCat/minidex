@@ -3,9 +3,10 @@ import type {
   SearchResponse,
   ApiError,
   Provider,
-  TokenMeta,
-  SearchResult,
+  SearchTokenSummary,
+  PoolSummary,
 } from '../../src/lib/types';
+import { isGtSupported } from '../shared/dex-allow';
 import fs from 'fs/promises';
 
 const GT_FIXTURE = '../../fixtures/search-gt.json';
@@ -14,8 +15,6 @@ const DS_FIXTURE = '../../fixtures/search-ds.json';
 const USE_FIXTURES = process.env.USE_FIXTURES === 'true';
 const DS_API_BASE = process.env.DS_API_BASE || '';
 const GT_API_BASE = process.env.GT_API_BASE || '';
-const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
-const CG_API_KEY = process.env.COINGECKO_API_KEY || '';
 const DEBUG = process.env.DEBUG_LOGS === 'true';
 
 function log(...args: any[]) {
@@ -24,10 +23,6 @@ function log(...args: any[]) {
 
 function isValidAddress(addr?: string): addr is string {
   return !!addr && /^0x[a-fA-F0-9]{40}$/.test(addr);
-}
-
-function isValidChain(chain?: string): chain is string {
-  return !!chain;
 }
 
 async function readFixture(path: string): Promise<SearchResponse> {
@@ -48,7 +43,6 @@ async function fetchJson(url: string): Promise<any> {
   }
 }
 
-// Map numeric chain IDs from Dexscreener to chain slugs used in the app.
 const CHAIN_ID_MAP: Record<string, string> = {
   '1': 'ethereum',
   '56': 'bsc',
@@ -67,19 +61,7 @@ function mapChainId(id: unknown): string {
 export const handler: Handler = async (event) => {
   const query =
     event.queryStringParameters?.query ||
-    event.queryStringParameters?.address; // accept legacy "address" param
-  const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
-  const chain = event.queryStringParameters?.chain;
-
-  const SUPPORTED_CHAINS = new Set([
-    'ethereum',
-    'bsc',
-    'polygon',
-    'optimism',
-    'arbitrum',
-    'avalanche',
-    'base',
-  ]);
+    event.queryStringParameters?.address;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -88,334 +70,185 @@ export const handler: Handler = async (event) => {
     'x-fallbacks-tried': '',
     'x-items': '0',
   };
+
   if (!isValidAddress(query)) {
     const body: ApiError = { error: 'invalid_address', provider: 'none' };
     return { statusCode: 400, headers, body: JSON.stringify(body) };
   }
+
   const attempted: string[] = [];
   let provider: Provider | 'none' = 'none';
-  if (chain && !SUPPORTED_CHAINS.has(chain)) {
-    const body: ApiError = { error: 'unsupported_network', provider: 'none' };
-    log('response', event.rawUrl, 200, 0, provider);
-    return { statusCode: 200, headers, body: JSON.stringify(body) };
-  }
 
   if (USE_FIXTURES) {
     try {
-      if (forceProvider !== 'gt') {
-        attempted.push('ds');
-        const ds = await readFixture(DS_FIXTURE);
-        ds.query = query;
-        provider = 'ds';
-        headers['x-provider'] = provider;
-        headers['x-fallbacks-tried'] = attempted.join(',');
-        headers['x-items'] = String(ds.results.length || 0);
-        log('response', event.rawUrl, 200, ds.results.length || 0, provider);
-        return { statusCode: 200, headers, body: JSON.stringify(ds) };
-      }
-      throw new Error('force gt');
-    } catch {
-      try {
-        attempted.push('gt');
-        const gt = await readFixture(GT_FIXTURE);
-        gt.query = query;
-        provider = 'gt';
-        headers['x-provider'] = provider;
-        headers['x-fallbacks-tried'] = attempted.join(',');
-        headers['x-items'] = String(gt.results.length || 0);
-        log('response', event.rawUrl, 200, gt.results.length || 0, provider);
-        return { statusCode: 200, headers, body: JSON.stringify(gt) };
-      } catch {
-        headers['x-fallbacks-tried'] = attempted.join(',');
-        const body: ApiError = { error: 'upstream_error', provider: 'none' };
-        log('response', event.rawUrl, 500, 0, provider);
-        return { statusCode: 500, headers, body: JSON.stringify(body) };
-      }
-    }
+      const ds = await readFixture(DS_FIXTURE);
+      ds.query = query;
+      headers['x-provider'] = ds.results[0]?.provider || 'ds';
+      headers['x-items'] = String(ds.results.length);
+      return { statusCode: 200, headers, body: JSON.stringify(ds) };
+    } catch {}
   }
 
   try {
-    log('params', { query, chain, forceProvider });
-    if (forceProvider === 'cg') {
-      attempted.push('cg');
-      if (!isValidChain(chain) || !CG_API_BASE || !CG_API_KEY) {
-        throw new Error('force gt');
-      }
-      const cgUrl = `${CG_API_BASE}/token-data/${chain}/${query}`;
-      const res = await fetch(cgUrl, { headers: { 'x-cg-pro-api-key': CG_API_KEY } });
-      if (!res.ok) throw new Error('status');
-      const cg = await res.json();
-      const attr = cg?.data?.attributes || cg?.data || cg;
-      const priceChange = attr?.price_change_percentage || {};
-      const token: TokenMeta = {
-        address: query,
-        symbol: attr.symbol || '',
-        name: attr.name || '',
-        icon: attr.image_url || undefined,
-      };
-      const core = {
-        priceUsd: attr.price_usd !== undefined ? Number(attr.price_usd) : undefined,
-        fdvUsd:
-          attr.fully_diluted_valuation_usd !== undefined
-            ? Number(attr.fully_diluted_valuation_usd)
-            : undefined,
-        mcUsd:
-          attr.market_cap_usd !== undefined ? Number(attr.market_cap_usd) : undefined,
-        liqUsd:
-          attr.liquidity_usd !== undefined ? Number(attr.liquidity_usd) : undefined,
-        vol24hUsd:
-          attr.volume_24h_usd !== undefined ? Number(attr.volume_24h_usd) : undefined,
-        priceChange1hPct:
-          priceChange.h1 !== undefined ? Number(priceChange.h1) : undefined,
-        priceChange24hPct:
-          priceChange.h24 !== undefined ? Number(priceChange.h24) : undefined,
-      };
-      const results: SearchResult[] = [{
-        chain: chain!,
-        token,
-        core,
-        pools: [],
-        provider: 'cg',
-      }];
-      const bodyRes: SearchResponse = { query, results };
-      provider = 'cg';
-      headers['x-provider'] = provider;
-      headers['x-fallbacks-tried'] = attempted.join(',');
-      headers['x-items'] = String(results.length);
-      log('response', event.rawUrl, 200, results.length, provider);
-      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
-    }
-    if (forceProvider !== 'gt') {
-      attempted.push('ds');
-      const ds = await fetchJson(`${DS_API_BASE}/dex/tokens/${query}`);
-      if (!ds || !Array.isArray(ds.pairs) || ds.pairs.length === 0) {
-        throw new Error('empty');
-      }
-
-      const tokenMeta = ds.token || ds.pairs[0]?.baseToken || {};
-      const results: SearchResult[] = [];
-      for (const pair of ds.pairs) {
-        const chainSlug = mapChainId(pair.chainId);
-        const core = {
-          priceUsd:
-            pair.priceUsd !== undefined ? Number(pair.priceUsd) : undefined,
-          fdvUsd:
-            pair.fdv !== undefined
-              ? Number(pair.fdv)
-              : tokenMeta.fdv !== undefined
-              ? Number(tokenMeta.fdv)
-              : undefined,
-          mcUsd:
-            tokenMeta.mcap !== undefined
-              ? Number(tokenMeta.mcap)
-              : tokenMeta.marketCap !== undefined
-              ? Number(tokenMeta.marketCap)
-              : undefined,
-          liqUsd:
-            pair.liquidity?.usd !== undefined
-              ? Number(pair.liquidity.usd)
-              : undefined,
-          vol24hUsd:
-            pair.volume?.h24 !== undefined
-              ? Number(pair.volume.h24)
-              : undefined,
-          priceChange1hPct:
-            pair.priceChange?.h1 !== undefined
-              ? Number(pair.priceChange.h1)
-              : undefined,
-          priceChange24hPct:
-            pair.priceChange?.h24 !== undefined
-              ? Number(pair.priceChange.h24)
-              : undefined,
-        };
-        let poolAddr = pair.pairAddress || pair.liquidityPoolAddress;
-        if (!isValidAddress(poolAddr)) {
-          try {
-            const detail = await fetchJson(
-              `${DS_API_BASE}/dex/pairs/${chainSlug}/${
-                pair.pairId || pair.pairAddress
-              }`
-            );
-            poolAddr =
-              detail?.pair?.pairAddress || detail?.pair?.address || detail?.pairAddress;
-          } catch {
-            // ignore
-          }
-        }
-        if (!isValidAddress(poolAddr)) {
-          try {
-            const gt = await fetchJson(
-              `${GT_API_BASE}/networks/${chainSlug}/tokens/${pair.baseToken?.address || query}/pools`
-            );
-            const first = gt?.data && gt.data[0];
-            poolAddr = first?.attributes?.pool_address;
-          } catch {
-            // ignore
-          }
-        }
-
-        results.push({
+    attempted.push('ds');
+    const ds = await fetchJson(`${DS_API_BASE}/dex/tokens/${query}`);
+    const pairs = Array.isArray(ds?.pairs) ? ds.pairs : [];
+    if (pairs.length) {
+      const tokenMeta = ds.token || pairs[0]?.baseToken || {};
+      const pools: PoolSummary[] = [];
+      let totalLiq = 0;
+      let totalVol = 0;
+      let bestLiq = 0;
+      let bestPrice = 0;
+      let gtPools = 0;
+      const chainTotals: Record<string, number> = {};
+      for (const p of pairs) {
+        const chainSlug = mapChainId(p.chainId);
+        const liq =
+          p.liquidity?.usd !== undefined
+            ? Number(p.liquidity.usd)
+            : p.liquidityUsd !== undefined
+            ? Number(p.liquidityUsd)
+            : 0;
+        const vol = p.volume?.h24 !== undefined ? Number(p.volume.h24) : 0;
+        const price = p.priceUsd !== undefined ? Number(p.priceUsd) : undefined;
+        const gt = isGtSupported(p.dexId, p.dexVersion || p.version);
+        pools.push({
+          pairId: p.pairId || p.pairAddress,
+          dex: p.dexId,
+          version: p.dexVersion || p.version,
+          base: p.baseToken?.symbol,
+          quote: p.quoteToken?.symbol,
           chain: chainSlug,
-          token: {
-            address: tokenMeta.address || pair.baseToken?.address || query,
-            symbol: tokenMeta.symbol || pair.baseToken?.symbol || '',
-            name: tokenMeta.name || pair.baseToken?.name || '',
-            icon:
-              tokenMeta.icon ||
-              tokenMeta.imageUrl ||
-              pair.info?.imageUrl ||
-              undefined,
-          },
-          core,
-          pools: [
-            {
-              pairId: pair.pairId || pair.pairAddress,
-              dex: pair.dexId,
-              base: pair.baseToken?.symbol,
-              quote: pair.quoteToken?.symbol,
-              chain: chainSlug,
-              poolAddress: isValidAddress(poolAddr) ? poolAddr : undefined,
-            },
-          ],
-          provider: 'ds',
+          poolAddress: p.pairAddress,
+          liqUsd: liq,
+          gtSupported: gt,
         });
+        totalLiq += liq;
+        totalVol += vol;
+        if (price !== undefined && liq > bestLiq) {
+          bestLiq = liq;
+          bestPrice = price;
+        }
+        chainTotals[chainSlug] = (chainTotals[chainSlug] || 0) + liq;
+        if (gt) gtPools++;
       }
-
-      log('dexscreener results', results.length);
-      const bodyRes: SearchResponse = { query, results };
+      const chainEntries = Object.entries(chainTotals).sort((a, b) => b[1] - a[1]);
+      const chainIcons = chainEntries.slice(0, 3).map(([c]) => c);
+      const summary: SearchTokenSummary = {
+        address: tokenMeta.address || query,
+        symbol: tokenMeta.symbol || '',
+        name: tokenMeta.name || '',
+        icon: tokenMeta.icon || tokenMeta.imageUrl || undefined,
+        priceUsd: bestPrice,
+        liqUsd: totalLiq,
+        vol24hUsd: totalVol,
+        chainIcons,
+        poolCount: pools.length,
+        gtSupported: gtPools > 0,
+        provider: 'ds',
+        chainCount: chainEntries.length,
+        pools,
+      };
+      const bodyRes: SearchResponse = { query, results: [summary] };
       provider = 'ds';
       headers['x-provider'] = provider;
       headers['x-fallbacks-tried'] = attempted.join(',');
-      headers['x-items'] = String(results.length);
-      log('response', event.rawUrl, 200, results.length, provider);
+      headers['x-items'] = '1';
+      log('response', event.rawUrl, 200, 1, provider);
       return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
     }
-    throw new Error('force gt');
-  } catch {
-    log('ds branch failed');
-    if (forceProvider === 'ds') {
-      headers['x-fallbacks-tried'] = attempted.join(',');
-      const body: ApiError = { error: 'upstream_error', provider: 'none' };
-      log('response', event.rawUrl, 500, 0, provider);
-      return { statusCode: 500, headers, body: JSON.stringify(body) };
-    }
-    try {
-      attempted.push('gt');
-      const gt = await fetchJson(`${GT_API_BASE}/search/pairs?query=${query}`);
-      const arr = Array.isArray(gt?.data) ? gt.data : [];
-      const results: SearchResult[] = arr.map((d: any) => {
-        const attr = d.attributes || {};
-        const token = attr.base_token || attr.token || {};
-        return {
-          chain: attr.network || chain || 'unknown',
-          token: {
-            address: token.address,
-            symbol: token.symbol,
-            name: token.name,
-            icon: token.image_url || undefined,
-          },
-          core: {
-            priceUsd:
-              attr.base_token_price_usd !== undefined
-                ? Number(attr.base_token_price_usd)
-                : attr.price_usd !== undefined
-                ? Number(attr.price_usd)
-                : undefined,
-            liqUsd:
-              attr.liquidity_usd !== undefined ? Number(attr.liquidity_usd) : undefined,
-            vol24hUsd:
-              attr.volume_24h_usd !== undefined ? Number(attr.volume_24h_usd) : undefined,
-            priceChange1hPct:
-              attr.price_change_percentage?.h1 !== undefined
-                ? Number(attr.price_change_percentage.h1)
-                : undefined,
-            priceChange24hPct:
-              attr.price_change_percentage?.h24 !== undefined
-                ? Number(attr.price_change_percentage.h24)
-                : undefined,
-          },
-          pools: [
-            {
-              pairId: d.id,
-              dex: attr.dex || attr.name || '',
-              base: attr.base_token?.symbol,
-              quote: attr.quote_token?.symbol,
-              chain: attr.network || chain || 'unknown',
-              poolAddress: attr.pool_address || d.id,
-            },
-          ],
-          provider: 'gt',
-        };
+    throw new Error('empty');
+  } catch (err) {
+    log('ds branch failed', err);
+  }
+
+  try {
+    attempted.push('gt');
+    const gt = await fetchJson(`${GT_API_BASE}/search/pairs?query=${query}`);
+    const arr = Array.isArray(gt?.data) ? gt.data : [];
+    if (!arr.length) throw new Error('empty');
+    const pools: PoolSummary[] = [];
+    let totalLiq = 0;
+    let totalVol = 0;
+    let bestLiq = 0;
+    let bestPrice = 0;
+    let gtPools = 0;
+    const chainTotals: Record<string, number> = {};
+    let tokenMeta: any = {};
+    for (const d of arr) {
+      const attr = d.attributes || {};
+      const token = attr.base_token || attr.token || {};
+      tokenMeta.address = token.address || query;
+      tokenMeta.symbol = token.symbol || '';
+      tokenMeta.name = token.name || '';
+      tokenMeta.icon = token.image_url || undefined;
+      const chainSlug = attr.network || 'unknown';
+      const liq =
+        attr.liquidity_usd !== undefined
+          ? Number(attr.liquidity_usd)
+          : attr.reserve_in_usd !== undefined
+          ? Number(attr.reserve_in_usd)
+          : attr.reserve_usd !== undefined
+          ? Number(attr.reserve_usd)
+          : 0;
+      const vol = attr.volume_24h_usd !== undefined ? Number(attr.volume_24h_usd) : 0;
+      const price =
+        attr.base_token_price_usd !== undefined
+          ? Number(attr.base_token_price_usd)
+          : attr.price_usd !== undefined
+          ? Number(attr.price_usd)
+          : undefined;
+      const gt = isGtSupported(attr.dex || attr.name, attr.version || attr.dex_version);
+      pools.push({
+        pairId: d.id,
+        dex: attr.dex || attr.name || '',
+        version: attr.version || attr.dex_version,
+        base: attr.base_token?.symbol,
+        quote: attr.quote_token?.symbol,
+        chain: chainSlug,
+        poolAddress: attr.pool_address || d.id,
+        liqUsd: liq,
+        gtSupported: gt,
       });
-      log('gt results', results.length);
-      const bodyRes: SearchResponse = { query, results };
-      if (!results.length) throw new Error('empty');
-      provider = 'gt';
-      headers['x-provider'] = provider;
-      headers['x-fallbacks-tried'] = attempted.join(',');
-      headers['x-items'] = String(results.length);
-      log('response', event.rawUrl, 200, results.length, provider);
-      return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
-    } catch {
-      if (CG_API_BASE && CG_API_KEY && isValidChain(chain)) {
-        try {
-          attempted.push('cg');
-          const cgUrl = `${CG_API_BASE}/token-data/${chain}/${query}`;
-          const res = await fetch(cgUrl, { headers: { 'x-cg-pro-api-key': CG_API_KEY } });
-          if (res.ok) {
-            const cg = await res.json();
-            const attr = cg?.data?.attributes || cg?.data || cg;
-            const priceChange = attr?.price_change_percentage || {};
-            const token: TokenMeta = {
-              address: query,
-              symbol: attr.symbol || '',
-              name: attr.name || '',
-              icon: attr.image_url || undefined,
-            };
-            const core = {
-              priceUsd:
-                attr.price_usd !== undefined ? Number(attr.price_usd) : undefined,
-              fdvUsd:
-                attr.fully_diluted_valuation_usd !== undefined
-                  ? Number(attr.fully_diluted_valuation_usd)
-                  : undefined,
-              mcUsd:
-                attr.market_cap_usd !== undefined
-                  ? Number(attr.market_cap_usd)
-                  : undefined,
-              liqUsd:
-                attr.liquidity_usd !== undefined
-                  ? Number(attr.liquidity_usd)
-                  : undefined,
-              vol24hUsd:
-                attr.volume_24h_usd !== undefined
-                  ? Number(attr.volume_24h_usd)
-                  : undefined,
-              priceChange1hPct:
-                priceChange.h1 !== undefined ? Number(priceChange.h1) : undefined,
-              priceChange24hPct:
-                priceChange.h24 !== undefined ? Number(priceChange.h24) : undefined,
-            };
-            const results: SearchResult[] = [
-              { chain: chain!, token, core, pools: [], provider: 'cg' },
-            ];
-            const bodyRes: SearchResponse = { query, results };
-            provider = 'cg';
-            headers['x-provider'] = provider;
-            headers['x-fallbacks-tried'] = attempted.join(',');
-            headers['x-items'] = String(results.length);
-            log('response', event.rawUrl, 200, results.length, provider);
-            return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
-          }
-        } catch {
-          // ignore
-        }
+      totalLiq += liq;
+      totalVol += vol;
+      if (price !== undefined && liq > bestLiq) {
+        bestLiq = liq;
+        bestPrice = price;
       }
-      headers['x-fallbacks-tried'] = attempted.join(',');
-      const body: ApiError = { error: 'upstream_error', provider: 'none' };
-      log('response', event.rawUrl, 500, 0, provider);
-      return { statusCode: 500, headers, body: JSON.stringify(body) };
+      chainTotals[chainSlug] = (chainTotals[chainSlug] || 0) + liq;
+      if (gt) gtPools++;
     }
+    const chainEntries = Object.entries(chainTotals).sort((a, b) => b[1] - a[1]);
+    const chainIcons = chainEntries.slice(0, 3).map(([c]) => c);
+    const summary: SearchTokenSummary = {
+      address: tokenMeta.address || query,
+      symbol: tokenMeta.symbol || '',
+      name: tokenMeta.name || '',
+      icon: tokenMeta.icon,
+      priceUsd: bestPrice,
+      liqUsd: totalLiq,
+      vol24hUsd: totalVol,
+      chainIcons,
+      poolCount: pools.length,
+      gtSupported: gtPools > 0,
+      provider: 'gt',
+      chainCount: chainEntries.length,
+      pools,
+    };
+    const bodyRes: SearchResponse = { query, results: [summary] };
+    provider = 'gt';
+    headers['x-provider'] = provider;
+    headers['x-fallbacks-tried'] = attempted.join(',');
+    headers['x-items'] = '1';
+    log('response', event.rawUrl, 200, 1, provider);
+    return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
+  } catch (err) {
+    log('gt branch failed', err);
+    headers['x-fallbacks-tried'] = attempted.join(',');
+    const body: ApiError = { error: 'upstream_error', provider: 'none' };
+    return { statusCode: 500, headers, body: JSON.stringify(body) };
   }
 };
 

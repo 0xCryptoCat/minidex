@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { search as apiSearch } from '../../lib/api';
-import type { SearchResult, PoolSummary } from '../../lib/types';
+import type { SearchTokenSummary, PoolSummary } from '../../lib/types';
 
 interface Props {
   autoFocus?: boolean;
@@ -15,7 +15,7 @@ function isAddress(addr: string) {
 export default function SearchInput({ autoFocus, large }: Props) {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<SearchTokenSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -55,13 +55,20 @@ export default function SearchInput({ autoFocus, large }: Props) {
     };
   }, [query]);
 
-  function handleSelect(r: SearchResult) {
-    const pool = r.pools.find((p) => p.gtSupported) ||
-      [...r.pools].sort((a: PoolSummary, b: PoolSummary) => (b.liqUsd || 0) - (a.liqUsd || 0))[0];
+  function handleSelect(r: SearchTokenSummary) {
+    const pool =
+      r.pools?.find((p) => p.gtSupported) ||
+      [...(r.pools || [])].sort(
+        (a: PoolSummary, b: PoolSummary) => (b.liqUsd || 0) - (a.liqUsd || 0)
+      )[0];
     if (pool && !pool.gtSupported) {
       alert('Chart/Trades not available on this DEX; limited metrics shown.');
     }
-    navigate(`/t/${r.chain}/${r.token.address}/${pool?.pairId || ''}`);
+    navigate(
+      `/t/${pool?.chain || ''}/${r.address}/${pool?.pairId || ''}?poolAddress=${
+        pool?.poolAddress || ''
+      }`
+    );
     setQuery('');
     setResults([]);
   }
@@ -113,13 +120,13 @@ export default function SearchInput({ autoFocus, large }: Props) {
           {loading && <li style={{ padding: '0.5rem', fontSize: '0.875rem' }}>Loading...</li>}
           {!loading &&
             results.map((r) => (
-              <li key={r.token.address} style={{ padding: '0.5rem' }}>
+              <li key={r.address} style={{ padding: '0.5rem' }}>
                 <button
                   type="button"
                   onClick={() => handleSelect(r)}
                   style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none' }}
                 >
-                  <strong>{r.token.symbol}</strong> {r.token.name}
+                  <strong>{r.symbol}</strong> {r.name}
                 </button>
               </li>
             ))}

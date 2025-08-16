@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 4,
             "patches": [
                 {
                     "date": 1755347748751,
@@ -20,6 +20,10 @@
                 {
                     "date": 1755361663346,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,10 @@\n import { useEffect, useState, useMemo, ReactNode, CSSProperties, useRef } from 'react';\n import { FixedSizeList as List } from 'react-window';\n import ContentCopyIcon from '@mui/icons-material/ContentCopy';\n-import OpenInNewIcon from '@mui/icons-material/OpenInNew';\n+import LaunchIcon from '@mui/icons-material/Launch';\n+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';\n+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';\n import type { Trade } from '../../lib/types';\n import { trades } from '../../lib/api';\n import {\n   formatUsd,\n@@ -117,8 +119,9 @@\n         accessor: (t) => t.ts,\n         render: (t) => (\n           <div className=\"time-cell\">\n             <div className=\"time-main\">{formatCompactTime(t.ts)}</div>\n+            <div className=\"time-ago\">ago</div>\n             {t.blockNumber !== undefined && (\n               <div className=\"time-block\">#{t.blockNumber}</div>\n             )}\n           </div>\n@@ -181,9 +184,9 @@\n                   target=\"_blank\"\n                   rel=\"noopener noreferrer\"\n                   onClick={(e) => e.stopPropagation()}\n                 >\n-                  <OpenInNewIcon className=\"action-icon\" />\n+                  <LaunchIcon className=\"action-icon\" />\n                 </a>\n               </div>\n             </div>\n           ) : (\n@@ -205,9 +208,9 @@\n                 target=\"_blank\"\n                 rel=\"noopener noreferrer\"\n                 onClick={(e) => e.stopPropagation()}\n               >\n-                <OpenInNewIcon className=\"action-icon\" />\n+                <LaunchIcon className=\"action-icon\" />\n               </a>\n             </div>\n           ) : (\n             <span className=\"no-data\">-</span>\n@@ -295,10 +298,16 @@\n             <div\n               key={c.key}\n               className=\"tr-cell\"\n               onClick={() => handleSort(c.key)}\n+              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}\n             >\n               {c.header}\n+              {sortKey === c.key && (\n+                sortDir === 'asc' ? \n+                  <KeyboardArrowUpIcon style={{ fontSize: 16 }} /> : \n+                  <KeyboardArrowDownIcon style={{ fontSize: 16 }} />\n+              )}\n             </div>\n           ))}\n         </div>\n         <div className=\"trades-list-container\">\n"
+                },
+                {
+                    "date": 1755364214224,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -162,8 +162,19 @@\n         ),\n         comparator: (a: number, b: number) => a - b,\n       },\n       {\n+        key: 'amountQuote',\n+        header: `${quoteSymbol || 'Quote'}`,\n+        accessor: (t) => t.amountQuote || 0,\n+        render: (t) => (\n+          <div className=\"amount-cell\">\n+            <div>{formatSmartAmount(t.amountQuote)}</div>\n+          </div>\n+        ),\n+        comparator: (a: number, b: number) => a - b,\n+      },\n+      {\n         key: 'wallet',\n         header: 'Maker',\n         accessor: (t) => t.wallet || '',\n         render: (t) =>\n"
                 }
             ],
             "date": 1755347748751,

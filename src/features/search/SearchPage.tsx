@@ -111,6 +111,35 @@ export default function SearchPage() {
 
   return (
     <div style={{ padding: '1rem' }}>
+      {/* Logo and Title Header */}
+      <div style={{ 
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 'var(--space-3)',
+        marginBottom: 'var(--space-6)',
+        paddingTop: 'var(--space-4)',
+      }}>
+        <img 
+          src="/logo.svg" 
+          alt="SmallDEX" 
+          style={{ height: 40, width: 'auto' }}
+        />
+        <h1 
+          style={{ 
+            fontSize: '1.5rem', 
+            fontWeight: 700, 
+            margin: 0,
+            background: 'linear-gradient(135deg, var(--telegram-blue) 0%, var(--brand-secondary) 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}
+        >
+          SmallDEX
+        </h1>
+      </div>
+
       <label htmlFor="search-input" style={{ position: 'absolute', left: '-10000px' }}>
         {copy.search_placeholder}
       </label>

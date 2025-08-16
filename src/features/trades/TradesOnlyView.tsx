@@ -163,6 +163,17 @@ export default function TradesOnlyView({
         comparator: (a: number, b: number) => a - b,
       },
       {
+        key: 'amountQuote',
+        header: `${quoteSymbol || 'Quote'}`,
+        accessor: (t) => t.amountQuote || 0,
+        render: (t) => (
+          <div className="amount-cell">
+            <div>{formatSmartAmount(t.amountQuote)}</div>
+          </div>
+        ),
+        comparator: (a: number, b: number) => a - b,
+      },
+      {
         key: 'wallet',
         header: 'Maker',
         accessor: (t) => t.wallet || '',

@@ -30,7 +30,7 @@
   /* Trading colors */
   --buy-primary: #34c759;
   --buy-secondary: #248a3d;
-  --sell-primary: #8b0000;
+  --sell-primary: #e13232;
   --sell-secondary: #691a1a;
   
   /* Legacy color mappings for backwards compatibility */
@@ -42,7 +42,8 @@
   
   /* Borders and separators */
   --border: #3a3a3c;
-  --border-light: #48484a;
+  --border-light: #4848480a;
+  --border-subtle: #4848480a;
   --separator: #38383a;
   
   /* Interactive states */

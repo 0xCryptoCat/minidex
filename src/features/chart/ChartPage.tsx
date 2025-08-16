@@ -165,11 +165,6 @@ export default function ChartPage() {
           {/* View-specific content */}
           {view === 'chart' && currentPool && currentPool.poolAddress && provider && address && (
             <div className="chart-view-content">
-              {currentPool.gtSupported === false && (
-                <div className="limitation-notice">
-                  Chart not available on this DEX; showing limited data.
-                </div>
-              )}
               <div className="chart-container">
                 <ChartOnlyView
                   pairId={currentPool.pairId}
@@ -186,11 +181,6 @@ export default function ChartPage() {
 
           {view === 'trades' && currentPool && currentPool.poolAddress && address && (
             <div className="trades-view-content">
-              {currentPool.gtSupported === false && (
-                <div className="limitation-notice">
-                  Trades not available on this DEX; showing limited data.
-                </div>
-              )}
               <div className="trades-container">
                 <TradesOnlyView
                   pairId={currentPool.pairId}

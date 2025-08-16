@@ -180,12 +180,6 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
                   )}
                   {chain}
                 </div>
-                <div className="badge provider-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  {getProviderIcon(detail.provider) && (
-                    <img src={getProviderIcon(detail.provider)} alt={detail.provider} style={{ width: 16, height: 16 }} />
-                  )}
-                  {detail.provider}
-                </div>
               </div>
               
               {info.description && (

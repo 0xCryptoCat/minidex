@@ -30,6 +30,8 @@ export default function ChartOnlyView({
   const [markers, setMarkers] = useState<TradeMarkerCluster[]>([]);
   const [noTrades, setNoTrades] = useState(false);
   const [tf, setTf] = useState<Timeframe | null>(null);
+  const [tfLoading, setTfLoading] = useState(true);
+  const [tfError, setTfError] = useState(false);
   const [meta, setMeta] = useState<FetchMeta | null>(null);
   const loggedRef = useRef(false);
   const DEBUG = (import.meta as any).env?.DEBUG === 'true';
@@ -38,11 +40,14 @@ export default function ChartOnlyView({
     const cached = getCachedTf(pairId, provider);
     if (cached) {
       setTf(cached);
+      setTfLoading(false);
       return;
     }
     const order: Timeframe[] =
       provider === 'cg' ? ['1m', '5m'] : provider === 'gt' ? ['5m', '15m', '1h'] : ['1m'];
     (async () => {
+      setTfLoading(true);
+      setTfError(false);
       for (const t of order) {
         try {
           const res = await ohlc({ pairId, chain, poolAddress, tf: t });
@@ -50,12 +55,16 @@ export default function ChartOnlyView({
             const eff = res.data.effectiveTf || t;
             setTf(eff);
             setCachedTf(pairId, provider, eff);
-            break;
+            setTfLoading(false);
+            return;
           }
         } catch {
           /* ignore and try next */
         }
       }
+      // If we get here, no timeframes worked
+      setTfError(true);
+      setTfLoading(false);
     })();
   }, [pairId, provider, chain, poolAddress]);
 
@@ -94,8 +103,16 @@ export default function ChartOnlyView({
     });
   }
 
-  if (!tf) {
+  if (tfLoading) {
     return <div>Loading…</div>;
+  }
+
+  if (tfError || !tf) {
+    return (
+      <div className="limitation-notice">
+        Chart data not available for this pair.
+      </div>
+    );
   }
 
   return (

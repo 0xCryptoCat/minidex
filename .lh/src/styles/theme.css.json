@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 7,
             "patches": [
                 {
                     "date": 1755347748704,
@@ -16,6 +16,26 @@
                 {
                     "date": 1755361663220,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -34,9 +34,11 @@\n   --sell-secondary: #691a1a;\n   \n   /* Legacy color mappings for backwards compatibility */\n   --accent-lime: var(--buy-primary);\n-  --accent-magenta: var(--sell-primary);\n+  --accent-lime-rgb: 52, 199, 89;\n+  --accent-maroon: var(--sell-primary);\n+  --accent-maroon-rgb: 139, 0, 0;\n   --accent-cyan: var(--telegram-blue);\n   \n   /* Borders and separators */\n   --border: #3a3a3c;\n@@ -76,83 +78,4 @@\n   /* Legacy tokens for compatibility */\n   --card-radius: var(--radius);\n   --padding: var(--space-4);\n }\n-:root {\n-  /* Base dark colors - iOS inspired */\n-  --bg: #000000;\n-  --bg-elev: #1c1c1e;\n-  --bg-elev-2: #2c2c2e;\n-  --bg-elev-3: #3a3a3c;\n-  --bg-card: #1c1c1e;\n-  --bg-input: #2c2c2e;\n-  \n-  /* Text colors */\n-  --text: #ffffff;\n-  --text-secondary: #d1d1d6;\n-  --text-muted: #8e8e93;\n-  --text-disabled: #636366;\n-  \n-  /* Brand colors */\n-  --brand-primary: #007aff;\n-  --brand-secondary: #5856d6;\n-  --telegram-blue: #0088cc;\n-  --telegram-blue-dark: #006bb3;\n-  \n-  /* Status colors */\n-  --success: #34c759;\n-  --success-dark: #248a3d;\n-  --warning: #ff9500;\n-  --warning-dark: #d1770f;\n-  --error: #ff3b30;\n-  --error-dark: #d70015;\n-  \n-  /* Trading colors */\n-  --buy-primary: #34c759;\n-  --buy-secondary: #248a3d;\n-  --sell-primary: #8b0000;\n-  --sell-secondary: #691a1a;\n-  \n-  /* Legacy color mappings for backwards compatibility */\n-  --accent-lime: var(--buy-primary);\n-  --accent-magenta: var(--sell-primary);\n-  --accent-cyan: var(--telegram-blue);\n-  \n-  /* Borders and separators */\n-  --border: #3a3a3c;\n-  --border-light: #48484a;\n-  --separator: #38383a;\n-  \n-  /* Interactive states */\n-  --hover: rgba(255, 255, 255, 0.04);\n-  --active: rgba(255, 255, 255, 0.08);\n-  --selected: rgba(0, 122, 255, 0.15);\n-  \n-  /* Layout */\n-  --radius: 12px;\n-  --radius-small: 8px;\n-  --radius-large: 16px;\n-  --radius-pill: 999px;\n-  \n-  /* Spacing */\n-  --space-1: 4px;\n-  --space-2: 8px;\n-  --space-3: 12px;\n-  --space-4: 16px;\n-  --space-5: 20px;\n-  --space-6: 24px;\n-  --space-8: 32px;\n-  \n-  /* Animation */\n-  --transition-fast: 0.15s ease-out;\n-  --transition-medium: 0.25s ease-out;\n-  --transition-slow: 0.35s ease-out;\n-  \n-  /* Shadows for depth */\n-  --shadow-small: 0 2px 8px rgba(0, 0, 0, 0.4);\n-  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.5);\n-  --shadow-large: 0 8px 32px rgba(0, 0, 0, 0.6);\n-\n-  /* Legacy tokens for compatibility */\n-  --card-radius: var(--radius);\n-  --padding: var(--space-4);\n-}\n"
+                },
+                {
+                    "date": 1755362110486,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,9 +29,9 @@\n   \n   /* Trading colors */\n   --buy-primary: #34c759;\n   --buy-secondary: #248a3d;\n-  --sell-primary: #8b0000;\n+  --sell-primary: #e13232;\n   --sell-secondary: #691a1a;\n   \n   /* Legacy color mappings for backwards compatibility */\n   --accent-lime: var(--buy-primary);\n"
+                },
+                {
+                    "date": 1755363407128,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,9 +41,9 @@\n   --accent-cyan: var(--telegram-blue);\n   \n   /* Borders and separators */\n   --border: #3a3a3c;\n-  --border-light: #48484a;\n+  --border-light: #484840a;\n   --separator: #38383a;\n   \n   /* Interactive states */\n   --hover: rgba(255, 255, 255, 0.04);\n"
+                },
+                {
+                    "date": 1755363414654,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -42,8 +42,9 @@\n   \n   /* Borders and separators */\n   --border: #3a3a3c;\n   --border-light: #484840a;\n+  --border-subtle: #484840a;\n   --separator: #38383a;\n   \n   /* Interactive states */\n   --hover: rgba(255, 255, 255, 0.04);\n"
+                },
+                {
+                    "date": 1755363422150,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,9 +41,9 @@\n   --accent-cyan: var(--telegram-blue);\n   \n   /* Borders and separators */\n   --border: #3a3a3c;\n-  --border-light: #484840a;\n+  --border-light: #484848;\n   --border-subtle: #484840a;\n   --separator: #38383a;\n   \n   /* Interactive states */\n"
+                },
+                {
+                    "date": 1755363428905,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -41,10 +41,10 @@\n   --accent-cyan: var(--telegram-blue);\n   \n   /* Borders and separators */\n   --border: #3a3a3c;\n-  --border-light: #484848;\n-  --border-subtle: #484840a;\n+  --border-light: #4848480a;\n+  --border-subtle: #4848480a;\n   --separator: #38383a;\n   \n   /* Interactive states */\n   --hover: rgba(255, 255, 255, 0.04);\n"
                 }
             ],
             "date": 1755347748704,

@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1755352612658,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755364214224,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -29,34 +29,43 @@\n   const [showMarkers, setShowMarkers] = useState(false);\n   const [markers, setMarkers] = useState<TradeMarkerCluster[]>([]);\n   const [noTrades, setNoTrades] = useState(false);\n   const [tf, setTf] = useState<Timeframe | null>(null);\n+  const [tfLoading, setTfLoading] = useState(true);\n+  const [tfError, setTfError] = useState(false);\n   const [meta, setMeta] = useState<FetchMeta | null>(null);\n   const loggedRef = useRef(false);\n   const DEBUG = (import.meta as any).env?.DEBUG === 'true';\n \n   useEffect(() => {\n     const cached = getCachedTf(pairId, provider);\n     if (cached) {\n       setTf(cached);\n+      setTfLoading(false);\n       return;\n     }\n     const order: Timeframe[] =\n       provider === 'cg' ? ['1m', '5m'] : provider === 'gt' ? ['5m', '15m', '1h'] : ['1m'];\n     (async () => {\n+      setTfLoading(true);\n+      setTfError(false);\n       for (const t of order) {\n         try {\n           const res = await ohlc({ pairId, chain, poolAddress, tf: t });\n           if (res.data.candles.length > 0 || res.data.effectiveTf) {\n             const eff = res.data.effectiveTf || t;\n             setTf(eff);\n             setCachedTf(pairId, provider, eff);\n-            break;\n+            setTfLoading(false);\n+            return;\n           }\n         } catch {\n           /* ignore and try next */\n         }\n       }\n+      // If we get here, no timeframes worked\n+      setTfError(true);\n+      setTfLoading(false);\n     })();\n   }, [pairId, provider, chain, poolAddress]);\n \n   useEffect(() => {\n@@ -93,12 +102,20 @@\n       return next;\n     });\n   }\n \n-  if (!tf) {\n+  if (tfLoading) {\n     return <div>Loading…</div>;\n   }\n \n+  if (tfError || !tf) {\n+    return (\n+      <div className=\"limitation-notice\">\n+        Chart data not available for this pair.\n+      </div>\n+    );\n+  }\n+\n   return (\n     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>\n       <div style={{ padding: '16px 16px 8px', borderBottom: '1px solid var(--border-subtle)' }}>\n         <label style={{ \n"
                 }
             ],
             "date": 1755352612658,

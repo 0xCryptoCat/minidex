@@ -156,7 +156,8 @@ export default function SearchInput({ autoFocus, large }: Props) {
             background: 'var(--bg-elev)',
           } : {}),
           ...((results.length > 0 || isLoading) ? {
-            borderRadius: large ? 'var(--radius-pill) var(--radius-pill) 0 0' : 'var(--radius-pill) var(--radius-pill) 0 0'
+            borderBottomLeftRadius: 0,
+            borderBottomRightRadius: 0
           } : {})
         }}
       />

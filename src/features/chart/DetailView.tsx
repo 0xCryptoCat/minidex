@@ -1,9 +1,10 @@
 import { Fragment, useEffect, useState } from 'react';
 import type { PoolSummary, TokenResponse } from '../../lib/types';
 import { token as fetchToken } from '../../lib/api';
-import { formatUsd, formatCompact, formatShortAddr } from '../../lib/format';
+import { formatUsd, formatCompact, formatShortAddr, formatSmallPrice } from '../../lib/format';
 import CopyButton from '../../components/CopyButton';
 import { addressUrl } from '../../lib/explorer';
+import { getChainIcon, getProviderIcon, getSocialIcon } from '../../lib/chain-icons';
 import { 
   Language as WebsiteIcon,
   Description as DocsIcon,
@@ -161,8 +162,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
                       >
                         {pools.map((p) => (
                           <option key={p.pairId} value={p.pairId}>
-                            {p.dex} {p.version ? `(${p.version})` : ''} — {p.base}/{p.quote}
-                            {p.gtSupported === false ? ' — Limited' : ''}
+                            {p.base}/{p.quote} [{p.dex} {p.version ? `${p.version} ` : ''}{formatShortAddr(p.poolAddress || p.pairId)}]
                           </option>
                         ))}
                       </select>
@@ -174,9 +174,18 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
               
               <div className="detail-subline">
                 <span style={{ color: 'var(--text-secondary)' }}>{active.baseToken.name}</span>
-                <span className="badge">{chain}</span>
-                <span className="badge">{detail.provider}</span>
-                {active.gtSupported === false && <span className="badge limited">Limited</span>}
+                <div className="badge chain-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  {getChainIcon(chain) && (
+                    <img src={getChainIcon(chain)} alt={chain} style={{ width: 16, height: 16 }} />
+                  )}
+                  {chain}
+                </div>
+                <div className="badge provider-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  {getProviderIcon(detail.provider) && (
+                    <img src={getProviderIcon(detail.provider)} alt={detail.provider} style={{ width: 16, height: 16 }} />
+                  )}
+                  {detail.provider}
+                </div>
               </div>
               
               {info.description && (
@@ -200,52 +209,78 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
                   )}
                 </div>
               )}
+              
+              {/* Social Links */}
+              {(info.websites?.length || info.socials?.length) && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
+                  {info.websites?.map((site, i) => (
+                    <a 
+                      key={`website-${i}`}
+                      href={site.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 8px',
+                        background: 'var(--bg-elev)',
+                        borderRadius: '6px',
+                        textDecoration: 'none',
+                        fontSize: '12px',
+                        color: 'var(--text-muted)',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = 'var(--accent-telegram)';
+                        e.currentTarget.style.color = 'white';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = 'var(--bg-elev)';
+                        e.currentTarget.style.color = 'var(--text-muted)';
+                      }}
+                    >
+                      <span>{getSocialIcon('website')}</span>
+                      {site.label}
+                    </a>
+                  ))}
+                  {info.socials?.map((social, i) => (
+                    <a 
+                      key={`social-${i}`}
+                      href={social.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 8px',
+                        background: 'var(--bg-elev)',
+                        borderRadius: '6px',
+                        textDecoration: 'none',
+                        fontSize: '12px',
+                        color: 'var(--text-muted)',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = 'var(--accent-telegram)';
+                        e.currentTarget.style.color = 'white';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = 'var(--bg-elev)';
+                        e.currentTarget.style.color = 'var(--text-muted)';
+                      }}
+                    >
+                      <span>{getSocialIcon(social.type)}</span>
+                      {social.type}
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </>
       )}
-
-      {/* KPIs Grid */}
-      <div className="detail-kpis">
-        <div className="kpi-item">
-          <span>Price USD</span>
-          <strong>{fmtUsdOrDash(kpis.priceUsd)}</strong>
-        </div>
-        <div className="kpi-item">
-          <span>Price {active.quoteToken.symbol}</span>
-          <strong>{fmtUsdOrDash(kpis.priceNative)}</strong>
-        </div>
-        <div className="kpi-item">
-          <span>Liquidity</span>
-          <strong>{fmtUsdOrDash(kpis.liqUsd)}</strong>
-        </div>
-        <div className="kpi-item">
-          <span>FDV</span>
-          <strong>{fmtUsdOrDash(kpis.fdvUsd)}</strong>
-        </div>
-        <div className="kpi-item">
-          <span>Market Cap</span>
-          <strong>{fmtUsdOrDash(kpis.mcUsd)}</strong>
-        </div>
-        <div className="kpi-item">
-          <span>24h Change</span>
-          <strong className={kpis.priceChange24hPct !== undefined ? (kpis.priceChange24hPct < 0 ? 'neg' : 'pos') : undefined}>
-            {fmtPct(kpis.priceChange24hPct)}
-          </strong>
-        </div>
-        <div className="kpi-item kpi-wide">
-          <span>Price Changes (5m | 1h | 6h | 24h)</span>
-          <strong>{renderPriceChanges(active.priceChange)}</strong>
-        </div>
-        <div className="kpi-item kpi-wide">
-          <span>Transactions (Total | Buys — Sells)</span>
-          <strong>{renderTxns(active.txns)}</strong>
-        </div>
-        <div className="kpi-item kpi-wide">
-          <span>Volume (5m | 1h | 6h | 24h)</span>
-          <strong>{renderVolume(active.volume)}</strong>
-        </div>
-      </div>
 
       {/* Addresses */}
       <div className="detail-addrs">
@@ -253,7 +288,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
           <div className="addr-row">
             <span>Pair:</span>
             <div>
-              <code>{formatShortAddr(active.pairAddress)}</code>
+              <span>{formatShortAddr(active.pairAddress)}</span>
               <CopyButton text={active.pairAddress} label="pair address" />
               {pairExplorer && (
                 <a href={pairExplorer} target="_blank" rel="noopener noreferrer">
@@ -266,7 +301,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
         <div className="addr-row">
           <span>{active.baseToken.symbol}:</span>
           <div>
-            <code>{formatShortAddr(active.baseToken.address)}</code>
+            <span>{formatShortAddr(active.baseToken.address)}</span>
             <CopyButton text={active.baseToken.address} label={`${active.baseToken.symbol} address`} />
             {baseExplorer && (
               <a href={baseExplorer} target="_blank" rel="noopener noreferrer">
@@ -278,13 +313,136 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
         <div className="addr-row">
           <span>{active.quoteToken.symbol}:</span>
           <div>
-            <code>{active.quoteToken.address}</code>
+            <span>{formatShortAddr(active.quoteToken.address)}</span>
             <CopyButton text={active.quoteToken.address} label={`${active.quoteToken.symbol} address`} />
             {quoteExplorer && (
               <a href={quoteExplorer} target="_blank" rel="noopener noreferrer">
                 <OpenInNewIcon sx={{ fontSize: 16 }} />
               </a>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* KPIs Grid */}
+      <div className="detail-kpis">
+        <div className="kpi-item">
+          <span>Price USD</span>
+          <strong>{formatSmallPrice(active.priceUsd)}</strong>
+        </div>
+        <div className="kpi-item">
+          <span>Price {active.quoteToken.symbol}</span>
+          <strong>{active.priceNative ? formatSmallPrice(Number(active.priceNative)) : '—'}</strong>
+        </div>
+        
+        <div className="kpi-item">
+          <span>Liquidity</span>
+          <strong>{formatUsd(active.liquidity?.usd)}</strong>
+        </div>
+        
+        {active.fdv && active.marketCap && Math.abs(active.fdv - active.marketCap) < 1000 ? (
+          <div className="kpi-item">
+            <span>FDV/MKT CAP</span>
+            <strong>{formatUsd(active.fdv)}</strong>
+          </div>
+        ) : (
+          <>
+            <div className="kpi-item">
+              <span>FDV</span>
+              <strong>{formatUsd(active.fdv)}</strong>
+            </div>
+            <div className="kpi-item">
+              <span>Market Cap</span>
+              <strong>{formatUsd(active.marketCap)}</strong>
+            </div>
+          </>
+        )}
+
+        {/* Price Changes */}
+        <div className="kpi-item kpi-wide">
+          <span>Price Changes</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {['m5', 'h1', 'h6', 'h24'].map((period, i) => {
+              const change = active.priceChange?.[period as keyof typeof active.priceChange];
+              const isPositive = change && change > 0;
+              const isNegative = change && change < 0;
+              
+              return (
+                <div key={period} style={{ textAlign: 'center', flex: 1 }}>
+                  <div 
+                    style={{ 
+                      color: isPositive ? 'var(--accent-lime)' : isNegative ? 'var(--accent-maroon)' : 'var(--text)',
+                      fontWeight: 600
+                    }}
+                  >
+                    {change !== undefined ? `${change.toFixed(2)}%` : '—'}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {period === 'm5' ? '5m' : period}
+                  </div>
+                  {i < 3 && <div style={{ position: 'absolute', right: `${(3-i) * 25}%`, top: '50%', transform: 'translateY(-50%)', width: '1px', height: '60%', background: 'var(--border-subtle)' }} />}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Transactions */}
+        <div className="kpi-item kpi-wide">
+          <span>Transactions (24h)</span>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <strong>
+                {active.txns?.h24 ? (active.txns.h24.buys + active.txns.h24.sells) : '—'}
+              </strong>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>TXNS</div>
+            </div>
+            <div style={{ width: '1px', height: '40px', background: 'var(--border-subtle)', margin: '0 12px' }} />
+            <div style={{ flex: 3, display: 'flex', alignItems: 'center' }}>
+              {active.txns?.h24 && (
+                <>
+                  <div style={{ 
+                    background: 'var(--accent-lime)', 
+                    height: '8px',
+                    flex: active.txns.h24.buys,
+                    borderRadius: '4px 0 0 4px'
+                  }} />
+                  <div style={{ 
+                    background: 'var(--accent-maroon)', 
+                    height: '8px',
+                    flex: active.txns.h24.sells,
+                    borderRadius: '0 4px 4px 0'
+                  }} />
+                  <div style={{ marginLeft: '8px', fontSize: '12px' }}>
+                    <span style={{ color: 'var(--accent-lime)' }}>{active.txns.h24.buys}</span>
+                    <span style={{ margin: '0 4px' }}>—</span>
+                    <span style={{ color: 'var(--accent-maroon)' }}>{active.txns.h24.sells}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Volume */}
+        <div className="kpi-item kpi-wide">
+          <span>Volume</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {['m5', 'h1', 'h6', 'h24'].map((period, i) => {
+              const volume = active.volume?.[period as keyof typeof active.volume];
+              
+              return (
+                <div key={period} style={{ textAlign: 'center', flex: 1 }}>
+                  <div style={{ color: 'var(--text)', fontWeight: 600 }}>
+                    {volume !== undefined ? formatUsd(volume) : '—'}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {period === 'm5' ? '5m' : period}
+                  </div>
+                  {i < 3 && <div style={{ position: 'absolute', right: `${(3-i) * 25}%`, top: '50%', transform: 'translateY(-50%)', width: '1px', height: '60%', background: 'var(--border-subtle)' }} />}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

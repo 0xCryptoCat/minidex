@@ -1,7 +1,9 @@
 import { useEffect, useState, useMemo, ReactNode, CSSProperties, useRef } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import LaunchIcon from '@mui/icons-material/Launch';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import type { Trade } from '../../lib/types';
 import { trades } from '../../lib/api';
 import {
@@ -118,6 +120,7 @@ export default function TradesOnlyView({
         render: (t) => (
           <div className="time-cell">
             <div className="time-main">{formatCompactTime(t.ts)}</div>
+            <div className="time-ago">ago</div>
             {t.blockNumber !== undefined && (
               <div className="time-block">#{t.blockNumber}</div>
             )}
@@ -182,7 +185,7 @@ export default function TradesOnlyView({
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <OpenInNewIcon className="action-icon" />
+                  <LaunchIcon className="action-icon" />
                 </a>
               </div>
             </div>
@@ -206,7 +209,7 @@ export default function TradesOnlyView({
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
               >
-                <OpenInNewIcon className="action-icon" />
+                <LaunchIcon className="action-icon" />
               </a>
             </div>
           ) : (
@@ -296,8 +299,14 @@ export default function TradesOnlyView({
               key={c.key}
               className="tr-cell"
               onClick={() => handleSort(c.key)}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
             >
               {c.header}
+              {sortKey === c.key && (
+                sortDir === 'asc' ? 
+                  <KeyboardArrowUpIcon style={{ fontSize: 16 }} /> : 
+                  <KeyboardArrowDownIcon style={{ fontSize: 16 }} />
+              )}
             </div>
           ))}
         </div>

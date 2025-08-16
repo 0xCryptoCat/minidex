@@ -35,7 +35,9 @@
   
   /* Legacy color mappings for backwards compatibility */
   --accent-lime: var(--buy-primary);
-  --accent-magenta: var(--sell-primary);
+  --accent-lime-rgb: 52, 199, 89;
+  --accent-maroon: var(--sell-primary);
+  --accent-maroon-rgb: 139, 0, 0;
   --accent-cyan: var(--telegram-blue);
   
   /* Borders and separators */

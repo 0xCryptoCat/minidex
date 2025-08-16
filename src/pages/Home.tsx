@@ -17,6 +17,11 @@ export default function Home() {
     >
       {/* Logo and Brand */}
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
+        <img 
+          src="/logo.svg" 
+          alt="SmallDEX" 
+          style={{ height: 64, width: 'auto', marginBottom: 'var(--space-4)' }}
+        />
         <h1 
           style={{ 
             fontSize: '3rem', 

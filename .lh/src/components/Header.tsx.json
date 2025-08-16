@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1755347748704,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755361429426,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -4,9 +4,8 @@\n \n export default function Header() {\n   const navigate = useNavigate();\n   const location = useLocation();\n-  const { provider } = useProvider();\n   \n   // Don't show header on home/search page\n   if (location.pathname === '/') {\n     return null;\n@@ -17,27 +16,22 @@\n       <div \n         className=\"header-logo\"\n         onClick={() => navigate('/')}\n         style={{ \n-          fontSize: '1.5rem', \n-          fontWeight: 700,\n-          color: 'var(--telegram-blue)',\n+          display: 'flex',\n+          alignItems: 'center',\n           cursor: 'pointer'\n         }}\n       >\n-        SmallDEX\n+        <img \n+          src=\"/logo.svg\" \n+          alt=\"SmallDEX\" \n+          style={{ height: 32, width: 'auto' }}\n+        />\n       </div>\n       \n       <div className=\"header-search-container\">\n         <SearchInput />\n       </div>\n-      \n-      <div className=\"header-provider\">\n-        {provider && (\n-          <span className=\"provider-badge\" aria-label={`data provider ${provider}`}>\n-            {provider}\n-          </span>\n-        )}\n-      </div>\n     </header>\n   );\n }\n"
                 }
             ],
             "date": 1755347748704,

@@ -177,6 +177,29 @@ export function formatSmartAmount(value?: number): string {
   return value.toPrecision(4);
 }
 
+export function formatSmallPrice(value?: number): string {
+  if (value === undefined || value === null || !Number.isFinite(value)) return '—';
+  if (value === 0) return '$0.00';
+
+  // For very small numbers, use subscript notation like 0.0₆32
+  if (Math.abs(value) < 0.0001 && Math.abs(value) > 0) {
+    const str = value.toString();
+    const match = str.match(/0\.0+/);
+    if (match) {
+      const zeros = match[0].length - 2; // subtract "0."
+      const remaining = str.slice(match[0].length);
+      const significantDigits = remaining.slice(0, 2);
+      return `$0.0₀${zeros}${significantDigits}`;
+    }
+  }
+
+  if (Math.abs(value) < 1) {
+    return `$${value.toFixed(6).replace(/\.?0+$/, '')}`;
+  }
+
+  return formatUsd(value);
+}
+
 import type { FetchMeta } from './types';
 export type { FetchMeta } from './types';
 

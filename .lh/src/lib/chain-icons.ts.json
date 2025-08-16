@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/lib/chain-icons.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755361663218,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755361663218,
+            "name": "Commit-0",
+            "content": "// Chain icons mapping\nexport const CHAIN_ICONS: Record<string, string> = {\n  ethereum: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',\n  bsc: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png',\n  polygon: 'https://assets.coingecko.com/coins/images/4713/large/matic-token-icon.png',\n  arbitrum: 'https://assets.coingecko.com/coins/images/16547/large/photo_2023-03-29_21.47.00.jpeg',\n  optimism: 'https://assets.coingecko.com/coins/images/25244/large/Optimism.png',\n  avalanche: 'https://assets.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png',\n  fantom: 'https://assets.coingecko.com/coins/images/4001/large/Fantom.png',\n  base: 'https://assets.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png', // Placeholder\n  solana: 'https://assets.coingecko.com/coins/images/4128/large/solana.png',\n};\n\nexport function getChainIcon(chainId: string): string | undefined {\n  return CHAIN_ICONS[chainId.toLowerCase()];\n}\n\n// Provider icons mapping\nexport const PROVIDER_ICONS: Record<string, string> = {\n  dexscreener: 'https://dexscreener.com/favicon.ico',\n  coingecko: 'https://assets.coingecko.com/coins/images/12271/large/512x512_Logo_no_chop.png',\n  geckoterminal: 'https://assets.coingecko.com/coins/images/12271/large/512x512_Logo_no_chop.png',\n  ds: 'https://dexscreener.com/favicon.ico',\n  cg: 'https://assets.coingecko.com/coins/images/12271/large/512x512_Logo_no_chop.png',\n  gt: 'https://assets.coingecko.com/coins/images/12271/large/512x512_Logo_no_chop.png',\n};\n\nexport function getProviderIcon(provider: string): string | undefined {\n  return PROVIDER_ICONS[provider.toLowerCase()];\n}\n\n// Social icons mapping\nexport const SOCIAL_ICONS: Record<string, string> = {\n  website: '🌐',\n  twitter: '𝕏',\n  telegram: '✈️', \n  discord: '💬',\n  github: '🐙',\n  medium: '📝',\n  linkedin: '💼',\n  facebook: '📘',\n  youtube: '📺',\n  instagram: '📷',\n  reddit: '🔴',\n};\n\nexport function getSocialIcon(type: string): string {\n  return SOCIAL_ICONS[type.toLowerCase()] || '🔗';\n}\n"
+        }
+    ]
+}

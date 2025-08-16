@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1755347748704,
@@ -12,6 +12,10 @@
                 {
                     "date": 1755356506679,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -154,8 +154,11 @@\n           ...(query ? {\n             borderColor: 'var(--telegram-blue)',\n             background: 'var(--bg-elev)',\n           } : {}),\n+          ...((results.length > 0 || isLoading) ? {\n+            borderRadius: large ? 'var(--radius-pill) var(--radius-pill) 0 0' : 'var(--radius-pill) var(--radius-pill) 0 0'\n+          } : {})\n         }}\n       />\n       \n       {(results.length > 0 || isLoading) && (\n"
+                },
+                {
+                    "date": 1755361663381,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -155,9 +155,10 @@\n             borderColor: 'var(--telegram-blue)',\n             background: 'var(--bg-elev)',\n           } : {}),\n           ...((results.length > 0 || isLoading) ? {\n-            borderRadius: large ? 'var(--radius-pill) var(--radius-pill) 0 0' : 'var(--radius-pill) var(--radius-pill) 0 0'\n+            borderBottomLeftRadius: 0,\n+            borderBottomRightRadius: 0\n           } : {})\n         }}\n       />\n       \n"
                 }
             ],
             "date": 1755347748704,

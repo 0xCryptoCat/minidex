@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/features/chart/PoolSwitcher.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755352612658,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755352612658,
+            "name": "Commit-0",
+            "content": "import { KeyboardArrowDown as ArrowDownIcon } from '@mui/icons-material';\nimport type { PoolSummary } from '../../lib/types';\n\ninterface Props {\n  pools: PoolSummary[];\n  current?: string;\n  onSwitch: (pool: PoolSummary) => void;\n}\n\nexport default function PoolSwitcher({ pools, current, onSwitch }: Props) {\n  if (!pools || pools.length === 0) return null;\n\n  const currentPool = pools.find(p => p.pairId === current) || pools[0];\n\n  // For single pool, show simple info pill\n  if (pools.length === 1) {\n    return (\n      <div className=\"pool-switcher single\">\n        <div className=\"pool-pill active\">\n          <span className=\"pool-main\">\n            {currentPool.dex} {currentPool.version && `(${currentPool.version})`}\n          </span>\n          <span className=\"pool-pair\">{currentPool.base}/{currentPool.quote}</span>\n          {currentPool.gtSupported === false && (\n            <span className=\"pool-badge limited\">Limited</span>\n          )}\n        </div>\n      </div>\n    );\n  }\n\n  // For multiple pools, show dropdown style\n  return (\n    <div className=\"pool-switcher multiple\">\n      <div className=\"pool-dropdown\">\n        <button className=\"pool-current\" onClick={() => {/* TODO: Open dropdown */}}>\n          <div className=\"pool-content\">\n            <span className=\"pool-main\">\n              {currentPool.dex} {currentPool.version && `(${currentPool.version})`}\n            </span>\n            <span className=\"pool-pair\">{currentPool.base}/{currentPool.quote}</span>\n          </div>\n          <ArrowDownIcon className=\"pool-arrow\" />\n        </button>\n        \n        {/* Alternative: Show as horizontal pills for now */}\n        <div className=\"pool-options\">\n          {pools.map((p) => (\n            <button\n              key={p.pairId}\n              onClick={() => onSwitch(p)}\n              className={`pool-pill ${current === p.pairId ? 'active' : ''}`}\n            >\n              <span className=\"pool-main\">\n                {p.dex} {p.version && `(${p.version})`}\n              </span>\n              <span className=\"pool-pair\">{p.base}/{p.quote}</span>\n              {p.gtSupported === false && (\n                <span className=\"pool-badge limited\">Limited</span>\n              )}\n            </button>\n          ))}\n        </div>\n      </div>\n    </div>\n  );\n}\n\n"
+        }
+    ]
+}

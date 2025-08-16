@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1755347748705,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755352713345,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -163,9 +163,9 @@\n           )}\n \n           {/* View-specific content */}\n           {view === 'chart' && currentPool && currentPool.poolAddress && provider && address && (\n-            <>\n+            <div className=\"chart-view-content\">\n               {currentPool.gtSupported === false && (\n                 <div className=\"limitation-notice\">\n                   Chart not available on this DEX; showing limited data.\n                 </div>\n@@ -180,13 +180,13 @@\n                   onXDomainChange={setXDomain}\n                   tokenAddress={address}\n                 />\n               </div>\n-            </>\n+            </div>\n           )}\n \n           {view === 'trades' && currentPool && currentPool.poolAddress && address && (\n-            <>\n+            <div className=\"trades-view-content\">\n               {currentPool.gtSupported === false && (\n                 <div className=\"limitation-notice\">\n                   Trades not available on this DEX; showing limited data.\n                 </div>\n@@ -200,20 +200,22 @@\n                   baseSymbol={tradeSymbols?.baseSymbol || currentPool.base}\n                   quoteSymbol={tradeSymbols?.quoteSymbol || currentPool.quote}\n                 />\n               </div>\n-            </>\n+            </div>\n           )}\n \n           {view === 'detail' && currentPool && address && (\n-            <DetailView\n-              chain={currentPool.chain}\n-              address={address}\n-              pairId={currentPool.pairId}\n-              pools={pools}\n-              onSwitch={handlePoolSwitch}\n-              hideDetailTop={true} // Don't show DetailTop again in DetailView\n-            />\n+            <div className=\"detail-view-content\">\n+              <DetailView\n+                chain={currentPool.chain}\n+                address={address}\n+                pairId={currentPool.pairId}\n+                pools={pools}\n+                onSwitch={handlePoolSwitch}\n+                hideDetailTop={true} // Don't show DetailTop again in DetailView\n+              />\n+            </div>\n           )}\n         </div>\n       )}\n \n"
                 }
             ],
             "date": 1755347748705,

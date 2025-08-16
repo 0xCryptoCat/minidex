@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1755347748704,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755352922486,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -149,31 +149,26 @@\n                   </strong>\n                   \n                   {/* Pool Selector Dropdown */}\n                   {pools.length > 1 && (\n-                    <select\n-                      value={pairId}\n-                      onChange={(e) => {\n-                        const sel = pools.find((p) => p.pairId === e.target.value);\n-                        if (sel) onSwitch(sel);\n-                      }}\n-                      style={{\n-                        background: 'var(--bg-input)',\n-                        border: '1px solid var(--border)',\n-                        borderRadius: 'var(--radius-small)',\n-                        color: 'var(--text)',\n-                        padding: 'var(--space-1) var(--space-2)',\n-                        fontSize: '0.875rem',\n-                        cursor: 'pointer',\n-                      }}\n-                    >\n-                      {pools.map((p) => (\n-                        <option key={p.pairId} value={p.pairId}>\n-                          {p.dex} {p.version ? `(${p.version})` : ''} — {p.base}/{p.quote}\n-                          {p.gtSupported === false ? ' — Limited' : ''}\n-                        </option>\n-                      ))}\n-                    </select>\n+                    <div className=\"pool-selector-wrapper\">\n+                      <select\n+                        value={pairId}\n+                        onChange={(e) => {\n+                          const sel = pools.find((p) => p.pairId === e.target.value);\n+                          if (sel) onSwitch(sel);\n+                        }}\n+                        className=\"pool-selector\"\n+                      >\n+                        {pools.map((p) => (\n+                          <option key={p.pairId} value={p.pairId}>\n+                            {p.dex} {p.version ? `(${p.version})` : ''} — {p.base}/{p.quote}\n+                            {p.gtSupported === false ? ' — Limited' : ''}\n+                          </option>\n+                        ))}\n+                      </select>\n+                      <ExpandMoreIcon className=\"pool-selector-arrow\" />\n+                    </div>\n                   )}\n                 </div>\n               </div>\n               \n"
                 }
             ],
             "date": 1755347748704,

@@ -1,4 +1,6 @@
+import { KeyboardArrowDown as ArrowDownIcon } from '@mui/icons-material';
 import type { PoolSummary } from '../../lib/types';
+
 interface Props {
   pools: PoolSummary[];
   current?: string;
@@ -6,41 +8,60 @@ interface Props {
 }
 
 export default function PoolSwitcher({ pools, current, onSwitch }: Props) {
-  if (!pools || pools.length === 0 || pools.length > 3) return null;
+  if (!pools || pools.length === 0) return null;
 
-  return (
-    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-      {pools.map((p) => (
-        <button
-          key={p.pairId}
-          onClick={() => onSwitch(p)}
-          style={{
-            padding: '0.25rem 0.5rem',
-            borderRadius: '9999px',
-            border: '1px solid var(--border)',
-            background: current === p.pairId ? 'var(--bg-elev)' : 'transparent',
-            minHeight: 40,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-            opacity: p.gtSupported === false ? 0.5 : 1,
-          }}
-        >
-          {p.dex} {p.version ? `(${p.version})` : ''} {p.base}/{p.quote}
-          {p.gtSupported === false && (
-            <span
-              style={{
-                fontSize: '0.625rem',
-                background: 'var(--bg-elev)',
-                padding: '0 4px',
-                borderRadius: 4,
-              }}
-            >
-              Limited
-            </span>
+  const currentPool = pools.find(p => p.pairId === current) || pools[0];
+
+  // For single pool, show simple info pill
+  if (pools.length === 1) {
+    return (
+      <div className="pool-switcher single">
+        <div className="pool-pill active">
+          <span className="pool-main">
+            {currentPool.dex} {currentPool.version && `(${currentPool.version})`}
+          </span>
+          <span className="pool-pair">{currentPool.base}/{currentPool.quote}</span>
+          {currentPool.gtSupported === false && (
+            <span className="pool-badge limited">Limited</span>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  // For multiple pools, show dropdown style
+  return (
+    <div className="pool-switcher multiple">
+      <div className="pool-dropdown">
+        <button className="pool-current" onClick={() => {/* TODO: Open dropdown */}}>
+          <div className="pool-content">
+            <span className="pool-main">
+              {currentPool.dex} {currentPool.version && `(${currentPool.version})`}
+            </span>
+            <span className="pool-pair">{currentPool.base}/{currentPool.quote}</span>
+          </div>
+          <ArrowDownIcon className="pool-arrow" />
         </button>
-      ))}
+        
+        {/* Alternative: Show as horizontal pills for now */}
+        <div className="pool-options">
+          {pools.map((p) => (
+            <button
+              key={p.pairId}
+              onClick={() => onSwitch(p)}
+              className={`pool-pill ${current === p.pairId ? 'active' : ''}`}
+            >
+              <span className="pool-main">
+                {p.dex} {p.version && `(${p.version})`}
+              </span>
+              <span className="pool-pair">{p.base}/{p.quote}</span>
+              {p.gtSupported === false && (
+                <span className="pool-badge limited">Limited</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

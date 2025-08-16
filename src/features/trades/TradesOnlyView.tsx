@@ -59,6 +59,8 @@ export default function TradesOnlyView({
   const [meta, setMeta] = useState<FetchMeta | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('time');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [containerHeight, setContainerHeight] = useState(400);
+  const containerRef = useRef<HTMLDivElement>(null);
   const DEBUG = (import.meta as any).env?.DEBUG === 'true';
   const sampleTradesLoggedRef = useRef(false);
 
@@ -91,6 +93,21 @@ export default function TradesOnlyView({
       cancelled = true;
     };
   }, [pairId, chain, poolAddress, tokenAddress]);
+
+  // Measure container height
+  useEffect(() => {
+    const updateHeight = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const availableHeight = window.innerHeight - rect.top - 100; // Leave some margin
+        setContainerHeight(Math.max(availableHeight, 300));
+      }
+    };
+
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
+  }, []);
 
   const columns: ColumnConfig[] = useMemo(
     () => [
@@ -271,7 +288,7 @@ export default function TradesOnlyView({
   }
 
   return (
-    <div className="trades-scroll">
+    <div className="trades-scroll" ref={containerRef}>
       <div className="trades-table">
         <div className="trades-header">
           {columns.map((c) => (
@@ -284,9 +301,16 @@ export default function TradesOnlyView({
             </div>
           ))}
         </div>
-        <List height={400} itemCount={sorted.length} itemSize={ROW_HEIGHT} width={910}>
-          {Row}
-        </List>
+        <div className="trades-list-container">
+          <List 
+            height={containerHeight - 60} // Account for header height
+            itemCount={sorted.length} 
+            itemSize={ROW_HEIGHT} 
+            width="100%"
+          >
+            {Row}
+          </List>
+        </div>
       </div>
     </div>
   );

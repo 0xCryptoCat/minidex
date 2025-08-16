@@ -1,26 +1,226 @@
+/* Search Result Items */
+.search-result-item {
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 40px 2fr 1fr 1fr 1fr 100px 120px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  min-height: 56px;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: all 0.2s ease;
+}
+
+.search-result-item:hover {
+  background: var(--bg-elev);
+  transform: translateX(2px);
+}
+
+.search-result-item.limited {
+  opacity: 0.6;
+}
+
+.search-result-item.supported:hover {
+  border-left: 3px solid var(--accent-telegram);
+}
+
+/* Token Icon Cell */
+.token-icon-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.token-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.token-fallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-telegram);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.token-fallback.hidden {
+  display: none;
+}
+
+/* Token Info Cell */
+.token-info-cell {
+  overflow: hidden;
+}
+
+.token-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.token-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.token-symbol {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.token-name {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.limited-badge {
+  font-size: 10px;
+  background: rgba(var(--accent-maroon-rgb), 0.2);
+  color: var(--accent-maroon);
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* Price/Liq/Vol Cells */
+.price-cell, .liquidity-cell, .volume-cell {
+  text-align: right;
+}
+
+.price-value, .liq-value, .vol-value {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 14px;
+}
+
+/* Chain Icons */
+.chains-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .chain-icons {
   display: flex;
   align-items: center;
 }
-.chain-icons img {
-  width: 16px;
-  height: 16px;
+
+.chain-icon {
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   border: 2px solid var(--bg);
+  object-fit: cover;
 }
-.chain-icons img + img {
-  margin-left: -6px;
+
+.chain-icon + .chain-icon {
+  margin-left: -8px;
 }
+
 .chain-more {
-  margin-left: var(--space-1);
-  font-size: 0.75rem;
+  margin-left: 4px;
+  font-size: 11px;
   background: var(--bg-elev);
-  padding: 0 var(--space-1);
-  border-radius: var(--radius);
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-weight: 500;
 }
+
+/* Meta Cell */
+.meta-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.meta-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+
 .pool-count-chip {
-  font-size: 0.75rem;
+  font-size: 11px;
   background: var(--bg-elev);
-  padding: 0 var(--space-1);
-  border-radius: var(--radius);
+  color: var(--text-muted);
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.provider-badge {
+  font-size: 10px;
+  background: var(--accent-telegram);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .search-result-item {
+    grid-template-columns: 32px 2fr 80px 60px;
+    gap: 8px;
+    padding: 12px;
+    font-size: 14px;
+  }
+  
+  .token-icon, .token-fallback {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .token-symbol {
+    font-size: 14px;
+  }
+  
+  .token-name {
+    font-size: 11px;
+  }
+  
+  .liquidity-cell, .volume-cell {
+    display: none;
+  }
+  
+  .chains-cell {
+    grid-column: 3;
+  }
+  
+  .meta-cell {
+    grid-column: 4;
+  }
+  
+  .meta-info {
+    gap: 2px;
+  }
+  
+  .chain-icon {
+    width: 16px;
+    height: 16px;
+  }
 }

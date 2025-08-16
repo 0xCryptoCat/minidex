@@ -70,7 +70,10 @@ export default function PriceChart({
 
   useEffect(() => {
     if (!containerRef.current) return;
-    const chart = createChart(containerRef.current, { height: 300 });
+    const chart = createChart(containerRef.current, { 
+      height: containerRef.current.clientHeight || 400,
+      width: containerRef.current.clientWidth || 800 
+    });
     const candleSeries = chart.addCandlestickSeries();
     const volumeSeries = chart.addHistogramSeries({
       priceScaleId: '',
@@ -84,7 +87,13 @@ export default function PriceChart({
     volumeSeriesRef.current = volumeSeries;
 
     function handleResize() {
-      chart.applyOptions({ width: containerRef.current!.clientWidth });
+      const container = containerRef.current;
+      if (container) {
+        chart.applyOptions({ 
+          width: container.clientWidth,
+          height: container.clientHeight || 400
+        });
+      }
     }
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -232,7 +241,7 @@ export default function PriceChart({
   }, [hasData, meta]);
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', height: '100%', minHeight: '400px' }}>
       {degraded && (
         <div
           style={{
@@ -251,7 +260,7 @@ export default function PriceChart({
           degraded
         </div>
       )}
-      <div ref={containerRef} style={{ height: 300 }} />
+      <div ref={containerRef} style={{ height: '100%', minHeight: '400px' }} />
       {!hasData && (
         <div
           style={{

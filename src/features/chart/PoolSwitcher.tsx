@@ -26,7 +26,7 @@ export default function PoolSwitcher({ pools, current, onSwitch }: Props) {
             opacity: p.gtSupported === false ? 0.5 : 1,
           }}
         >
-          {p.dex} {p.base}/{p.quote}
+          {p.dex} {p.version ? `(${p.version})` : ''} {p.base}/{p.quote}
           {p.gtSupported === false && (
             <span
               style={{

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+import { ExpandMore as ExpandMoreIcon, KeyboardArrowDown as ArrowDownIcon } from '@mui/icons-material';
 import type { PoolSummary, TokenResponse } from '../../lib/types';
 
 interface Props {
@@ -43,21 +43,24 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
               
               {/* Pool Selector Dropdown */}
               {pools.length > 1 && (
-                <select
-                  value={pairId}
-                  onChange={(e) => {
-                    const sel = pools.find((p) => p.pairId === e.target.value);
-                    if (sel) onPoolSwitch(sel);
-                  }}
-                  className="pool-selector"
-                >
-                  {pools.map((p) => (
-                    <option key={p.pairId} value={p.pairId}>
-                      {p.dex} {p.version ? `(${p.version})` : ''} — {p.base}/{p.quote}
-                      {p.gtSupported === false ? ' — Limited' : ''}
-                    </option>
-                  ))}
-                </select>
+                <div className="pool-selector-wrapper">
+                  <select
+                    value={pairId}
+                    onChange={(e) => {
+                      const sel = pools.find((p) => p.pairId === e.target.value);
+                      if (sel) onPoolSwitch(sel);
+                    }}
+                    className="pool-selector"
+                  >
+                    {pools.map((p) => (
+                      <option key={p.pairId} value={p.pairId}>
+                        {p.dex} {p.version ? `(${p.version})` : ''} — {p.base}/{p.quote}
+                        {p.gtSupported === false ? ' — Limited' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <ArrowDownIcon className="pool-selector-arrow" />
+                </div>
               )}
             </div>
           </div>

@@ -164,7 +164,7 @@ export default function ChartPage() {
 
           {/* View-specific content */}
           {view === 'chart' && currentPool && currentPool.poolAddress && provider && address && (
-            <>
+            <div className="chart-view-content">
               {currentPool.gtSupported === false && (
                 <div className="limitation-notice">
                   Chart not available on this DEX; showing limited data.
@@ -181,11 +181,11 @@ export default function ChartPage() {
                   tokenAddress={address}
                 />
               </div>
-            </>
+            </div>
           )}
 
           {view === 'trades' && currentPool && currentPool.poolAddress && address && (
-            <>
+            <div className="trades-view-content">
               {currentPool.gtSupported === false && (
                 <div className="limitation-notice">
                   Trades not available on this DEX; showing limited data.
@@ -201,18 +201,20 @@ export default function ChartPage() {
                   quoteSymbol={tradeSymbols?.quoteSymbol || currentPool.quote}
                 />
               </div>
-            </>
+            </div>
           )}
 
           {view === 'detail' && currentPool && address && (
-            <DetailView
-              chain={currentPool.chain}
-              address={address}
-              pairId={currentPool.pairId}
-              pools={pools}
-              onSwitch={handlePoolSwitch}
-              hideDetailTop={true} // Don't show DetailTop again in DetailView
-            />
+            <div className="detail-view-content">
+              <DetailView
+                chain={currentPool.chain}
+                address={address}
+                pairId={currentPool.pairId}
+                pools={pools}
+                onSwitch={handlePoolSwitch}
+                hideDetailTop={true} // Don't show DetailTop again in DetailView
+              />
+            </div>
           )}
         </div>
       )}

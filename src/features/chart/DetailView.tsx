@@ -150,29 +150,24 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
                   
                   {/* Pool Selector Dropdown */}
                   {pools.length > 1 && (
-                    <select
-                      value={pairId}
-                      onChange={(e) => {
-                        const sel = pools.find((p) => p.pairId === e.target.value);
-                        if (sel) onSwitch(sel);
-                      }}
-                      style={{
-                        background: 'var(--bg-input)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-small)',
-                        color: 'var(--text)',
-                        padding: 'var(--space-1) var(--space-2)',
-                        fontSize: '0.875rem',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {pools.map((p) => (
-                        <option key={p.pairId} value={p.pairId}>
-                          {p.dex} {p.version ? `(${p.version})` : ''} — {p.base}/{p.quote}
-                          {p.gtSupported === false ? ' — Limited' : ''}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="pool-selector-wrapper">
+                      <select
+                        value={pairId}
+                        onChange={(e) => {
+                          const sel = pools.find((p) => p.pairId === e.target.value);
+                          if (sel) onSwitch(sel);
+                        }}
+                        className="pool-selector"
+                      >
+                        {pools.map((p) => (
+                          <option key={p.pairId} value={p.pairId}>
+                            {p.dex} {p.version ? `(${p.version})` : ''} — {p.base}/{p.quote}
+                            {p.gtSupported === false ? ' — Limited' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <ExpandMoreIcon className="pool-selector-arrow" />
+                    </div>
                   )}
                 </div>
               </div>

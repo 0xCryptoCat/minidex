@@ -70,66 +70,47 @@ export default function SearchResultItem({ result }: Props) {
       onKeyDown={(e) => {
         if (e.key === 'Enter') handleClick();
       }}
-      style={{
-        cursor: 'pointer',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-        minHeight: 40,
-        opacity: isSupported ? 1 : 0.5,
-      }}
+      className={`search-result-item ${isSupported ? 'supported' : 'limited'}`}
     >
-      <td>
+      <td className="token-icon-cell">
         {icon ? (
-          <img src={icon} alt={`${symbol} logo`} style={{ width: 24, height: 24 }} />
-        ) : (
-          <div style={{ width: 24, height: 24, background: 'var(--bg-elev)', borderRadius: 4 }} />
-        )}
-      </td>
-      <td>
-        <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
-            <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{symbol}</strong>
-            {!isSupported && (
-              <span
-                style={{
-                  fontSize: '0.625rem',
-                  background: 'var(--bg-elev)',
-                  padding: '0 4px',
-                  borderRadius: 4,
-                  flexShrink: 0,
-                }}
-              >
-                Limited
-              </span>
-            )}
-          </div>
-          <span
-            style={{
-              fontSize: '0.75rem',
-              color: 'var(--text-muted)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+          <img 
+            src={icon} 
+            alt={`${symbol} logo`} 
+            className="token-icon"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+              if (fallback) fallback.style.display = 'flex';
             }}
-          >
-            {name}
-          </span>
+          />
+        ) : null}
+        <div className={`token-fallback ${icon ? 'hidden' : ''}`}>
+          {symbol?.[0]?.toUpperCase()}
         </div>
       </td>
-      <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {formatUsd(priceUsd)}
+      <td className="token-info-cell">
+        <div className="token-info">
+          <div className="token-main">
+            <strong className="token-symbol">{symbol}</strong>
+            {!isSupported && (
+              <span className="limited-badge">Limited</span>
+            )}
+          </div>
+          <span className="token-name">{name}</span>
+        </div>
       </td>
-      <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {formatUsd(liqUsd)}
+      <td className="price-cell">
+        <span className="price-value">{formatUsd(priceUsd)}</span>
       </td>
-      <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {formatUsd(vol24hUsd)}
+      <td className="liquidity-cell">
+        <span className="liq-value">{formatUsd(liqUsd)}</span>
       </td>
-      <td>
-        <div
-          className="chain-icons"
-          title={(chainIcons || []).join(', ')}
-        >
+      <td className="volume-cell">
+        <span className="vol-value">{formatUsd(vol24hUsd)}</span>
+      </td>
+      <td className="chains-cell">
+        <div className="chain-icons" title={(chainIcons || []).join(', ')}>
           {displayedChains.map((c, i) => {
             const url = CHAIN_TO_ICON[c];
             if (!url) return null;
@@ -138,6 +119,7 @@ export default function SearchResultItem({ result }: Props) {
                 key={c}
                 src={url}
                 alt={c}
+                className="chain-icon"
                 style={{ zIndex: displayedChains.length - i }}
               />
             );
@@ -147,11 +129,13 @@ export default function SearchResultItem({ result }: Props) {
           )}
         </div>
       </td>
-      <td style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        <span className="pool-count-chip">{poolCount} pools</span>
-        <span className="provider-badge" aria-label={`data provider ${provider}`}>
-          {provider}
-        </span>
+      <td className="meta-cell">
+        <div className="meta-info">
+          <span className="pool-count-chip">{poolCount} pools</span>
+          <span className="provider-badge" title={`Data provider: ${provider}`}>
+            {provider}
+          </span>
+        </div>
       </td>
     </tr>
   );

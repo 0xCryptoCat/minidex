@@ -99,30 +99,49 @@ export default function ChartOnlyView({
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: '0.5rem' }}>
-        <label>
-          <input type="checkbox" checked={showMarkers} onChange={handleToggle} /> trades
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '16px 16px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
+        <label style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '8px',
+          fontSize: '14px',
+          cursor: 'pointer'
+        }}>
+          <input 
+            type="checkbox" 
+            checked={showMarkers} 
+            onChange={handleToggle}
+            style={{ accentColor: 'var(--accent-telegram)' }}
+          /> 
+          Trade markers
         </label>
       </div>
       {showMarkers && noTrades && (
-        <div style={{ marginBottom: '0.5rem' }}>
-          <div>No trades</div>
+        <div style={{ 
+          padding: '8px 16px', 
+          fontSize: '13px', 
+          color: 'var(--text-muted)',
+          borderBottom: '1px solid var(--border-subtle)'
+        }}>
+          <div>No trades available</div>
           {meta && formatFetchMeta(meta) && (
-            <div style={{ fontSize: '0.75rem' }}>{formatFetchMeta(meta)}</div>
+            <div style={{ fontSize: '11px', marginTop: '4px' }}>{formatFetchMeta(meta)}</div>
           )}
         </div>
       )}
-      <PriceChart
-        pairId={pairId}
-        tf={tf}
-        xDomain={xDomain}
-        onXDomainChange={onXDomainChange}
-        markers={showMarkers ? markers : []}
-        chain={chain}
-        poolAddress={poolAddress}
-        tokenAddress={tokenAddress}
-      />
+      <div style={{ flex: 1, position: 'relative' }}>
+        <PriceChart
+          pairId={pairId}
+          tf={tf}
+          xDomain={xDomain}
+          onXDomainChange={onXDomainChange}
+          markers={showMarkers ? markers : []}
+          chain={chain}
+          poolAddress={poolAddress}
+          tokenAddress={tokenAddress}
+        />
+      </div>
     </div>
   );
 }

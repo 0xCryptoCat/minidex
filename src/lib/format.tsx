@@ -12,12 +12,13 @@ export function formatCompact(value?: number): string {
 
 export function formatUsd(
   value?: number,
-  opts?: { compact?: boolean }
+  opts?: { compact?: boolean; dp?: number }
 ): string {
   if (value === undefined || value === null || !Number.isFinite(value)) return '-';
+  const dp = opts?.dp ?? 4;
   if (Math.abs(value) >= 1000 && opts?.compact !== false)
     return `$${formatCompact(value)}`;
-  return `$${value.toFixed(4)}`;
+  return `$${value.toFixed(dp)}`;
 }
 
 export function formatDateTimeUTC(ts?: number): string {
@@ -60,6 +61,7 @@ export function subscriptZeros(frac: string): ReactNode[] {
 
 export function formatAmount(value?: number): ReactNode {
   if (value === undefined || value === null || !Number.isFinite(value)) return '-';
+  if (value === 0) return '0';
   const abs = Math.abs(value);
   if (abs >= 1) return value.toFixed(2);
 

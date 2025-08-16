@@ -197,7 +197,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
         {active.pairAddress && (
           <div>
             Pair: {active.pairAddress}
-            <CopyButton text={active.pairAddress} />
+            <CopyButton text={active.pairAddress} label="pair address" />
             {pairExplorer && (
               <a href={pairExplorer} target="_blank" rel="noopener noreferrer">
                 ↗
@@ -207,7 +207,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
         )}
         <div>
           {active.baseToken.symbol}: {active.baseToken.address}
-          <CopyButton text={active.baseToken.address} />
+          <CopyButton text={active.baseToken.address} label={`${active.baseToken.symbol} address`} />
           {baseExplorer && (
             <a href={baseExplorer} target="_blank" rel="noopener noreferrer">
               ↗
@@ -216,7 +216,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
         </div>
         <div>
           {active.quoteToken.symbol}: {active.quoteToken.address}
-          <CopyButton text={active.quoteToken.address} />
+          <CopyButton text={active.quoteToken.address} label={`${active.quoteToken.symbol} address`} />
           {quoteExplorer && (
             <a href={quoteExplorer} target="_blank" rel="noopener noreferrer">
               ↗

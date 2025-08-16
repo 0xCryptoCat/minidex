@@ -8,6 +8,7 @@ import DetailView from './DetailView';
 import TradesOnlyView from '../trades/TradesOnlyView';
 import copy from '../../copy/en.json';
 import { useProvider } from '../../lib/provider';
+import { resolvePairSymbols } from '../../lib/pairs';
 
 // Views for chart page
 type View = 'chart' | 'trades' | 'detail';
@@ -97,11 +98,8 @@ export default function ChartPage() {
     requestAnimationFrame(() => window.scrollTo(0, scroll));
   }
 
-  const tradeSymbols = currentPool && token
-    ? token.symbol === currentPool.base
-      ? { baseSymbol: currentPool.base, quoteSymbol: currentPool.quote }
-      : { baseSymbol: currentPool.quote, quoteSymbol: currentPool.base }
-    : null;
+  const tradeSymbols =
+    currentPool && token ? resolvePairSymbols(token.symbol, currentPool) : null;
 
   return (
     <div style={{ padding: '1rem' }}>

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import type { SearchTokenSummary, PoolSummary } from '../../lib/types';
 import { formatUsd } from '../../lib/format';
+import { CHAIN_TO_ICON } from '../../lib/chains';
 
 interface Props { result: SearchTokenSummary }
 
@@ -125,15 +126,22 @@ export default function SearchResultItem({ result }: Props) {
         {formatUsd(vol24hUsd)}
       </td>
       <td>
-        <div className="chain-icons">
-          {displayedChains.map((c, i) => (
-            <img
-              key={c}
-              src={`https://icons.llamao.fi/icons/chains/rsz_${c}.jpg`}
-              alt={c}
-              style={{ zIndex: displayedChains.length - i }}
-            />
-          ))}
+        <div
+          className="chain-icons"
+          title={(chainIcons || []).join(', ')}
+        >
+          {displayedChains.map((c, i) => {
+            const url = CHAIN_TO_ICON[c];
+            if (!url) return null;
+            return (
+              <img
+                key={c}
+                src={url}
+                alt={c}
+                style={{ zIndex: displayedChains.length - i }}
+              />
+            );
+          })}
           {chainCount && chainCount > displayedChains.length && (
             <span className="chain-more">+{chainCount - displayedChains.length}</span>
           )}

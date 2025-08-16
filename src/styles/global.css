@@ -184,16 +184,3 @@ tbody tr:nth-child(even) {
   color: inherit;
 }
 
-.copy-btn .tooltip {
-  position: absolute;
-  top: -1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--bg-elev);
-  color: var(--text);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius);
-  font-size: 0.75rem;
-  pointer-events: none;
-  white-space: nowrap;
-}

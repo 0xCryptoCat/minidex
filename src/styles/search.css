@@ -9,7 +9,7 @@
   border: 2px solid var(--bg);
 }
 .chain-icons img + img {
-  margin-left: -8px;
+  margin-left: -6px;
 }
 .chain-more {
   margin-left: var(--space-1);

@@ -32,8 +32,7 @@ type SortKey =
   | 'amountBase'
   | 'amountQuote'
   | 'wallet'
-  | 'tx'
-  | 'txCount';
+  | 'tx';
 
 interface ColumnConfig {
   key: SortKey;
@@ -90,14 +89,6 @@ export default function TradesOnlyView({
     };
   }, [pairId, chain, poolAddress, tokenAddress]);
 
-  const counts = useMemo(() => {
-    const m = new Map<string, number>();
-    rows.forEach((r) => {
-      if (r.wallet) m.set(r.wallet, (m.get(r.wallet) || 0) + 1);
-    });
-    return m;
-  }, [rows]);
-
   const columns: ColumnConfig[] = useMemo(
     () => [
       {
@@ -126,7 +117,7 @@ export default function TradesOnlyView({
         key: 'price',
         header: 'Price $',
         accessor: (t) => t.price,
-        render: (t) => formatUsd(t.price, { compact: true }),
+        render: (t) => formatUsd(t.price, { compact: true, dp: 4 }),
         comparator: (a: number | undefined, b: number | undefined) =>
           (a || 0) - (b || 0),
       },
@@ -158,18 +149,22 @@ export default function TradesOnlyView({
         accessor: (t) => t.wallet || '',
         render: (t) =>
           t.wallet ? (
-            <a
-              className="tr-link"
-              href={addressUrl(chain as any, t.wallet)!}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {formatShortAddr(t.wallet)} ↗
-            </a>
+            <>
+              {formatShortAddr(t.wallet)}
+              <a
+                className="tr-link"
+                href={addressUrl(chain as any, t.wallet)!}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                ↗
+              </a>
+            </>
           ) : (
             '-'
           ),
         comparator: (a: string, b: string) => a.localeCompare(b),
+        className: 'maker',
       },
       {
         key: 'tx',
@@ -190,24 +185,8 @@ export default function TradesOnlyView({
           ),
         comparator: (a: string, b: string) => a.localeCompare(b),
       },
-      {
-        key: 'txCount',
-        header: 'TX Sum',
-        accessor: (t) => (t.wallet ? counts.get(t.wallet) || 0 : 0),
-        render: (t) => {
-          const cnt = t.wallet ? counts.get(t.wallet) || 0 : 0;
-          return t.wallet ? (
-            <span className="tr-pill">
-              {cnt} {cnt === 1 ? 'trade' : 'trades'}
-            </span>
-          ) : (
-            '-'
-          );
-        },
-        comparator: (a: number, b: number) => a - b,
-      },
     ],
-    [baseSymbol, quoteSymbol, counts, chain]
+    [baseSymbol, quoteSymbol, chain]
   );
 
   const sorted = useMemo(() => {

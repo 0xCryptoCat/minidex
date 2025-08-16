@@ -1,20 +1,79 @@
 :root {
-  --bg: #0b0d10;
-  --bg-elev: #14171d;
-  --bg-elev-2: #1b1f27;
-  --text: #cdd1d7;
-  --text-muted: #5c6067;
-  --accent-lime: #8cff00;
-  --accent-magenta: #ff2ed1;
-  --accent-cyan: #00e0ff;
-  --border: #282c34;
+  /* Base dark colors - iOS inspired */
+  --bg: #131313;
+  --bg-elev: #1c1c1e;
+  --bg-elev-2: #2c2c2e;
+  --bg-elev-3: #3a3a3c;
+  --bg-card: #1c1c1e;
+  --bg-input: #2c2c2e;
+  
+  /* Text colors */
+  --text: #ffffff;
+  --text-secondary: #d1d1d6;
+  --text-muted: #8e8e93;
+  --text-disabled: #636366;
+  
+  /* Brand colors */
+  --brand-primary: #007aff;
+  --brand-secondary: #5856d6;
+  --telegram-blue: #0088cc;
+  --telegram-blue-dark: #006bb3;
+  
+  /* Status colors */
+  --success: #34c759;
+  --success-dark: #248a3d;
+  --warning: #ff9500;
+  --warning-dark: #d1770f;
+  --error: #ff3b30;
+  --error-dark: #d70015;
+  
+  /* Trading colors */
+  --buy-primary: #34c759;
+  --buy-secondary: #248a3d;
+  --sell-primary: #8b0000;
+  --sell-secondary: #691a1a;
+  
+  /* Legacy color mappings for backwards compatibility */
+  --accent-lime: var(--buy-primary);
+  --accent-magenta: var(--sell-primary);
+  --accent-cyan: var(--telegram-blue);
+  
+  /* Borders and separators */
+  --border: #3a3a3c;
+  --border-light: #48484a;
+  --separator: #38383a;
+  
+  /* Interactive states */
+  --hover: rgba(255, 255, 255, 0.04);
+  --active: rgba(255, 255, 255, 0.08);
+  --selected: rgba(0, 122, 255, 0.15);
+  
+  /* Layout */
   --radius: 12px;
+  --radius-small: 8px;
+  --radius-large: 16px;
+  --radius-pill: 999px;
+  
+  /* Spacing */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  
+  /* Animation */
+  --transition-fast: 0.15s ease-out;
+  --transition-medium: 0.25s ease-out;
+  --transition-slow: 0.35s ease-out;
+  
+  /* Shadows for depth */
+  --shadow-small: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-large: 0 8px 32px rgba(0, 0, 0, 0.6);
 
-  /* legacy tokens */
+  /* Legacy tokens for compatibility */
   --card-radius: var(--radius);
   --padding: var(--space-4);
 }

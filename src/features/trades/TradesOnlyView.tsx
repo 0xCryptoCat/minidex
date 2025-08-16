@@ -1,12 +1,15 @@
 import { useEffect, useState, useMemo, ReactNode, CSSProperties, useRef } from 'react';
 import { FixedSizeList as List } from 'react-window';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import type { Trade } from '../../lib/types';
 import { trades } from '../../lib/api';
 import {
   formatUsd,
   formatAmount,
   formatShortAddr,
-  formatDateTimeUTC,
+  formatCompactTime,
+  formatSmartAmount,
   formatFetchMeta,
   type FetchMeta,
 } from '../../lib/format';
@@ -96,51 +99,47 @@ export default function TradesOnlyView({
         header: 'Time',
         accessor: (t) => t.ts,
         render: (t) => (
-          <>
-            <div>{formatDateTimeUTC(t.ts)}</div>
+          <div className="time-cell">
+            <div className="time-main">{formatCompactTime(t.ts)}</div>
             {t.blockNumber !== undefined && (
-              <div className="muted">#{t.blockNumber}</div>
+              <div className="time-block">#{t.blockNumber}</div>
             )}
-          </>
+          </div>
         ),
         comparator: (a: number, b: number) => a - b,
       },
       {
-        key: 'side',
-        header: 'Type',
-        accessor: (t) => t.side,
-        render: (t) => t.side,
-        comparator: (a: string, b: string) => a.localeCompare(b),
-        className: 'type',
-      },
-      {
         key: 'price',
-        header: 'Price $',
+        header: 'Price',
         accessor: (t) => t.price,
-        render: (t) => formatUsd(t.price, { compact: true, dp: 4 }),
+        render: (t) => (
+          <div className="price-cell">
+            <div>${formatSmartAmount(t.price)}</div>
+          </div>
+        ),
         comparator: (a: number | undefined, b: number | undefined) =>
           (a || 0) - (b || 0),
       },
       {
         key: 'total',
-        header: 'Total $',
+        header: 'Total',
         accessor: (t) => (t.amountBase || 0) * (t.price || 0),
-        render: (t) =>
-          formatUsd((t.amountBase || 0) * (t.price || 0), { compact: true }),
+        render: (t) => (
+          <div className="total-cell">
+            <div>${formatSmartAmount((t.amountBase || 0) * (t.price || 0))}</div>
+          </div>
+        ),
         comparator: (a: number, b: number) => a - b,
       },
       {
         key: 'amountBase',
-        header: `Amount ${baseSymbol || '1'}`,
+        header: `${baseSymbol || 'Base'}`,
         accessor: (t) => t.amountBase || 0,
-        render: (t) => formatAmount(t.amountBase),
-        comparator: (a: number, b: number) => a - b,
-      },
-      {
-        key: 'amountQuote',
-        header: `Amount ${quoteSymbol || '2'}`,
-        accessor: (t) => t.amountQuote || 0,
-        render: (t) => formatAmount(t.amountQuote),
+        render: (t) => (
+          <div className="amount-cell">
+            <div>{formatSmartAmount(t.amountBase)}</div>
+          </div>
+        ),
         comparator: (a: number, b: number) => a - b,
       },
       {
@@ -149,19 +148,29 @@ export default function TradesOnlyView({
         accessor: (t) => t.wallet || '',
         render: (t) =>
           t.wallet ? (
-            <>
-              {formatShortAddr(t.wallet)}
-              <a
-                className="tr-link"
-                href={addressUrl(chain as any, t.wallet)!}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                ↗
-              </a>
-            </>
+            <div className="maker-cell">
+              <span className="maker-addr">{formatShortAddr(t.wallet)}</span>
+              <div className="maker-actions">
+                <ContentCopyIcon 
+                  className="action-icon copy-icon" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(t.wallet || '');
+                  }}
+                />
+                <a
+                  className="action-link"
+                  href={addressUrl(chain as any, t.wallet)!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <OpenInNewIcon className="action-icon" />
+                </a>
+              </div>
+            </div>
           ) : (
-            '-'
+            <span className="no-data">-</span>
           ),
         comparator: (a: string, b: string) => a.localeCompare(b),
         className: 'maker',
@@ -172,16 +181,19 @@ export default function TradesOnlyView({
         accessor: (t) => t.txHash || '',
         render: (t) =>
           t.txHash ? (
-            <a
-              className="tr-link"
-              href={txUrl(chain as any, t.txHash)!}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              ↗
-            </a>
+            <div className="tx-cell">
+              <a
+                className="action-link"
+                href={txUrl(chain as any, t.txHash)!}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <OpenInNewIcon className="action-icon" />
+              </a>
+            </div>
           ) : (
-            '-'
+            <span className="no-data">-</span>
           ),
         comparator: (a: string, b: string) => a.localeCompare(b),
       },
@@ -220,7 +232,19 @@ export default function TradesOnlyView({
     const t = sorted[index];
     const typeClass = t.side === 'buy' ? 'buy' : 'sell';
     return (
-      <div style={style} className={`tr-row ${typeClass}`}>
+      <div 
+        style={style} 
+        className={`tr-row ${typeClass}`}
+        onMouseEnter={(e) => {
+          e.currentTarget.classList.add('hover');
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.classList.remove('hover');
+        }}
+        onClick={() => {
+          // Optional: Add click handler for row selection
+        }}
+      >
         {columns.map((c) => (
           <div key={c.key} className={`tr-cell${c.className ? ' ' + c.className : ''}`}>
             {c.render(t)}
@@ -232,10 +256,11 @@ export default function TradesOnlyView({
 
   if (rows.length === 0 && noTrades) {
     return (
-      <div>
-        <div>No recent trades (24h)</div>
+      <div className="no-data-container">
+        <div className="no-data-message">No recent trades available</div>
+        <div className="no-data-subtitle">Check back later for trading activity</div>
         {meta && formatFetchMeta(meta) && (
-          <div style={{ fontSize: '0.75rem' }}>{formatFetchMeta(meta)}</div>
+          <div className="fetch-meta">{formatFetchMeta(meta)}</div>
         )}
       </div>
     );

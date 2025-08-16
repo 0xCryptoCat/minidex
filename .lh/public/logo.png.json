@@ -1,0 +1,18 @@
+{
+    "sourceFile": "public/logo.png",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755347748727,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755347748727,
+            "name": "Commit-0",
+            "content": "# This is a placeholder for the logo file\n# In a real implementation, this would be an actual PNG file\n# For now, we'll create a text-based logo component\n"
+        }
+    ]
+}

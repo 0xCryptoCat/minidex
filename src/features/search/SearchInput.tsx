@@ -16,6 +16,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchTokenSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -29,11 +30,15 @@ export default function SearchInput({ autoFocus, large }: Props) {
   function runSearch(q: string, force = false) {
     if (!q || (!force && !isAddress(q) && q.length < 4)) {
       setResults([]);
+      setIsLoading(false);
       return;
     }
+    
+    setIsLoading(true);
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
+    
     apiSearch(q, undefined, controller.signal)
       .then(({ data }) => {
         if ('results' in data) {
@@ -42,7 +47,8 @@ export default function SearchInput({ autoFocus, large }: Props) {
           setResults([]);
         }
       })
-      .catch(() => setResults([]));
+      .catch(() => setResults([]))
+      .finally(() => setIsLoading(false));
   }
 
   useEffect(() => {
@@ -55,6 +61,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
       timer.current = setTimeout(() => runSearch(query), 500);
     } else {
       setResults([]);
+      setIsLoading(false);
     }
     return () => {
       if (timer.current) clearTimeout(timer.current);
@@ -96,10 +103,40 @@ export default function SearchInput({ autoFocus, large }: Props) {
     setResults([]);
   }
 
-  const sizeStyle = large ? { fontSize: '1.5rem', padding: '0.75rem' } : { padding: '0.5rem' };
+  const containerStyle = large ? {
+    position: 'relative' as const,
+    width: '100%',
+    maxWidth: 600
+  } : {
+    position: 'relative' as const,
+    width: '100%',
+    maxWidth: 400
+  };
+
+  const inputStyle = large ? {
+    width: '100%',
+    fontSize: '1.125rem',
+    padding: 'var(--space-4)',
+    borderRadius: 'var(--radius-pill)',
+    background: 'var(--bg-input)',
+    border: '1px solid var(--border)',
+    color: 'var(--text)',
+    transition: 'all var(--transition-fast)',
+    outline: 'none',
+  } : {
+    width: '100%',
+    fontSize: '1rem',
+    padding: 'var(--space-3)',
+    borderRadius: 'var(--radius-pill)',
+    background: 'var(--bg-input)',
+    border: '1px solid var(--border)',
+    color: 'var(--text)',
+    transition: 'all var(--transition-fast)',
+    outline: 'none',
+  };
 
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: large ? 600 : 400 }}>
+    <div style={containerStyle}>
       <label htmlFor="global-search" style={{ position: 'absolute', left: -10000 }}>
         {'Search tokens or paste address'}
       </label>
@@ -112,34 +149,95 @@ export default function SearchInput({ autoFocus, large }: Props) {
         onPaste={handlePaste}
         placeholder="Search tokens or paste address"
         aria-label="Search tokens or paste address"
-        style={{ width: '100%', ...sizeStyle }}
+        style={{
+          ...inputStyle,
+          ...(query ? {
+            borderColor: 'var(--telegram-blue)',
+            background: 'var(--bg-elev)',
+          } : {}),
+        }}
       />
-      {results.length > 0 && (
-        <ul
+      
+      {(results.length > 0 || isLoading) && (
+        <div
           style={{
-            listStyle: 'none',
-            margin: 0,
-            padding: 0,
             position: 'absolute',
             top: '100%',
             left: 0,
             right: 0,
-            background: 'var(--bg-elev)',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderTop: 'none',
+            borderRadius: `0 0 var(--radius) var(--radius)`,
+            boxShadow: 'var(--shadow-medium)',
             zIndex: 50,
+            maxHeight: '300px',
+            overflow: 'auto',
           }}
         >
-          {results.map((r) => (
-            <li key={r.address} style={{ padding: '0.5rem' }}>
+          {isLoading ? (
+            <div style={{ 
+              padding: 'var(--space-3)', 
+              color: 'var(--text-muted)',
+              textAlign: 'center',
+            }}>
+              Searching...
+            </div>
+          ) : (
+            results.map((r) => (
               <button
+                key={r.address}
                 type="button"
                 onClick={() => handleSelect(r)}
-                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none' }}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  background: 'none',
+                  border: 'none',
+                  padding: 'var(--space-3)',
+                  color: 'var(--text)',
+                  cursor: 'pointer',
+                  transition: 'background-color var(--transition-fast)',
+                  borderBottom: '1px solid var(--separator)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--hover)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'none';
+                }}
               >
-                <strong>{r.symbol}</strong> {r.name}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  {r.icon && (
+                    <img 
+                      src={r.icon} 
+                      alt={`${r.symbol} logo`} 
+                      style={{ width: 24, height: 24, borderRadius: '50%' }} 
+                    />
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, marginBottom: '2px' }}>
+                      {r.symbol}
+                    </div>
+                    <div style={{ 
+                      fontSize: '0.875rem', 
+                      color: 'var(--text-muted)',
+                    }}>
+                      {r.name}
+                    </div>
+                  </div>
+                  <div style={{ 
+                    fontSize: '0.875rem', 
+                    color: 'var(--text-secondary)',
+                    textAlign: 'right',
+                  }}>
+                    ${r.priceUsd?.toFixed(4) || '—'}
+                  </div>
+                </div>
               </button>
-            </li>
-          ))}
-        </ul>
+            ))
+          )}
+        </div>
       )}
     </div>
   );

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/components/CopyButton.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755347748704,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755347748704,
+            "name": "Commit-0",
+            "content": "import { useState } from 'react';\nimport { ContentCopy as CopyIcon, Check as CheckIcon } from '@mui/icons-material';\nimport '../styles/tooltips.css';\n\ninterface Props {\n  text: string;\n  label?: string;\n}\n\nexport default function CopyButton({ text, label }: Props) {\n  const [copied, setCopied] = useState(false);\n  \n  async function copy() {\n    try {\n      await navigator.clipboard.writeText(text);\n      setCopied(true);\n      setTimeout(() => setCopied(false), 1200);\n    } catch {\n      /* ignore */\n    }\n  }\n\n  function handleKey(e: React.KeyboardEvent<HTMLButtonElement>) {\n    if (e.key === 'Enter' || e.key === ' ') {\n      e.preventDefault();\n      copy();\n    }\n  }\n\n  return (\n    <button\n      type=\"button\"\n      onClick={copy}\n      onKeyDown={handleKey}\n      className=\"copy-btn\"\n      aria-label={label ? `Copy ${label}` : 'Copy'}\n      style={{\n        background: 'none',\n        border: 'none',\n        cursor: 'pointer',\n        padding: 'var(--space-1)',\n        borderRadius: 'var(--radius-small)',\n        color: copied ? 'var(--success)' : 'var(--text-muted)',\n        transition: 'all var(--transition-fast)',\n        display: 'inline-flex',\n        alignItems: 'center',\n        justifyContent: 'center',\n        position: 'relative',\n      }}\n    >\n      {copied ? <CheckIcon sx={{ fontSize: 16 }} /> : <CopyIcon sx={{ fontSize: 16 }} />}\n      {copied && <span className=\"tooltip\">Copied</span>}\n    </button>\n  );\n}\n"
+        }
+    ]
+}

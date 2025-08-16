@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import type { PoolSummary, TokenMeta, Provider } from '../../lib/types';
-import { pairs } from '../../lib/api';
+import type { PoolSummary, TokenMeta, TokenResponse, Provider } from '../../lib/types';
+import { pairs, token as fetchToken } from '../../lib/api';
 import PoolSwitcher from './PoolSwitcher';
 import ChartOnlyView from './ChartOnlyView';
 import DetailView from './DetailView';
+import DetailTop from './DetailTop';
 import TradesOnlyView from '../trades/TradesOnlyView';
 import copy from '../../copy/en.json';
 import { useProvider } from '../../lib/provider';
@@ -17,6 +18,7 @@ export default function ChartPage() {
   const { chain, address, pairId } = useParams<{ chain: string; address: string; pairId?: string }>();
   const navigate = useNavigate();
   const [token, setToken] = useState<TokenMeta | null>(null);
+  const [tokenDetail, setTokenDetail] = useState<TokenResponse | null>(null);
   const [pools, setPools] = useState<PoolSummary[]>([]);
   const [currentPool, setCurrentPool] = useState<PoolSummary | null>(null);
   const [provider, setProvider] = useState<Provider | null>(null);
@@ -24,6 +26,7 @@ export default function ChartPage() {
   const view = (searchParams.get('view') as View) || 'detail';
   const [xDomain, setXDomain] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [noData, setNoData] = useState(false);
   const [unsupported, setUnsupported] = useState(false);
@@ -45,9 +48,12 @@ export default function ChartPage() {
     let cancelled = false;
     setUnsupported(false);
     setLoading(true);
+    setDetailLoading(true);
     setError(null);
     setProvider(null);
     setGlobalProvider('');
+
+    // Fetch pairs data
     pairs(chain, address)
       .then(({ data }) => {
         if (cancelled) return;
@@ -82,6 +88,22 @@ export default function ChartPage() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
+    // Fetch token detail data
+    fetchToken(chain, address)
+      .then(({ data }) => {
+        if (cancelled) return;
+        if (!('error' in data)) {
+          setTokenDetail(data);
+        }
+      })
+      .catch(() => {
+        // Token detail is optional, so we don't handle errors
+      })
+      .finally(() => {
+        if (!cancelled) setDetailLoading(false);
+      });
+
     return () => {
       cancelled = true;
     };
@@ -102,66 +124,86 @@ export default function ChartPage() {
     currentPool && token ? resolvePairSymbols(token.symbol, currentPool) : null;
 
   return (
-    <div style={{ padding: '1rem' }}>
-      {token && (
-        <div style={{ marginBottom: '1rem' }}>
-          <strong>{token.symbol}</strong> {token.name}
-        </div>
-      )}
-
-      {loading && <div>{copy.loading}</div>}
+    <div className="chart-page">
+      {loading && <div className="loading-state">{copy.loading}</div>}
 
       {unsupported && (
-        <div style={{ color: 'red' }}>Network not supported (yet)</div>
+        <div className="error-state">Network not supported (yet)</div>
       )}
 
       {!loading && error && (
-        <div style={{ color: 'red' }}>
+        <div className="error-state">
           {error === 'rate_limit' ? copy.error_rate_limit : copy.error_generic}
         </div>
       )}
 
-      {!loading && !error && pools.length === 0 && <div>{copy.no_pools}</div>}
+      {!loading && !error && pools.length === 0 && (
+        <div className="no-data-state">{copy.no_pools}</div>
+      )}
 
       {!loading && !error && pools.length > 0 && (
-        <>
-          {pools.length > 1 && pools.length <= 3 && (
-            <PoolSwitcher
-              pools={pools}
-              current={currentPool?.pairId}
-              onSwitch={handlePoolSwitch}
-            />
-          )}
-
-          {(view === 'chart' || view === 'trades') && currentPool?.gtSupported === false && (
-            <div style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-              Chart/Trades not available on this DEX; limited metrics shown.
-            </div>
-          )}
-
-          {view === 'chart' && currentPool && currentPool.poolAddress && provider && address && (
-            <div style={{ marginTop: '1rem' }}>
-              <ChartOnlyView
-                pairId={currentPool.pairId}
-                chain={currentPool.chain}
-                poolAddress={currentPool.poolAddress}
-                provider={provider}
-                xDomain={xDomain}
-                onXDomainChange={setXDomain}
-                tokenAddress={address}
-              />
-            </div>
-          )}
-          {view === 'trades' && currentPool && currentPool.poolAddress && address && (
-            <TradesOnlyView
+        <div className="chart-content">
+          {/* Show DetailTop for all views if we have token detail */}
+          {tokenDetail && currentPool && !detailLoading && (
+            <DetailTop
+              detail={tokenDetail}
               pairId={currentPool.pairId}
-              chain={currentPool.chain}
-              poolAddress={currentPool.poolAddress}
-              tokenAddress={address}
-              baseSymbol={tradeSymbols?.baseSymbol || currentPool.base}
-              quoteSymbol={tradeSymbols?.quoteSymbol || currentPool.quote}
+              pools={pools}
+              chain={chain!}
+              onPoolSwitch={handlePoolSwitch}
             />
           )}
+
+          {/* Show loading skeleton if detail is still loading */}
+          {detailLoading && (
+            <div className="detail-top-skeleton">
+              <div className="loading-skeleton" style={{ height: 200, marginBottom: '1rem' }} />
+              <div className="loading-skeleton" style={{ height: 100 }} />
+            </div>
+          )}
+
+          {/* View-specific content */}
+          {view === 'chart' && currentPool && currentPool.poolAddress && provider && address && (
+            <>
+              {currentPool.gtSupported === false && (
+                <div className="limitation-notice">
+                  Chart not available on this DEX; showing limited data.
+                </div>
+              )}
+              <div className="chart-container">
+                <ChartOnlyView
+                  pairId={currentPool.pairId}
+                  chain={currentPool.chain}
+                  poolAddress={currentPool.poolAddress}
+                  provider={provider}
+                  xDomain={xDomain}
+                  onXDomainChange={setXDomain}
+                  tokenAddress={address}
+                />
+              </div>
+            </>
+          )}
+
+          {view === 'trades' && currentPool && currentPool.poolAddress && address && (
+            <>
+              {currentPool.gtSupported === false && (
+                <div className="limitation-notice">
+                  Trades not available on this DEX; showing limited data.
+                </div>
+              )}
+              <div className="trades-container">
+                <TradesOnlyView
+                  pairId={currentPool.pairId}
+                  chain={currentPool.chain}
+                  poolAddress={currentPool.poolAddress}
+                  tokenAddress={address}
+                  baseSymbol={tradeSymbols?.baseSymbol || currentPool.base}
+                  quoteSymbol={tradeSymbols?.quoteSymbol || currentPool.quote}
+                />
+              </div>
+            </>
+          )}
+
           {view === 'detail' && currentPool && address && (
             <DetailView
               chain={currentPool.chain}
@@ -169,12 +211,15 @@ export default function ChartPage() {
               pairId={currentPool.pairId}
               pools={pools}
               onSwitch={handlePoolSwitch}
+              hideDetailTop={true} // Don't show DetailTop again in DetailView
             />
           )}
-        </>
+        </div>
       )}
 
-      {noData && <div>No chart data available for this pool</div>}
+      {noData && (
+        <div className="no-data-state">No data available for this token</div>
+      )}
     </div>
   );
 }

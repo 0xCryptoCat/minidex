@@ -155,6 +155,9 @@ export default function SearchInput({ autoFocus, large }: Props) {
             borderColor: 'var(--telegram-blue)',
             background: 'var(--bg-elev)',
           } : {}),
+          ...((results.length > 0 || isLoading) ? {
+            borderRadius: large ? 'var(--radius-pill) var(--radius-pill) 0 0' : 'var(--radius-pill) var(--radius-pill) 0 0'
+          } : {})
         }}
       />
       

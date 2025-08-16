@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState } from 'react';
 import type { PoolSummary, TokenResponse } from '../../lib/types';
 import { token as fetchToken } from '../../lib/api';
-import { formatUsd, formatCompact } from '../../lib/format';
+import { formatUsd, formatCompact, formatShortAddr } from '../../lib/format';
 import CopyButton from '../../components/CopyButton';
 import { addressUrl } from '../../lib/explorer';
 import { 
@@ -253,7 +253,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
           <div className="addr-row">
             <span>Pair:</span>
             <div>
-              <code>{active.pairAddress}</code>
+              <code>{formatShortAddr(active.pairAddress)}</code>
               <CopyButton text={active.pairAddress} label="pair address" />
               {pairExplorer && (
                 <a href={pairExplorer} target="_blank" rel="noopener noreferrer">
@@ -266,7 +266,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
         <div className="addr-row">
           <span>{active.baseToken.symbol}:</span>
           <div>
-            <code>{active.baseToken.address}</code>
+            <code>{formatShortAddr(active.baseToken.address)}</code>
             <CopyButton text={active.baseToken.address} label={`${active.baseToken.symbol} address`} />
             {baseExplorer && (
               <a href={baseExplorer} target="_blank" rel="noopener noreferrer">

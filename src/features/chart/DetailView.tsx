@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import type { PoolSummary, TokenResponse } from '../../lib/types';
 import { token as fetchToken } from '../../lib/api';
-import { formatUsd, formatCompact, formatAge } from '../../lib/format';
+import { formatUsd, formatCompact } from '../../lib/format';
 import CopyButton from '../../components/CopyButton';
 import { addressUrl } from '../../lib/explorer';
 import '../../styles/detail.css';
@@ -50,18 +50,50 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
   const active = detail.pools.find((p) => p.pairId === pairId) || detail.pools[0];
   const info = detail.info || {};
   const kpis = {
-    priceUsd: active.priceUsd ?? detail.kpis?.priceUsd,
-    priceNative: active.priceNative ?? detail.kpis?.priceNative,
-    liqUsd: active.liquidity?.usd ?? detail.kpis?.liqUsd,
-    fdvUsd: active.fdv ?? detail.kpis?.fdvUsd,
-    mcUsd: active.marketCap ?? detail.kpis?.mcUsd,
-    priceChange24hPct: active.priceChange?.h24 ?? detail.kpis?.priceChange24hPct,
+    priceUsd: active.priceUsd,
+    priceNative: active.priceNative,
+    liqUsd: active.liquidity?.usd,
+    fdvUsd: active.fdv,
+    mcUsd: active.marketCap,
+    priceChange24hPct: active.priceChange?.h24,
   };
-  const ageText = active?.pairCreatedAt
-    ? formatAge(Math.floor(active.pairCreatedAt / 1000))
-    : detail.kpis?.age
-    ? `${detail.kpis.age.days}d ${detail.kpis.age.hours}h`
-    : '-';
+
+  const fmtUsdOrDash = (v?: number) => (v !== undefined ? formatUsd(v) : '—');
+  const fmtPct = (v?: number) => (v !== undefined ? `${v.toFixed(2)}%` : '—');
+  const fmtCompactOrDash = (v?: number) => (v !== undefined ? formatCompact(v) : '—');
+
+  const renderPriceChanges = (pc?: { m5?: number; h1?: number; h6?: number; h24?: number }) =>
+    ['m5', 'h1', 'h6', 'h24'].map((k, i) => (
+      <Fragment key={k}>
+        <span
+          className={
+            pc?.[k as keyof typeof pc] !== undefined
+              ? pc![k as keyof typeof pc]! < 0
+                ? 'neg'
+                : 'pos'
+              : undefined
+          }
+        >
+          {fmtPct(pc?.[k as keyof typeof pc])}
+        </span>
+        {i < 3 && ' | '}
+      </Fragment>
+    ));
+
+  const renderTxns = (tx?: { h24?: { buys: number; sells: number } }) => {
+    const h24 = tx?.h24;
+    if (!h24) return '—';
+    const total = h24.buys + h24.sells;
+    return `${total} | ${h24.buys} — ${h24.sells}`;
+  };
+
+  const renderVolume = (v?: { m5?: number; h1?: number; h6?: number; h24?: number }) =>
+    ['m5', 'h1', 'h6', 'h24'].map((k, i) => (
+      <Fragment key={k}>
+        {fmtCompactOrDash(v?.[k as keyof typeof v])}
+        {i < 3 && ' | '}
+      </Fragment>
+    ));
 
   const linkItems: { key: string; url: string }[] = [];
   info.websites?.forEach((w) => linkItems.push({ key: (w.label || 'website').toLowerCase(), url: w.url }));
@@ -88,9 +120,12 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
         </div>
         <div className="detail-overview">
           <div className="detail-title">
-            <strong>{active.baseToken.symbol}</strong> / {active.quoteToken.symbol}
+            <strong>
+              {active.baseToken.symbol} / {active.quoteToken.symbol}
+            </strong>
           </div>
-          <div className="detail-badges">
+          <div className="detail-subline">
+            <span>{active.baseToken.name}</span>
             <span className="badge">{chain}</span>
             <span className="badge">{detail.provider}</span>
             {active.gtSupported === false && <span className="badge limited">Limited</span>}
@@ -132,57 +167,29 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
         </div>
       )}
 
-      {linkItems.length > 0 && (
-        <div className="detail-links">
-          {linkItems.map((l, i) => (
-            <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" title={l.key}>
-              {LINK_ICONS[l.key] || '🔗'}
-            </a>
-          ))}
-        </div>
-      )}
-
       <div className="detail-kpis">
-        <div><span>Price USD</span><strong>{formatUsd(kpis.priceUsd)}</strong></div>
-        <div><span>Price {active.quoteToken.symbol}</span><strong>{formatUsd(kpis.priceNative)}</strong></div>
-        <div><span>Liquidity $</span><strong>{formatUsd(kpis.liqUsd)}</strong></div>
-        <div><span>FDV $</span><strong>{formatUsd(kpis.fdvUsd)}</strong></div>
-        <div><span>MC $</span><strong>{formatUsd(kpis.mcUsd)}</strong></div>
+        <div><span>Price USD</span><strong>{fmtUsdOrDash(kpis.priceUsd)}</strong></div>
+        <div><span>Price {active.quoteToken.symbol}</span><strong>{fmtUsdOrDash(kpis.priceNative)}</strong></div>
+        <div><span>Liquidity $</span><strong>{fmtUsdOrDash(kpis.liqUsd)}</strong></div>
+        <div><span>FDV $</span><strong>{fmtUsdOrDash(kpis.fdvUsd)}</strong></div>
+        <div><span>MC $</span><strong>{fmtUsdOrDash(kpis.mcUsd)}</strong></div>
         <div>
           <span>24h %</span>
-          <strong
-            className={
-              kpis.priceChange24hPct !== undefined
-                ? kpis.priceChange24hPct < 0
-                  ? 'neg'
-                  : 'pos'
-                : undefined
-            }
-          >
-            {kpis.priceChange24hPct !== undefined
-              ? `${kpis.priceChange24hPct.toFixed(2)}%`
-              : '-'}
+          <strong className={kpis.priceChange24hPct !== undefined ? (kpis.priceChange24hPct < 0 ? 'neg' : 'pos') : undefined}>
+            {fmtPct(kpis.priceChange24hPct)}
           </strong>
         </div>
-        <div><span>Age</span><strong>{ageText}</strong></div>
-      </div>
-
-      <div className="detail-extra">
-        <div className="detail-row">
-          PriceChange m5/h1/h6/h24:{' '}
-          {active.priceChange ? `${active.priceChange.m5 ?? '-'} / ${active.priceChange.h1 ?? '-'} / ${active.priceChange.h6 ?? '-'} / ${active.priceChange.h24 ?? '-'}` : '-'}
+        <div>
+          <span>priceChange m5 | h1 | h6 | h24</span>
+          <strong>{renderPriceChanges(active.priceChange)}</strong>
         </div>
-        <div className="detail-row">
-          Txns m5/h1/h6/h24:{' '}
-          {active.txns
-            ? `${active.txns.m5 ? active.txns.m5.buys + active.txns.m5.sells : '-'} / ${active.txns.h1 ? active.txns.h1.buys + active.txns.h1.sells : '-'} / ${active.txns.h6 ? active.txns.h6.buys + active.txns.h6.sells : '-'} / ${active.txns.h24 ? active.txns.h24.buys + active.txns.h24.sells : '-'}`
-            : '-'}
+        <div>
+          <span>txns h24: total | buys — sells</span>
+          <strong>{renderTxns(active.txns)}</strong>
         </div>
-        <div className="detail-row">
-          Volume m5/h1/h6/h24:{' '}
-          {active.volume
-            ? `${formatCompact(active.volume.m5)} / ${formatCompact(active.volume.h1)} / ${formatCompact(active.volume.h6)} / ${formatCompact(active.volume.h24)}`
-            : '-'}
+        <div>
+          <span>volume m5 | h1 | h6 | h24</span>
+          <strong>{renderVolume(active.volume)}</strong>
         </div>
       </div>
 
@@ -218,19 +225,53 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch }: 
         </div>
       </div>
 
+      {linkItems.length > 0 && (
+        <div className="detail-links">
+          {linkItems.map((l, i) => (
+            <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" title={l.key}>
+              {LINK_ICONS[l.key] || '🔗'}
+            </a>
+          ))}
+        </div>
+      )}
+
       {otherPools.length > 0 && (
         <div className="detail-pools">
           {otherPools.map((p) => (
             <details key={p.pairId} className="pool-item">
               <summary>
-                {p.dex} {p.version && `(${p.version})`} — {p.baseToken.symbol}/{p.quoteToken.symbol} — liq ${
-                  p.liquidity?.usd ? formatCompact(p.liquidity.usd) : '-'
-                }
+                {p.dex} {p.version && `(${p.version})`} — {p.baseToken.symbol}/{p.quoteToken.symbol} — liq $
+                {p.liquidity?.usd ? formatCompact(p.liquidity.usd) : '—'}
                 {!p.gtSupported && <span className="badge limited">Limited</span>}
               </summary>
               <div className="pool-body">
+                <div className="pool-metrics">
+                  <div><span>Price USD</span><strong>{fmtUsdOrDash(p.priceUsd)}</strong></div>
+                  <div><span>Price {p.quoteToken.symbol}</span><strong>{fmtUsdOrDash(p.priceNative)}</strong></div>
+                  <div><span>Liquidity $</span><strong>{fmtUsdOrDash(p.liquidity?.usd)}</strong></div>
+                  <div><span>FDV $</span><strong>{fmtUsdOrDash(p.fdv)}</strong></div>
+                  <div><span>MC $</span><strong>{fmtUsdOrDash(p.marketCap)}</strong></div>
+                  <div>
+                    <span>24h %</span>
+                    <strong className={p.priceChange?.h24 !== undefined ? (p.priceChange.h24 < 0 ? 'neg' : 'pos') : undefined}>
+                      {fmtPct(p.priceChange?.h24)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>priceChange m5 | h1 | h6 | h24</span>
+                    <strong>{renderPriceChanges(p.priceChange)}</strong>
+                  </div>
+                  <div>
+                    <span>txns h24: total | buys — sells</span>
+                    <strong>{renderTxns(p.txns)}</strong>
+                  </div>
+                  <div>
+                    <span>volume m5 | h1 | h6 | h24</span>
+                    <strong>{renderVolume(p.volume)}</strong>
+                  </div>
+                </div>
                 <div className="pool-switcher">
-                  <button onClick={() => onSwitch(p)}>Switch</button>
+                  <button onClick={() => onSwitch(p)}>Switch to this pool</button>
                 </div>
               </div>
             </details>

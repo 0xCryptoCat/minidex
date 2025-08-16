@@ -127,7 +127,7 @@ export default function ChartPage() {
 
       {!loading && !error && pools.length > 0 && (
         <>
-          {view !== 'detail' && pools.length > 1 && pools.length <= 3 && (
+          {pools.length > 1 && pools.length <= 3 && (
             <PoolSwitcher
               pools={pools}
               current={currentPool?.pairId}

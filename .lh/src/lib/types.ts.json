@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1755434210973,
@@ -12,6 +12,10 @@
                 {
                     "date": 1755456083087,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,6 @@\n /* ---------- Core primitives ---------- */\n-export type Provider = 'gt' | 'ds' | 'cg' | 'synthetic';       // geckoterminal | dexscreener | coingecko | synthetic\n+export type Provider = 'gt' | 'ds' | 'cg' | 'synthetic' | 'none';       // geckoterminal | dexscreener | coingecko | synthetic | none\n export type ChainSlug =\n   | 'ethereum' | 'arbitrum' | 'polygon' | 'bsc' | 'base' | 'optimism' | 'avalanche'\n   | string; // keep open for many chains\n \n"
+                },
+                {
+                    "date": 1755458526286,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -90,8 +90,9 @@\n   symbol: string;\n   name: string;\n   icon?: string;\n   priceUsd: number;\n+  priceChange24h?: number; // 24h price change percentage\n   liqUsd: number;\n   vol24hUsd: number;\n   chainIcons: string[]; // up to 3 chains by liquidity\n   poolCount: number;\n"
                 }
             ],
             "date": 1755434210973,

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1755457263687,
@@ -24,6 +24,10 @@
                 {
                     "date": 1755457377967,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -122,9 +122,9 @@\n export function getProviderIcon(provider: string): string {\n   const PROVIDER_ICONS: Record<string, string> = {\n     dexscreener: 'https://dexscreener.com/favicon.ico',\n     coingecko: 'https://assets.coingecko.com/coins/images/12271/large/512x512_Logo_no_chop.png',\n-    geckoterminal: 'https://assets.coingecko.com/coins/images/12271/large/512x512_Logo_no_chop.png', \n+    geckoterminal: 'https://assets.coingecko.com/coins/images/12271/large/512x512_Logo_no_chop.png', // this is sushiswap icon\n     ds: 'https://dexscreener.com/favicon.ico',\n     cg: 'https://assets.coingecko.com/coins/images/12271/large/512x512_Logo_no_chop.png', // this is sushiswap icon\n     gt: 'https://assets.coingecko.com/coins/images/12271/large/512x512_Logo_no_chop.png', // this is sushiswap icon\n     synthetic: '🔄',\n"
+                },
+                {
+                    "date": 1755457569218,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -11,9 +11,9 @@\n   polygon: 'https://assets.coingecko.com/coins/images/4713/large/matic-token-icon.png',\n   arbitrum: 'https://assets.coingecko.com/coins/images/16547/large/photo_2023-03-29_21.47.00.jpeg',\n   optimism: 'https://assets.coingecko.com/coins/images/25244/large/Optimism.png',\n   avalanche: 'https://assets.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png',\n-  base: 'https://assets.coingecko.com/asset_platforms/images/131/small/base-network.png',\n+  base: 'https://assets.coingecko.com/asset_platforms/images/131/small/base-network.png', %%\n   solana: 'https://assets.coingecko.com/coins/images/4128/large/solana.png',\n   fantom: 'https://assets.coingecko.com/coins/images/4001/large/Fantom.png',\n   \n   // Layer 2s and scaling solutions\n"
                 }
             ],
             "date": 1755457263687,

@@ -139,7 +139,7 @@ export default function SearchResultItem({ result }: Props) {
         <div className="meta-info">
           <span className="pool-count-chip">{poolCount} pool{poolCount !== 1 ? 's' : ''}</span>
           {uniqueDexes.length > 0 && (
-            <div className="dex-icons">
+            <div className="dex-icons" title={`DEXes: ${uniqueDexes.join(', ')}`}>
               {uniqueDexes.map(dex => (
                 <img 
                   key={dex}
@@ -147,7 +147,37 @@ export default function SearchResultItem({ result }: Props) {
                   alt={dex}
                   className="dex-icon"
                   title={dex}
+                  onError={(e) => {
+                    // Fallback to first character if icon fails to load
+                    e.currentTarget.style.display = 'none';
+                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (fallback && fallback.classList.contains('dex-fallback')) {
+                      fallback.style.display = 'inline-block';
+                    }
+                  }}
                 />
+              ))}
+              {uniqueDexes.map(dex => (
+                <span 
+                  key={`${dex}-fallback`}
+                  className="dex-fallback"
+                  style={{
+                    display: 'none',
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '50%',
+                    background: 'var(--accent-telegram)',
+                    color: 'white',
+                    fontSize: '8px',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 600,
+                    textTransform: 'uppercase'
+                  }}
+                  title={dex}
+                >
+                  {dex[0]}
+                </span>
               ))}
               {(pools || []).length > uniqueDexes.length && (
                 <span className="dex-more" title={`${(pools || []).length - uniqueDexes.length} more DEXes`}>

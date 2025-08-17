@@ -34,10 +34,15 @@ async function readFixture(path: string): Promise<SearchResponse> {
 
 async function fetchJson(url: string): Promise<any> {
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), 3000);
+  const id = setTimeout(() => controller.abort(), 5000); // Increased timeout for Solana
   try {
     const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new Error('status');
+    if (!res.ok) {
+      // Log the response for debugging
+      const text = await res.text();
+      logError('fetch error response', url, res.status, text);
+      throw new Error('status');
+    }
     return await res.json();
   } catch (err) {
     logError('fetch error', url, err);
@@ -87,6 +92,12 @@ const CHAIN_ID_MAP: Record<string, string> = {
 
 function mapChainId(id: unknown): string {
   const key = typeof id === 'number' ? String(id) : (id as string | undefined);
+  
+  // Handle Solana specifically
+  if (key === 'solana' || key === 'sol') {
+    return 'solana';
+  }
+  
   const chainName = (key && CHAIN_ID_MAP[key]) || (key ?? 'unknown');
   
   // Validate against our supported chains
@@ -134,13 +145,22 @@ export const handler: Handler = async (event) => {
         const tokenMeta = ds.token || pairs[0]?.baseToken || {};
         // Extract info from the first pair (which has the most complete data)
         const firstPairInfo = pairs[0]?.info || {};
+        
+        // Get the best imageUrl from multiple sources
+        const imageUrl = firstPairInfo.imageUrl || 
+                         tokenMeta.icon || 
+                         tokenMeta.imageUrl || 
+                         pairs[0]?.baseToken?.icon ||
+                         pairs[0]?.baseToken?.imageUrl;
+        
         const pools: PoolSummary[] = [];
-      let totalLiq = 0;
-      let totalVol = 0;
-      let bestLiq = 0;
-      let bestPrice = 0;
-      let gtPools = 0;
-      const chainTotals: Record<string, number> = {};
+        let totalLiq = 0;
+        let totalVol = 0;
+        let bestLiq = 0;
+        let bestPrice = 0;
+        let bestPriceChange24h = 0;
+        let gtPools = 0;
+        const chainTotals: Record<string, number> = {};
       for (const p of pairs) {
         const chainSlug = mapChainId(p.chainId);
         const liq =
@@ -203,6 +223,7 @@ export const handler: Handler = async (event) => {
         if (price !== undefined && liq > bestLiq) {
           bestLiq = liq;
           bestPrice = price;
+          bestPriceChange24h = p.priceChange?.h24 || 0;
         }
         chainTotals[chainSlug] = (chainTotals[chainSlug] || 0) + liq;
         if (gt) gtPools++;
@@ -213,8 +234,9 @@ export const handler: Handler = async (event) => {
         address: tokenMeta.address || query,
         symbol: tokenMeta.symbol || '',
         name: tokenMeta.name || '',
-        icon: tokenMeta.icon || tokenMeta.imageUrl || undefined,
+        icon: imageUrl,
         priceUsd: bestPrice,
+        priceChange24h: bestPriceChange24h,
         liqUsd: totalLiq,
         vol24hUsd: totalVol,
         chainIcons,

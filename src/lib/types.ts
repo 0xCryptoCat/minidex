@@ -91,6 +91,7 @@ export interface SearchTokenSummary {
   name: string;
   icon?: string;
   priceUsd: number;
+  priceChange24h?: number; // 24h price change percentage
   liqUsd: number;
   vol24hUsd: number;
   chainIcons: string[]; // up to 3 chains by liquidity

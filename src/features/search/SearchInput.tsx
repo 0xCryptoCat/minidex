@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { search as apiSearch } from '../../lib/api';
 import type { SearchTokenSummary, PoolSummary } from '../../lib/types';
 import { getChainIcon, getDexIcon } from '../../lib/icons';
+import { formatUsd, formatCompact } from '../../lib/format';
 
 interface Props {
   autoFocus?: boolean;
@@ -48,11 +49,14 @@ export default function SearchInput({ autoFocus, large }: Props) {
     
     apiSearch(q, undefined, controller.signal)
       .then(({ data }) => {
+        if (controller.signal.aborted) return;
+        
         if ('results' in data) {
           const searchResults = Array.isArray(data.results) ? data.results : [];
           setResults(searchResults);
           
-          if (searchResults.length === 0 && q.length > 0) {
+          // Only show error if this was a forced search (Enter pressed) and no results
+          if (searchResults.length === 0 && q.length > 0 && force) {
             setHasError(true);
             setErrorMessage(isAddress(q) ? 'Token address not found' : 'No tokens found matching your search');
           }
@@ -63,13 +67,17 @@ export default function SearchInput({ autoFocus, large }: Props) {
         }
       })
       .catch((err) => {
-        if (err.name !== 'AbortError') {
+        if (err.name !== 'AbortError' && !controller.signal.aborted) {
           setResults([]);
           setHasError(true);
           setErrorMessage('Search error. Please check your connection.');
         }
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      });
   }
 
   useEffect(() => {
@@ -338,10 +346,10 @@ export default function SearchInput({ autoFocus, large }: Props) {
                       }}>
                         <span>{r.pools.length} pool{r.pools.length !== 1 ? 's' : ''}</span>
                         {r.liqUsd && (
-                          <span>• TVL: ${r.liqUsd.toLocaleString()}</span>
+                          <span>• TVL: {formatUsd(r.liqUsd, { compact: true })}</span>
                         )}
                         {r.vol24hUsd && (
-                          <span>• Vol: ${r.vol24hUsd.toLocaleString()}</span>
+                          <span>• Vol: {formatUsd(r.vol24hUsd, { compact: true })}</span>
                         )}
                       </div>
                     )}
@@ -351,9 +359,22 @@ export default function SearchInput({ autoFocus, large }: Props) {
                     fontWeight: 500,
                     color: 'var(--text)',
                     textAlign: 'right',
-                    minWidth: '80px'
+                    minWidth: '100px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-end',
+                    gap: '2px'
                   }}>
-                    ${r.priceUsd?.toFixed(4) || '—'}
+                    <span>{formatUsd(r.priceUsd, { dp: 6 })}</span>
+                    {r.priceChange24h !== undefined && r.priceChange24h !== 0 && (
+                      <span style={{
+                        fontSize: '0.8rem',
+                        fontWeight: 500,
+                        color: r.priceChange24h >= 0 ? '#10b981' : '#ef4444'
+                      }}>
+                        {r.priceChange24h >= 0 ? '+' : ''}{r.priceChange24h.toFixed(2)}%
+                      </span>
+                    )}
                   </div>
                 </div>
               </button>

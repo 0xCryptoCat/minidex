@@ -11,10 +11,10 @@ export const CHAIN_ICONS: Record<string, string> = {
   polygon: 'https://assets.coingecko.com/coins/images/4713/large/matic-token-icon.png',
   arbitrum: 'https://assets.coingecko.com/coins/images/16547/large/photo_2023-03-29_21.47.00.jpeg',
   optimism: 'https://assets.coingecko.com/coins/images/25244/large/Optimism.png',
-  avalanche: 'https://assets.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png',
-  base: 'https://assets.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png',
-  solana: 'https://assets.coingecko.com/coins/images/4128/large/solana.png',
-  fantom: 'https://assets.coingecko.com/coins/images/4001/large/Fantom.png',
+  avalanche: 'https://assets.coingecko.com/asset_platforms/images/12/small/avalanche.png', // correct
+  base: 'https://assets.coingecko.com/asset_platforms/images/131/small/base-network.png', // correct
+  solana: 'https://assets.coingecko.com/coins/images/4128/large/solana.png', // correct
+  fantom: 'https://assets.coingecko.com/coins/images/4001/large/Fantom.png', // correct
   
   // Layer 2s and scaling solutions
   scroll: 'https://assets.coingecko.com/coins/images/26942/large/scroll.png',

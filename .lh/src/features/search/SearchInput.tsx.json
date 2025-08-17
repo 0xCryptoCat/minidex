@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 18,
             "patches": [
                 {
                     "date": 1755347748704,
@@ -16,6 +16,70 @@
                 {
                     "date": 1755361663381,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -155,9 +155,10 @@\n             borderColor: 'var(--telegram-blue)',\n             background: 'var(--bg-elev)',\n           } : {}),\n           ...((results.length > 0 || isLoading) ? {\n-            borderRadius: large ? 'var(--radius-pill) var(--radius-pill) 0 0' : 'var(--radius-pill) var(--radius-pill) 0 0'\n+            borderBottomLeftRadius: 0,\n+            borderBottomRightRadius: 0\n           } : {})\n         }}\n       />\n       \n"
+                },
+                {
+                    "date": 1755429090624,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -114,9 +114,9 @@\n   };\n \n   const inputStyle = large ? {\n     width: '100%',\n-    fontSize: '1.125rem',\n+    fontSize: '1rem',\n     padding: 'var(--space-4)',\n     borderRadius: 'var(--radius-pill)',\n     background: 'var(--bg-input)',\n     border: '1px solid var(--border)',\n"
+                },
+                {
+                    "date": 1755429099227,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -155,8 +155,9 @@\n             borderColor: 'var(--telegram-blue)',\n             background: 'var(--bg-elev)',\n           } : {}),\n           ...((results.length > 0 || isLoading) ? {\n+            \n             borderBottomLeftRadius: 0,\n             borderBottomRightRadius: 0\n           } : {})\n         }}\n"
+                },
+                {
+                    "date": 1755429106060,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -155,9 +155,10 @@\n             borderColor: 'var(--telegram-blue)',\n             background: 'var(--bg-elev)',\n           } : {}),\n           ...((results.length > 0 || isLoading) ? {\n-            \n+            borderTopLeftRadius: 'var(--radius-pill)',\n+            borderTopRightRadius: 'var(--radius-pill)',\n             borderBottomLeftRadius: 0,\n             borderBottomRightRadius: 0\n           } : {})\n         }}\n"
+                },
+                {
+                    "date": 1755429154996,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -155,10 +155,9 @@\n             borderColor: 'var(--telegram-blue)',\n             background: 'var(--bg-elev)',\n           } : {}),\n           ...((results.length > 0 || isLoading) ? {\n-            borderTopLeftRadius: 'var(--radius-pill)',\n-            borderTopRightRadius: 'var(--radius-pill)',\n+            \n             borderBottomLeftRadius: 0,\n             borderBottomRightRadius: 0\n           } : {})\n         }}\n"
+                },
+                {
+                    "date": 1755429177979,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -155,9 +155,8 @@\n             borderColor: 'var(--telegram-blue)',\n             background: 'var(--bg-elev)',\n           } : {}),\n           ...((results.length > 0 || isLoading) ? {\n-            \n             borderBottomLeftRadius: 0,\n             borderBottomRightRadius: 0\n           } : {})\n         }}\n"
+                },
+                {
+                    "date": 1755429234507,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -116,9 +116,9 @@\n   const inputStyle = large ? {\n     width: '100%',\n     fontSize: '1rem',\n     padding: 'var(--space-4)',\n-    borderRadius: 'var(--radius-pill)',\n+    borderRadius: '25px,\n     background: 'var(--bg-input)',\n     border: '1px solid var(--border)',\n     color: 'var(--text)',\n     transition: 'all var(--transition-fast)',\n"
+                },
+                {
+                    "date": 1755429269137,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -116,9 +116,9 @@\n   const inputStyle = large ? {\n     width: '100%',\n     fontSize: '1rem',\n     padding: 'var(--space-4)',\n-    borderRadius: '25px,\n+    borderRadius: '25px', //\n     background: 'var(--bg-input)',\n     border: '1px solid var(--border)',\n     color: 'var(--text)',\n     transition: 'all var(--transition-fast)',\n"
+                },
+                {
+                    "date": 1755429286435,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -116,9 +116,10 @@\n   const inputStyle = large ? {\n     width: '100%',\n     fontSize: '1rem',\n     padding: 'var(--space-4)',\n-    borderRadius: '25px', //\n+    borderRadius: '25px', // smaller radius for large input\n+    borderBottomLeftRadius\n     background: 'var(--bg-input)',\n     border: '1px solid var(--border)',\n     color: 'var(--text)',\n     transition: 'all var(--transition-fast)',\n"
+                },
+                {
+                    "date": 1755429315982,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -117,9 +117,9 @@\n     width: '100%',\n     fontSize: '1rem',\n     padding: 'var(--space-4)',\n     borderRadius: '25px', // smaller radius for large input\n-    borderBottomLeftRadius\n+    \n     background: 'var(--bg-input)',\n     border: '1px solid var(--border)',\n     color: 'var(--text)',\n     transition: 'all var(--transition-fast)',\n"
+                },
+                {
+                    "date": 1755429326011,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -116,10 +116,9 @@\n   const inputStyle = large ? {\n     width: '100%',\n     fontSize: '1rem',\n     padding: 'var(--space-4)',\n-    borderRadius: '25px', // smaller radius for large input\n-    \n+    borderRadius: 'var(--radius-pill)',\n     background: 'var(--bg-input)',\n     border: '1px solid var(--border)',\n     color: 'var(--text)',\n     transition: 'all var(--transition-fast)',\n"
+                },
+                {
+                    "date": 1755429334881,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -126,9 +126,9 @@\n   } : {\n     width: '100%',\n     fontSize: '1rem',\n     padding: 'var(--space-3)',\n-    borderRadius: 'var(--radius-pill)',\n+    borderRadius: '25px',\n     background: 'var(--bg-input)',\n     border: '1px solid var(--border)',\n     color: 'var(--text)',\n     transition: 'all var(--transition-fast)',\n"
+                },
+                {
+                    "date": 1755429350491,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -127,8 +127,9 @@\n     width: '100%',\n     fontSize: '1rem',\n     padding: 'var(--space-3)',\n     borderRadius: '25px',\n+    \n     background: 'var(--bg-input)',\n     border: '1px solid var(--border)',\n     color: 'var(--text)',\n     transition: 'all var(--transition-fast)',\n"
+                },
+                {
+                    "date": 1755429365002,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -127,9 +127,9 @@\n     width: '100%',\n     fontSize: '1rem',\n     padding: 'var(--space-3)',\n     borderRadius: '25px',\n-    \n+\n     background: 'var(--bg-input)',\n     border: '1px solid var(--border)',\n     color: 'var(--text)',\n     transition: 'all var(--transition-fast)',\n"
+                },
+                {
+                    "date": 1755429370713,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -126,10 +126,9 @@\n   } : {\n     width: '100%',\n     fontSize: '1rem',\n     padding: 'var(--space-3)',\n-    borderRadius: '25px',\n-\n+    borderRadius: 'var(--radius)',\n     background: 'var(--bg-input)',\n     border: '1px solid var(--border)',\n     color: 'var(--text)',\n     transition: 'all var(--transition-fast)',\n"
+                },
+                {
+                    "date": 1755429390031,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -126,9 +126,9 @@\n   } : {\n     width: '100%',\n     fontSize: '1rem',\n     padding: 'var(--space-3)',\n-    borderRadius: 'var(--radius)',\n+    borderRadius: 'var(--radius-pill)',\n     background: 'var(--bg-input)',\n     border: '1px solid var(--border)',\n     color: 'var(--text)',\n     transition: 'all var(--transition-fast)',\n@@ -155,8 +155,9 @@\n             borderColor: 'var(--telegram-blue)',\n             background: 'var(--bg-elev)',\n           } : {}),\n           ...((results.length > 0 || isLoading) ? {\n+            \n             borderBottomLeftRadius: 0,\n             borderBottomRightRadius: 0\n           } : {})\n         }}\n"
+                },
+                {
+                    "date": 1755429397073,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -155,9 +155,9 @@\n             borderColor: 'var(--telegram-blue)',\n             background: 'var(--bg-elev)',\n           } : {}),\n           ...((results.length > 0 || isLoading) ? {\n-            \n+            borderRadius: 'var(--radius) var(--radius) 0 0',\n             borderBottomLeftRadius: 0,\n             borderBottomRightRadius: 0\n           } : {})\n         }}\n"
                 }
             ],
             "date": 1755347748704,

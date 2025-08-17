@@ -115,7 +115,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
 
   const inputStyle = large ? {
     width: '100%',
-    fontSize: '1.125rem',
+    fontSize: '1rem',
     padding: 'var(--space-4)',
     borderRadius: 'var(--radius-pill)',
     background: 'var(--bg-input)',
@@ -156,8 +156,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
             background: 'var(--bg-elev)',
           } : {}),
           ...((results.length > 0 || isLoading) ? {
-            borderBottomLeftRadius: 0,
-            borderBottomRightRadius: 0
+            borderRadius: 'var(--radius) var(--radius) 0 0',
           } : {})
         }}
       />

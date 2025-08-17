@@ -17,24 +17,26 @@ export default function Home() {
     >
       {/* Logo and Brand */}
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
-        <img 
-          src="/logo.svg" 
-          alt="SmallDEX" 
-          style={{ height: 64, width: 'auto', marginBottom: 'var(--space-4)' }}
-        />
-        <h1 
-          style={{ 
-            fontSize: '3rem', 
-            fontWeight: 800, 
-            margin: 0,
-            background: 'linear-gradient(135deg, var(--telegram-blue) 0%, var(--brand-secondary) 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}
-        >
-          SmallDEX
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <img 
+            src="/logo.svg" 
+            alt="SmallDEX" 
+            style={{ height: 48, width: 'auto' }}
+          />
+          <h1 
+            style={{ 
+              fontSize: '3rem', 
+              fontWeight: 800, 
+              margin: 0,
+              background: 'linear-gradient(135deg, var(--telegram-blue) 0%, var(--brand-secondary) 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            SmallDEX
+          </h1>
+        </div>  
         <p style={{ 
           color: 'var(--text-secondary)', 
           fontSize: '1.125rem',

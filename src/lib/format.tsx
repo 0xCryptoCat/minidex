@@ -231,3 +231,48 @@ export function formatFetchMeta(meta?: FetchMeta): string | undefined {
   return parts.join(' | ');
 }
 
+export function formatSmartAmountReact(value?: number): ReactNode {
+  if (value === undefined || value === null || !Number.isFinite(value)) return '-';
+  if (value === 0) return '0';
+
+  const abs = Math.abs(value);
+
+  // For very small numbers (< 0.0001), use the same logic as formatAmount
+  if (abs < 0.0001 && abs > 0) {
+    return formatAmount(value);
+  }
+
+  // For numbers >= 1000, use compact notation
+  if (abs >= 1000) {
+    if (abs >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+    if (abs >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
+    if (abs >= 1e3) return `${(value / 1e3).toFixed(2)}K`;
+  }
+
+  // For numbers >= 1, use 2 decimal places
+  if (abs >= 1) return value.toFixed(2);
+
+  // For small numbers < 1, limit to 4 decimal places and use subscript for leading zeros
+  const fixed = value.toFixed(8);
+  const [intPart, fracPart = ''] = fixed.split('.');
+  
+  // Find leading zeros
+  const leadingZerosMatch = fracPart.match(/^(0+)/);
+  if (leadingZerosMatch && leadingZerosMatch[1].length > 0) {
+    const zeros = leadingZerosMatch[1];
+    const rest = fracPart.slice(zeros.length, zeros.length + 4);
+    if (zeros.length >= 2) {
+      return (
+        <>
+          {intPart}.
+          {subscriptZeros(zeros)}
+          {rest}
+        </>
+      );
+    }
+  }
+  
+  // Default: show up to 4 decimal places
+  return value.toFixed(4).replace(/\.?0+$/, '');
+}
+

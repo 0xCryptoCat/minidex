@@ -120,24 +120,28 @@ export default function SearchPage() {
         marginBottom: 'var(--space-6)',
         paddingTop: 'var(--space-4)',
       }}>
-        <img 
-          src="/logo.svg" 
-          alt="SmallDEX" 
-          style={{ height: 40, width: 'auto' }}
-        />
-        <h1 
-          style={{ 
-            fontSize: '1.5rem', 
-            fontWeight: 700, 
-            margin: 0,
-            background: 'linear-gradient(135deg, var(--telegram-blue) 0%, var(--brand-secondary) 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}
-        >
-          SmallDEX
-        </h1>
+        <div style={{ 
+          display: 'flex',
+          alignItems: 'center'}}>
+          <img 
+            src="/logo.svg" 
+            alt="SmallDEX" 
+            style={{ height: 48 }}
+          />
+          <h1 
+            style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: 700, 
+              margin: 0,
+              background: 'linear-gradient(135deg, var(--telegram-blue) 0%, var(--brand-secondary) 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}
+          >
+            SmallDEX
+          </h1>
+        </div>  
       </div>
 
       <label htmlFor="search-input" style={{ position: 'absolute', left: '-10000px' }}>
@@ -191,10 +195,22 @@ export default function SearchPage() {
         </table>
       )}
       {!loading && hasSearched && results.length === 0 && !error && (
-        <div className="no-results">
-          No results
-          <br />
-          Addresses must be full 42-char checksummed or lowercase.
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 'var(--space-6)',
+          textAlign: 'center',
+          color: 'var(--text-muted)',
+          marginTop: 'var(--space-4)',
+        }}>
+          <div style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: 'var(--space-2)' }}>
+            Token not found
+          </div>
+          <div style={{ fontSize: '0.875rem', lineHeight: 1.5 }}>
+            Try a different search term or make sure addresses are full 42-character checksummed format.
+          </div>
         </div>
       )}
     </div>

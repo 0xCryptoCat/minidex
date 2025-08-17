@@ -11,7 +11,7 @@ import {
   formatAmount,
   formatShortAddr,
   formatCompactTime,
-  formatSmartAmount,
+  formatSmartAmountReact,
   formatFetchMeta,
   type FetchMeta,
 } from '../../lib/format';
@@ -36,8 +36,7 @@ type SortKey =
   | 'total'
   | 'amountBase'
   | 'amountQuote'
-  | 'wallet'
-  | 'tx';
+  | 'wallet';
 
 interface ColumnConfig {
   key: SortKey;
@@ -62,6 +61,7 @@ export default function TradesOnlyView({
   const [sortKey, setSortKey] = useState<SortKey>('time');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [containerHeight, setContainerHeight] = useState(400);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const DEBUG = (import.meta as any).env?.DEBUG === 'true';
   const sampleTradesLoggedRef = useRef(false);
@@ -134,7 +134,7 @@ export default function TradesOnlyView({
         accessor: (t) => t.price,
         render: (t) => (
           <div className="price-cell">
-            <div>${formatSmartAmount(t.price)}</div>
+            <div>${formatSmartAmountReact(t.price)}</div>
           </div>
         ),
         comparator: (a: number | undefined, b: number | undefined) =>
@@ -146,7 +146,7 @@ export default function TradesOnlyView({
         accessor: (t) => (t.amountBase || 0) * (t.price || 0),
         render: (t) => (
           <div className="total-cell">
-            <div>${formatSmartAmount((t.amountBase || 0) * (t.price || 0))}</div>
+            <div>${formatSmartAmountReact((t.amountBase || 0) * (t.price || 0))}</div>
           </div>
         ),
         comparator: (a: number, b: number) => a - b,
@@ -157,7 +157,7 @@ export default function TradesOnlyView({
         accessor: (t) => t.amountBase || 0,
         render: (t) => (
           <div className="amount-cell">
-            <div>{formatSmartAmount(t.amountBase)}</div>
+            <div>{formatSmartAmountReact(t.amountBase)}</div>
           </div>
         ),
         comparator: (a: number, b: number) => a - b,
@@ -168,7 +168,7 @@ export default function TradesOnlyView({
         accessor: (t) => t.amountQuote || 0,
         render: (t) => (
           <div className="amount-cell">
-            <div>{formatSmartAmount(t.amountQuote)}</div>
+            <div>{formatSmartAmountReact(t.amountQuote)}</div>
           </div>
         ),
         comparator: (a: number, b: number) => a - b,
@@ -205,28 +205,6 @@ export default function TradesOnlyView({
           ),
         comparator: (a: string, b: string) => a.localeCompare(b),
         className: 'maker',
-      },
-      {
-        key: 'tx',
-        header: 'TX',
-        accessor: (t) => t.txHash || '',
-        render: (t) =>
-          t.txHash ? (
-            <div className="tx-cell">
-              <a
-                className="action-link"
-                href={txUrl(chain as any, t.txHash)!}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <LaunchIcon className="action-icon" />
-              </a>
-            </div>
-          ) : (
-            <span className="no-data">-</span>
-          ),
-        comparator: (a: string, b: string) => a.localeCompare(b),
       },
     ],
     [baseSymbol, quoteSymbol, chain]
@@ -273,7 +251,8 @@ export default function TradesOnlyView({
           e.currentTarget.classList.remove('hover');
         }}
         onClick={() => {
-          // Optional: Add click handler for row selection
+          const tradeId = `${t.ts}-${t.txHash}`;
+          setExpandedRow(expandedRow === tradeId ? null : tradeId);
         }}
       >
         {columns.map((c) => (

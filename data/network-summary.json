@@ -1,0 +1,134 @@
+{
+  "generated_at": "2025-08-17T18:36:01.750Z",
+  "total_networks": 100,
+  "total_dexes": 1127,
+  "priority_networks": 12,
+  "top_networks_by_dexes": [
+    {
+      "id": "bsc",
+      "name": "BNB Chain",
+      "dex_count": 100,
+      "is_priority": true
+    },
+    {
+      "id": "base",
+      "name": "Base",
+      "dex_count": 94,
+      "is_priority": true
+    },
+    {
+      "id": "arbitrum",
+      "name": "Arbitrum",
+      "dex_count": 78,
+      "is_priority": true
+    },
+    {
+      "id": "eth",
+      "name": "Ethereum",
+      "dex_count": 62,
+      "is_priority": true
+    },
+    {
+      "id": "polygon_pos",
+      "name": "Polygon POS",
+      "dex_count": 57,
+      "is_priority": true
+    },
+    {
+      "id": "avax",
+      "name": "Avalanche",
+      "dex_count": 52,
+      "is_priority": true
+    },
+    {
+      "id": "ftm",
+      "name": "Fantom",
+      "dex_count": 44,
+      "is_priority": true
+    },
+    {
+      "id": "zksync",
+      "name": "ZkSync",
+      "dex_count": 31,
+      "is_priority": true
+    },
+    {
+      "id": "scroll",
+      "name": "Scroll",
+      "dex_count": 31,
+      "is_priority": true
+    },
+    {
+      "id": "linea",
+      "name": "Linea",
+      "dex_count": 30,
+      "is_priority": true
+    },
+    {
+      "id": "optimism",
+      "name": "Optimism",
+      "dex_count": 29,
+      "is_priority": true
+    },
+    {
+      "id": "cro",
+      "name": "Cronos",
+      "dex_count": 24,
+      "is_priority": false
+    },
+    {
+      "id": "core",
+      "name": "Core",
+      "dex_count": 23,
+      "is_priority": false
+    },
+    {
+      "id": "solana",
+      "name": "Solana",
+      "dex_count": 18,
+      "is_priority": true
+    },
+    {
+      "id": "mantle",
+      "name": "Mantle",
+      "dex_count": 17,
+      "is_priority": false
+    },
+    {
+      "id": "tlos",
+      "name": "Telos",
+      "dex_count": 16,
+      "is_priority": false
+    },
+    {
+      "id": "opbnb",
+      "name": "opBNB",
+      "dex_count": 16,
+      "is_priority": false
+    },
+    {
+      "id": "pulsechain",
+      "name": "Pulsechain",
+      "dex_count": 15,
+      "is_priority": false
+    },
+    {
+      "id": "shibarium",
+      "name": "Shibarium",
+      "dex_count": 15,
+      "is_priority": false
+    },
+    {
+      "id": "glmr",
+      "name": "Moonbeam",
+      "dex_count": 14,
+      "is_priority": false
+    }
+  ],
+  "dex_distribution": {
+    "networks_with_50_plus_dexes": 6,
+    "networks_with_20_plus_dexes": 13,
+    "networks_with_10_plus_dexes": 32,
+    "networks_with_single_dex": 25
+  }
+}

@@ -14,6 +14,7 @@ export default function SearchPage() {
   const [results, setResults] = useState<SearchTokenSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [provider, setProvider] = useState<Provider | ''>('');
   const [hasSearched, setHasSearched] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -29,6 +30,8 @@ export default function SearchPage() {
     if (!query) {
       setResults([]);
       setProvider('');
+      setError(false);
+      setErrorMessage('');
       return;
     }
     if (isAddress(query)) {
@@ -40,6 +43,8 @@ export default function SearchPage() {
     } else {
       setResults([]);
       setProvider('');
+      setError(false);
+      setErrorMessage('');
     }
     return () => {
       if (timer.current) clearTimeout(timer.current);
@@ -52,10 +57,13 @@ export default function SearchPage() {
     abortRef.current = controller;
     setLoading(true);
     setError(false);
+    setErrorMessage('');
     setHasSearched(true);
+    
     try {
       const { data } = await search(q, undefined, controller.signal);
       setLoading(false);
+      
       if ('results' in data) {
         const res = Array.isArray(data.results) ? data.results : [];
         res.forEach((r) => {
@@ -73,19 +81,27 @@ export default function SearchPage() {
           return (a as any).gtSupported ? -1 : 1;
         });
         setResults(sorted);
-        const first = sorted[0];
-        setProvider(first?.provider || '');
+        
+        if (sorted.length === 0 && q.length > 0) {
+          setError(true);
+          setErrorMessage(isAddress(q) ? 'Token address not found' : 'No tokens found matching your search');
+        } else {
+          const first = sorted[0];
+          setProvider(first?.provider || '');
+        }
       } else {
+        setResults([]);
         setError(true);
+        setErrorMessage('Search failed. Please try again.');
+      }
+    } catch (err: any) {
+      setLoading(false);
+      if (err.name !== 'AbortError') {
+        setError(true);
+        setErrorMessage('Search error. Please check your connection.');
         setResults([]);
         setProvider('');
       }
-    } catch {
-      if (controller.signal.aborted) return;
-      setLoading(false);
-      setError(true);
-      setResults([]);
-      setProvider('');
     }
   }
 
@@ -154,15 +170,29 @@ export default function SearchPage() {
         onChange={(e) => {
           setQuery(e.target.value);
           setError(false);
+          setErrorMessage('');
         }}
         onKeyDown={handleKey}
         onPaste={handlePaste}
         placeholder={copy.search_placeholder}
         aria-label={copy.search_placeholder}
-        style={{ width: '100%', padding: '0.5rem' }}
+        className={error ? 'search-input-error' : ''}
+        style={{ 
+          width: '100%', 
+          padding: '0.75rem',
+          fontSize: '1rem',
+          borderRadius: 'var(--radius)',
+          border: `1px solid ${error ? '#ef4444' : 'var(--border)'}`,
+          background: 'var(--bg)',
+          color: 'var(--text)',
+          outline: 'none',
+          transition: 'all 0.2s ease',
+        }}
       />
-      {error && (
-        <div className="error-banner">Search failed—try again</div>
+      {error && errorMessage && (
+        <div className="search-error-message">
+          {errorMessage}
+        </div>
       )}
       {results.length > 0 && (
         <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

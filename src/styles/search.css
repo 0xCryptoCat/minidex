@@ -1,12 +1,59 @@
+/* Search animations and states */
+@keyframes buzz {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-2px); }
+  20% { transform: translateX(2px); }
+  30% { transform: translateX(-2px); }
+  40% { transform: translateX(2px); }
+  50% { transform: translateX(-1px); }
+  60% { transform: translateX(1px); }
+  70% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+  90% { transform: translateX(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.search-input-error {
+  border-color: #ef4444 !important;
+  animation: buzz 0.5s ease-in-out;
+}
+
+.search-loading {
+  position: relative;
+}
+
+.search-loading::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ddd;
+  border-top: 2px solid var(--accent-telegram);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: translateY(-50%) rotate(0deg); }
+  100% { transform: translateY(-50%) rotate(360deg); }
+}
+
 /* Search Result Items */
 .search-result-item {
   cursor: pointer;
   display: grid;
-  grid-template-columns: 40px 2fr 1fr 1fr 1fr 100px 120px;
+  grid-template-columns: 50px 2fr 1fr 1fr 1fr 120px 140px;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  min-height: 56px;
+  padding: 16px;
+  min-height: 64px;
   border-bottom: 1px solid var(--border-subtle);
   transition: all 0.2s ease;
 }
@@ -14,17 +61,18 @@
 .search-result-item:hover {
   background: var(--bg-elev);
   transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .search-result-item.limited {
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
 .search-result-item.supported:hover {
   border-left: 3px solid var(--accent-telegram);
 }
 
-/* Token Icon Cell */
+/* Enhanced Token Icon Cell */
 .token-icon-cell {
   position: relative;
   display: flex;
@@ -32,89 +80,101 @@
   justify-content: center;
 }
 
+.token-icon-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .token-icon {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .token-fallback {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: var(--accent-telegram);
+  background: linear-gradient(135deg, var(--accent-telegram), #4338ca);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 14px;
+  border: 2px solid var(--bg-card);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .token-fallback.hidden {
   display: none;
 }
 
-/* Token Info Cell */
+/* Enhanced Token Info Cell */
 .token-info-cell {
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .token-info {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: 2px;
+  min-width: 0;
 }
 
 .token-main {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 2px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .token-symbol {
-  font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 0.95rem;
 }
 
 .token-name {
-  font-size: 12px;
   color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  line-height: 1.2;
+  max-width: 200px;
 }
 
 .limited-badge {
-  font-size: 10px;
-  background: rgba(var(--accent-maroon-rgb), 0.2);
-  color: var(--accent-maroon);
+  background: #fbbf24;
+  color: #92400e;
   padding: 2px 6px;
-  border-radius: 8px;
-  font-weight: 600;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
   text-transform: uppercase;
-  flex-shrink: 0;
 }
 
 /* Price/Liq/Vol Cells */
 .price-cell, .liquidity-cell, .volume-cell {
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .price-value, .liq-value, .vol-value {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
-  font-size: 14px;
 }
 
-/* Chain Icons */
+/* Enhanced Chain Icons */
 .chains-cell {
   display: flex;
   align-items: center;
@@ -124,35 +184,45 @@
 .chain-icons {
   display: flex;
   align-items: center;
+  position: relative;
 }
 
 .chain-icon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  border: 2px solid var(--bg);
+  border: 1.5px solid var(--bg-card);
   object-fit: cover;
+  margin-left: -4px;
+  transition: transform 0.2s ease;
 }
 
-.chain-icon + .chain-icon {
-  margin-left: -8px;
+.chain-icon:first-child {
+  margin-left: 0;
+}
+
+.chain-icon:hover {
+  transform: scale(1.1);
+  z-index: 10;
 }
 
 .chain-more {
   margin-left: 4px;
-  font-size: 11px;
   background: var(--bg-elev);
   color: var(--text-muted);
-  padding: 2px 6px;
-  border-radius: 8px;
+  font-size: 0.75rem;
   font-weight: 500;
+  padding: 2px 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
 }
 
 /* Meta Cell */
 .meta-cell {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
 }
 
 .meta-info {
@@ -163,21 +233,43 @@
 }
 
 .pool-count-chip {
-  font-size: 11px;
   background: var(--bg-elev);
-  color: var(--text-muted);
-  padding: 2px 6px;
-  border-radius: 8px;
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
+  border: 1px solid var(--border);
+}
+
+.dex-icons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.dex-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+.dex-more {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-left: 2px;
 }
 
 .provider-badge {
-  font-size: 10px;
   background: var(--accent-telegram);
   color: white;
   padding: 2px 6px;
-  border-radius: 6px;
-  font-weight: 600;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 500;
   text-transform: uppercase;
 }
 
@@ -223,4 +315,72 @@
     width: 16px;
     height: 16px;
   }
+}
+
+/* Search input enhancements */
+.search-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input-enhanced {
+  width: 100%;
+  padding-right: 40px; /* Make room for loading indicator */
+}
+
+.search-status-indicator {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.search-error-message {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 8px 12px;
+  border-radius: 0 0 var(--radius) var(--radius);
+  border: 1px solid #fecaca;
+  border-top: none;
+  font-size: 0.8rem;
+  z-index: 51;
+}
+
+/* Search results loading skeleton */
+.search-skeleton {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 50px 2fr 1fr 1fr 1fr 120px 140px;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-skeleton-item {
+  height: 16px;
+  background: linear-gradient(90deg, var(--bg-elev) 25%, var(--bg-card) 50%, var(--bg-elev) 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+.search-skeleton-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, var(--bg-elev) 25%, var(--bg-card) 50%, var(--bg-elev) 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }

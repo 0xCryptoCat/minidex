@@ -7,6 +7,7 @@ import type {
   ListItem,
 } from '../../src/lib/types';
 import fs from 'fs/promises';
+import { CHAIN_TO_GT_NETWORK } from '../shared/chains';
 
 const FIXTURES: Record<string, string> = {
   'trending:ethereum:1h': '../../fixtures/lists-trending-eth-1h.json',
@@ -102,15 +103,7 @@ export const handler: Handler = async (event) => {
   const limitParam = event.queryStringParameters?.limit;
   const limit = limitParam ? parseInt(limitParam, 10) : undefined;
 
-  const SUPPORTED_CHAINS = new Set([
-    'ethereum',
-    'bsc',
-    'polygon',
-    'optimism',
-    'arbitrum',
-    'avalanche',
-    'base',
-  ]);
+  const SUPPORTED_CHAINS = Object.keys(CHAIN_TO_GT_NETWORK);
 
   log('params', { chain, type, window, limit });
 
@@ -133,7 +126,7 @@ export const handler: Handler = async (event) => {
     log('response', event.rawUrl, 200, 0, 'none');
     return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
   }
-  if (!SUPPORTED_CHAINS.has(chain)) {
+  if (!SUPPORTED_CHAINS.includes(chain)) {
     const body: ApiError = { error: 'unsupported_network', provider: 'none' };
     log('response', event.rawUrl, 200, 0, 'none');
     return { statusCode: 200, headers, body: JSON.stringify(body) };
@@ -290,7 +283,7 @@ export const handler: Handler = async (event) => {
           pairId: first.pairAddress || first.id || addr,
           chain: chain!,
           token: {
-            address: addr,
+            address: addr as `0x${string}`,
             symbol: (ds.token && ds.token.symbol) || first.baseToken?.symbol,
             name: (ds.token && ds.token.name) || first.baseToken?.name,
           },

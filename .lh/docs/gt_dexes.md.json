@@ -1,0 +1,38 @@
+{
+    "sourceFile": "docs/gt_dexes.md",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 5,
+            "patches": [
+                {
+                    "date": 1755454144197,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755454150900,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,4 +1,4 @@\n # GeckoTerminal API\n \n-## GET GET\n-/networks/{network}/dexes\n\\ No newline at end of file\n+## GET /networks/{network}/dexes\n+\n"
+                },
+                {
+                    "date": 1755454156930,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,4 +1,6 @@\n # GeckoTerminal API\n \n ## GET /networks/{network}/dexes\n \n+### TODO:\n+\n"
+                },
+                {
+                    "date": 1755454164074,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,4 +3,5 @@\n ## GET /networks/{network}/dexes\n \n ### TODO:\n \n+- Take gt_networks\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1755454174960,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,5 +3,5 @@\n ## GET /networks/{network}/dexes\n \n ### TODO:\n \n-- Take gt_networks.md example result\n\\ No newline at end of file\n+- Take gt_networks.md example result, extract IDs\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1755454183078,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,5 +3,5 @@\n ## GET /networks/{network}/dexes\n \n ### TODO:\n \n-- Take gt_networks.md example result, extract IDs\n\\ No newline at end of file\n+- Take gt_networks.md example result, extract network IDs and create a dex\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1755454144197,
+            "name": "Commit-0",
+            "content": "# GeckoTerminal API\n\n## GET GET\n/networks/{network}/dexes"
+        }
+    ]
+}

@@ -45,15 +45,7 @@ export const handler: Handler = async (event) => {
     ? tokenParam.toLowerCase()
     : undefined;
 
-  const SUPPORTED_CHAINS = new Set([
-    'ethereum',
-    'bsc',
-    'polygon',
-    'optimism',
-    'arbitrum',
-    'avalanche',
-    'base',
-  ]);
+  const SUPPORTED_CHAINS = Object.keys(CHAIN_TO_GT_NETWORK);
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -69,7 +61,7 @@ export const handler: Handler = async (event) => {
     log('response', event.rawUrl, 400, 0, 'none');
     return { statusCode: 400, headers, body: JSON.stringify(body) };
   }
-  if (!SUPPORTED_CHAINS.has(chain)) {
+  if (!SUPPORTED_CHAINS.includes(chain)) {
     const body: ApiError = { error: 'unsupported_network', provider: 'none' };
     log('response', event.rawUrl, 200, 0, 'none');
     return { statusCode: 200, headers, body: JSON.stringify(body) };
@@ -301,7 +293,7 @@ export const handler: Handler = async (event) => {
       }
     }
 
-    const bodyRes: TradesResponse = { pairId, trades, provider };
+    const bodyRes: TradesResponse = { pairId, trades, provider: provider as Provider };
     headers['x-provider'] = provider;
     headers['x-fallbacks-tried'] = attempted.join(',');
     headers['x-items'] = String(trades.length);

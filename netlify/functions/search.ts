@@ -7,6 +7,7 @@ import type {
   ApiError,
 } from '../../src/lib/types';
 import { isGtSupported } from '../shared/dex-allow';
+import { CHAIN_TO_GT_NETWORK } from '../shared/chains';
 import fs from 'fs/promises';
 
 const GT_FIXTURE = '../../fixtures/search-gt.json';
@@ -54,11 +55,46 @@ const CHAIN_ID_MAP: Record<string, string> = {
   '42161': 'arbitrum',
   '43114': 'avalanche',
   '8453': 'base',
+  '250': 'fantom',
+  '59144': 'linea',
+  '534352': 'scroll',
+  '324': 'zksync',
+  '5000': 'mantle',
+  '1284': 'moonbeam',
+  '1285': 'moonriver',
+  '25': 'cronos',
+  '1666600000': 'harmony',
+  '42220': 'celo',
+  '1313161554': 'aurora',
+  '1088': 'metis',
+  '288': 'boba',
+  '2222': 'kava',
+  '100': 'gnosis',
+  // Add more chain ID mappings as needed
+  // Adding non EVM chains
+  'solana': 'solana',
+  'aptos': 'aptos',
+  'sui': 'sui',
+  'sei': 'sei', 
+  'manta': 'manta',
+  'lightlink': 'lightlink',
+  'stepnetwork': 'step-network',
+  'starknet': 'starknet-alpha',
+  'neonevm': 'neon-evm',
+  'eosevm': 'eos-evm',
+  // Add more as needed
 };
 
 function mapChainId(id: unknown): string {
   const key = typeof id === 'number' ? String(id) : (id as string | undefined);
-  return (key && CHAIN_ID_MAP[key]) || (key ?? 'unknown');
+  const chainName = (key && CHAIN_ID_MAP[key]) || (key ?? 'unknown');
+  
+  // Validate against our supported chains
+  if (chainName !== 'unknown' && CHAIN_TO_GT_NETWORK[chainName]) {
+    return chainName;
+  }
+  
+  return key ?? 'unknown';
 }
 
 export const handler: Handler = async (event) => {

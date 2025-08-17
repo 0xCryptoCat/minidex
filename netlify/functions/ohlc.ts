@@ -93,15 +93,7 @@ export const handler: Handler = async (event) => {
   const gtSupported = event.queryStringParameters?.gtSupported !== 'false';
   const gtNetwork = chain ? CHAIN_TO_GT_NETWORK[chain] : undefined;
   const validPool = /^0x[0-9a-fA-F]{40}$/.test(poolAddress || '');
-  const SUPPORTED_CHAINS = new Set([
-    'ethereum',
-    'bsc',
-    'polygon',
-    'optimism',
-    'arbitrum',
-    'avalanche',
-    'base',
-  ]);
+  const SUPPORTED_CHAINS = Object.keys(CHAIN_TO_GT_NETWORK);
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -117,7 +109,7 @@ export const handler: Handler = async (event) => {
     log('response', event.rawUrl, 400, 0, 'none');
     return { statusCode: 400, headers, body: JSON.stringify(body) };
   }
-  if (!SUPPORTED_CHAINS.has(chain)) {
+  if (!SUPPORTED_CHAINS.includes(chain)) {
     const body: ApiError = { error: 'unsupported_network', provider: 'none' };
     log('response', event.rawUrl, 200, 0, 'none');
     return { statusCode: 200, headers, body: JSON.stringify(body) };
@@ -351,7 +343,7 @@ export const handler: Handler = async (event) => {
 
   candles = sanitizeCandles(candles);
 
-  const bodyRes: OHLCResponse = { pairId, tf, candles, provider, effectiveTf };
+  const bodyRes: OHLCResponse = { pairId, tf, candles, provider: provider as Provider, effectiveTf };
   headers['x-provider'] = provider;
   headers['x-fallbacks-tried'] = attempted.join(',');
   headers['x-items'] = String(candles.length);

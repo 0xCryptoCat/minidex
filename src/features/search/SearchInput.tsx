@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { search as apiSearch } from '../../lib/api';
 import type { SearchTokenSummary, PoolSummary } from '../../lib/types';
+import { getChainIcon, getDexIcon } from '../../lib/icons';
 
 interface Props {
   autoFocus?: boolean;
@@ -17,6 +18,8 @@ export default function SearchInput({ autoFocus, large }: Props) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchTokenSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -31,10 +34,14 @@ export default function SearchInput({ autoFocus, large }: Props) {
     if (!q || (!force && !isAddress(q) && q.length < 4)) {
       setResults([]);
       setIsLoading(false);
+      setHasError(false);
+      setErrorMessage('');
       return;
     }
     
     setIsLoading(true);
+    setHasError(false);
+    setErrorMessage('');
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -42,27 +49,46 @@ export default function SearchInput({ autoFocus, large }: Props) {
     apiSearch(q, undefined, controller.signal)
       .then(({ data }) => {
         if ('results' in data) {
-          setResults(Array.isArray(data.results) ? data.results : []);
+          const searchResults = Array.isArray(data.results) ? data.results : [];
+          setResults(searchResults);
+          
+          if (searchResults.length === 0 && q.length > 0) {
+            setHasError(true);
+            setErrorMessage(isAddress(q) ? 'Token address not found' : 'No tokens found matching your search');
+          }
         } else {
           setResults([]);
+          setHasError(true);
+          setErrorMessage('Search failed. Please try again.');
         }
       })
-      .catch(() => setResults([]))
+      .catch((err) => {
+        if (err.name !== 'AbortError') {
+          setResults([]);
+          setHasError(true);
+          setErrorMessage('Search error. Please check your connection.');
+        }
+      })
       .finally(() => setIsLoading(false));
   }
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
+    
     if (isAddress(query)) {
       runSearch(query);
-      return () => {};
+      return;
     }
+    
     if (query.length >= 4) {
       timer.current = setTimeout(() => runSearch(query), 500);
     } else {
       setResults([]);
       setIsLoading(false);
+      setHasError(false);
+      setErrorMessage('');
     }
+    
     return () => {
       if (timer.current) clearTimeout(timer.current);
     };
@@ -140,28 +166,52 @@ export default function SearchInput({ autoFocus, large }: Props) {
       <label htmlFor="global-search" style={{ position: 'absolute', left: -10000 }}>
         {'Search tokens or paste address'}
       </label>
-      <input
-        id="global-search"
-        ref={inputRef}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={handleKey}
-        onPaste={handlePaste}
-        placeholder="Search tokens or paste address"
-        aria-label="Search tokens or paste address"
-        style={{
-          ...inputStyle,
-          ...(query ? {
-            borderColor: 'var(--telegram-blue)',
-            background: 'var(--bg-elev)',
-          } : {}),
-          ...((results.length > 0 || isLoading) ? {
-            borderRadius: 'var(--radius) var(--radius) 0 0',
-          } : {})
-        }}
-      />
+      <div className="search-input-container">
+        <input
+          id="global-search"
+          ref={inputRef}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKey}
+          onPaste={handlePaste}
+          placeholder="Search tokens or paste address"
+          aria-label="Search tokens or paste address"
+          className={`search-input-enhanced ${hasError ? 'search-input-error' : ''} ${isLoading ? 'search-loading' : ''}`}
+          style={{
+            ...inputStyle,
+            ...(query ? {
+              borderColor: hasError ? '#ef4444' : 'var(--telegram-blue)',
+              background: 'var(--bg-elev)',
+            } : {}),
+            ...((results.length > 0 || isLoading || hasError) ? {
+              borderRadius: 'var(--radius) var(--radius) 0 0',
+            } : {})
+          }}
+        />
+        <div className="search-status-indicator">
+          {isLoading && (
+            <div style={{
+              width: 16,
+              height: 16,
+              border: '2px solid #ddd',
+              borderTop: '2px solid var(--telegram-blue)',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+          )}
+          {hasError && !isLoading && (
+            <span style={{ color: '#ef4444', fontSize: '16px' }}>⚠️</span>
+          )}
+        </div>
+      </div>
       
-      {(results.length > 0 || isLoading) && (
+      {hasError && errorMessage && (
+        <div className="search-error-message">
+          {errorMessage}
+        </div>
+      )}
+      
+      {(results.length > 0 || isLoading) && !hasError && (
         <div
           style={{
             position: 'absolute',
@@ -174,7 +224,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
             borderRadius: `0 0 var(--radius) var(--radius)`,
             boxShadow: 'var(--shadow-medium)',
             zIndex: 50,
-            maxHeight: '300px',
+            maxHeight: '400px',
             overflow: 'auto',
           }}
         >
@@ -183,7 +233,19 @@ export default function SearchInput({ autoFocus, large }: Props) {
               padding: 'var(--space-3)', 
               color: 'var(--text-muted)',
               textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
             }}>
+              <div style={{
+                width: 16,
+                height: 16,
+                border: '2px solid #ddd',
+                borderTop: '2px solid var(--telegram-blue)',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }} />
               Searching...
             </div>
           ) : (
@@ -197,7 +259,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
                   textAlign: 'left',
                   background: 'none',
                   border: 'none',
-                  padding: 'var(--space-3)',
+                  padding: 'var(--space-4)',
                   color: 'var(--text)',
                   cursor: 'pointer',
                   transition: 'background-color var(--transition-fast)',
@@ -210,29 +272,86 @@ export default function SearchInput({ autoFocus, large }: Props) {
                   e.currentTarget.style.background = 'none';
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  {r.icon && (
-                    <img 
-                      src={r.icon} 
-                      alt={`${r.symbol} logo`} 
-                      style={{ width: 24, height: 24, borderRadius: '50%' }} 
-                    />
-                  )}
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, marginBottom: '2px' }}>
-                      {r.symbol}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
+                  <div className="token-icon-container">
+                    {r.icon ? (
+                      <img 
+                        src={r.icon} 
+                        alt={`${r.symbol} logo`} 
+                        className="token-icon"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div className={`token-fallback ${r.icon ? 'hidden' : ''}`}>
+                      {r.symbol?.[0]?.toUpperCase()}
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span style={{ fontWeight: 600, fontSize: '1rem' }}>
+                        {r.symbol}
+                      </span>
+                      {r.chainIcons && r.chainIcons.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          {r.chainIcons.slice(0, 3).map((chain, i) => (
+                            <img 
+                              key={chain}
+                              src={getChainIcon(chain)} 
+                              alt={chain}
+                              style={{ 
+                                width: 16, 
+                                height: 16, 
+                                borderRadius: '50%', 
+                                border: '1px solid var(--border)' 
+                              }}
+                            />
+                          ))}
+                          {r.chainCount && r.chainCount > 3 && (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '4px' }}>
+                              +{r.chainCount - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div style={{ 
                       fontSize: '0.875rem', 
                       color: 'var(--text-muted)',
+                      marginBottom: '4px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
                     }}>
                       {r.name}
                     </div>
+                    {r.pools && r.pools.length > 0 && (
+                      <div style={{ 
+                        fontSize: '0.75rem', 
+                        color: 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}>
+                        <span>{r.pools.length} pool{r.pools.length !== 1 ? 's' : ''}</span>
+                        {r.liqUsd && (
+                          <span>• TVL: ${r.liqUsd.toLocaleString()}</span>
+                        )}
+                        {r.vol24hUsd && (
+                          <span>• Vol: ${r.vol24hUsd.toLocaleString()}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div style={{ 
-                    fontSize: '0.875rem', 
-                    color: 'var(--text-secondary)',
+                    fontSize: '1rem', 
+                    fontWeight: 500,
+                    color: 'var(--text)',
                     textAlign: 'right',
+                    minWidth: '80px'
                   }}>
                     ${r.priceUsd?.toFixed(4) || '—'}
                   </div>

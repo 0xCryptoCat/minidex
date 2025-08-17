@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import type { SearchTokenSummary, PoolSummary } from '../../lib/types';
 import { formatUsd } from '../../lib/format';
-import { CHAIN_TO_ICON } from '../../lib/chains';
+import { getChainIcon, getDexIcon } from '../../lib/icons';
 
 interface Props { result: SearchTokenSummary }
 
@@ -37,6 +37,13 @@ export default function SearchResultItem({ result }: Props) {
     provider,
   } = result;
   const displayedChains = (chainIcons || []).slice(0, 3);
+  
+  // Get unique DEXes from pools for display
+  const uniqueDexes = Array.from(new Set(
+    (pools || [])
+      .map(p => p.dex)
+      .filter(Boolean)
+  )).slice(0, 3);
 
   const supportedPool = (pools || []).reduce<PoolSummary | undefined>((acc, p) => {
     if (p.gtSupported) {
@@ -112,8 +119,7 @@ export default function SearchResultItem({ result }: Props) {
       <td className="chains-cell">
         <div className="chain-icons" title={(chainIcons || []).join(', ')}>
           {displayedChains.map((c, i) => {
-            const url = CHAIN_TO_ICON[c];
-            if (!url) return null;
+            const url = getChainIcon(c);
             return (
               <img
                 key={c}
@@ -131,7 +137,25 @@ export default function SearchResultItem({ result }: Props) {
       </td>
       <td className="meta-cell">
         <div className="meta-info">
-          <span className="pool-count-chip">{poolCount} pools</span>
+          <span className="pool-count-chip">{poolCount} pool{poolCount !== 1 ? 's' : ''}</span>
+          {uniqueDexes.length > 0 && (
+            <div className="dex-icons">
+              {uniqueDexes.map(dex => (
+                <img 
+                  key={dex}
+                  src={getDexIcon(dex)} 
+                  alt={dex}
+                  className="dex-icon"
+                  title={dex}
+                />
+              ))}
+              {(pools || []).length > uniqueDexes.length && (
+                <span className="dex-more" title={`${(pools || []).length - uniqueDexes.length} more DEXes`}>
+                  +{(pools || []).length - uniqueDexes.length}
+                </span>
+              )}
+            </div>
+          )}
           <span className="provider-badge" title={`Data provider: ${provider}`}>
             {provider}
           </span>

@@ -9,7 +9,7 @@ import type {
 } from '../../src/lib/types';
 import fs from 'fs/promises';
 import { isGtSupported } from '../shared/dex-allow';
-import { toGTNetwork } from '../shared/chains';
+import { toGTNetwork, CHAIN_TO_GT_NETWORK, isPriorityChain } from '../shared/chains';
 
 const GT_FIXTURE = '../../fixtures/pairs-gt.json';
 
@@ -35,11 +35,40 @@ const CHAIN_ID_MAP: Record<string, string> = {
   '42161': 'arbitrum',
   '43114': 'avalanche',
   '8453': 'base',
+  '250': 'fantom',
+  '59144': 'linea',
+  '534352': 'scroll',
+  '324': 'zksync',
+  '5000': 'mantle',
+  '1284': 'moonbeam',
+  '1285': 'moonriver',
+  '25': 'cronos',
+  '1666600000': 'harmony',
+  '42220': 'celo',
+  '1313161554': 'aurora',
+  '1088': 'metis',
+  '288': 'boba',
+  '2222': 'kava',
+  '100': 'gnosis',
+  // Add more chain ID mappings as needed
+  // To add non-EVM like Solana, Aptos, etc., use their common names
+  'solana': 'solana',
+  'aptos': 'aptos',
+  'sui': 'sui',
+  'sei': 'sei',
+  'manta': 'manta',
+  'lightlink': 'lightlink',
+  'alveychain': 'alveychain',
+  'arbitrumnova': 'arbitrumnova',
+  'astr': 'astr',
+  'bitgert': 'bitgert',
+  // Add more mappings as needed
 };
 
+// Use all supported chains from our comprehensive chain mapping
 let SUPPORTED_CHAINS: Set<string> | null = null;
 try {
-  SUPPORTED_CHAINS = new Set(Object.values(CHAIN_ID_MAP));
+  SUPPORTED_CHAINS = new Set(Object.keys(CHAIN_TO_GT_NETWORK));
 } catch (err) {
   logError('failed to init supported chains', err);
 }

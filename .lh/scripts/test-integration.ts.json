@@ -1,0 +1,18 @@
+{
+    "sourceFile": "scripts/test-integration.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755455319294,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755455319294,
+            "name": "Commit-0",
+            "content": "#!/usr/bin/env tsx\n\n/**\n * Test script to verify GT integration is working\n */\n\nimport { toGTNetwork, isPriorityChain, CHAIN_TO_GT_NETWORK, NETWORK_INFO } from '../netlify/shared/chains';\nimport { isGtSupported, isPriorityDex, getDexesForNetwork } from '../netlify/shared/dex-allow';\n\nfunction runTests() {\n  console.log('🧪 Testing SmallDEX GT Integration...\\n');\n  \n  // Test 1: Chain mapping\n  console.log('📋 Test 1: Chain Mapping');\n  const testChains = ['ethereum', 'base', 'solana', 'mantle', 'scroll'];\n  testChains.forEach(chain => {\n    const gtNetwork = toGTNetwork(chain);\n    const isPriority = isPriorityChain(chain);\n    const info = NETWORK_INFO[chain];\n    console.log(`  ${chain} -> ${gtNetwork} ${isPriority ? '(Priority)' : ''} - ${info?.name || 'Unknown'}`);\n  });\n  \n  // Test 2: DEX support\n  console.log('\\n🏪 Test 2: DEX Support');\n  const testDexes = ['uniswap_v3', 'pancakeswap_v2', 'aerodrome-base', 'spookyswap', 'orca'];\n  testDexes.forEach(dex => {\n    const supported = isGtSupported(dex);\n    const isPriority = isPriorityDex(dex);\n    console.log(`  ${dex}: ${supported ? '✅' : '❌'} ${isPriority ? '(Priority)' : ''}`);\n  });\n  \n  // Test 3: Network DEX counts  \n  console.log('\\n📊 Test 3: Network DEX Counts');\n  const testNetworks = ['eth', 'bsc', 'base', 'arbitrum', 'solana'];\n  testNetworks.forEach(network => {\n    const dexes = getDexesForNetwork(network);\n    console.log(`  ${network}: ${dexes.length} DEXes`);\n  });\n  \n  // Test 4: Summary stats\n  console.log('\\n📈 Test 4: Summary Statistics');\n  const totalNetworks = Object.keys(CHAIN_TO_GT_NETWORK).length;\n  const totalDexes = getDexesForNetwork('eth').length + getDexesForNetwork('bsc').length; // Sample\n  console.log(`  Total Networks: ${totalNetworks}`);\n  console.log(`  Sample DEX coverage: ${totalDexes}+ DEXes`);\n  \n  console.log('\\n✅ All tests completed!');\n}\n\nif (require.main === module) {\n  runTests();\n}\n"
+        }
+    ]
+}

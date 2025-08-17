@@ -1,7 +1,7 @@
 import type { Handler } from '@netlify/functions';
 import type { TokenResponse, ApiError } from '../../src/lib/types';
 import { isGtSupported } from '../shared/dex-allow';
-import { toGTNetwork } from '../shared/chains';
+import { toGTNetwork, CHAIN_TO_GT_NETWORK } from '../shared/chains';
 import { getJson } from '../shared/http';
 
 const CG_API_BASE = process.env.COINGECKO_API_BASE || '';
@@ -48,15 +48,7 @@ async function fetchCgToken(chain: string, address: string): Promise<any> {
 export const handler: Handler = async (event) => {
   const chain = event.queryStringParameters?.chain;
   const address = event.queryStringParameters?.address;
-  const SUPPORTED_CHAINS = new Set([
-    'ethereum',
-    'bsc',
-    'polygon',
-    'optimism',
-    'arbitrum',
-    'avalanche',
-    'base',
-  ]);
+  const SUPPORTED_CHAINS = Object.keys(CHAIN_TO_GT_NETWORK);
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -73,7 +65,7 @@ export const handler: Handler = async (event) => {
     log('response', event.rawUrl, 400, 0, 'none');
     return { statusCode: 400, headers, body: JSON.stringify(body) };
   }
-  if (!SUPPORTED_CHAINS.has(chain)) {
+  if (!SUPPORTED_CHAINS.includes(chain)) {
     const body: ApiError = { error: 'unsupported_network', provider: 'none' };
     log('response', event.rawUrl, 200, 0, 'none');
     return { statusCode: 200, headers, body: JSON.stringify(body) };

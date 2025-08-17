@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1755434210881,
@@ -16,6 +16,10 @@
                 {
                     "date": 1755437795222,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -53,9 +53,8 @@\n   '10': 'optimism',\n   '42161': 'arbitrum',\n   '43114': 'avalanche',\n   '8453': 'base',\n-\n };\n \n function mapChainId(id: unknown): string {\n   const key = typeof id === 'number' ? String(id) : (id as string | undefined);\n"
+                },
+                {
+                    "date": 1755455927454,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -75,9 +75,13 @@\n   'solana': 'solana',\n   'aptos': 'aptos',\n   'sui': 'sui',\n   'sei': 'sei', \n-  \n+  'manta': 'manta',\n+  'lightlink': 'lightlink',\n+  'stepnetwork': 'step-network',\n+  'starknet': 'starknet-alpha',\n+  'neonevm': 'neon-evm',\n };\n \n function mapChainId(id: unknown): string {\n   const key = typeof id === 'number' ? String(id) : (id as string | undefined);\n"
                 }
             ],
             "date": 1755434210881,

@@ -25,6 +25,7 @@
     "@types/react-window": "^1.8.8",
     "@vitejs/plugin-react": "^4.2.1",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.4",
     "typescript": "^5.2.2",
     "vite": "^5.0.0"
   }

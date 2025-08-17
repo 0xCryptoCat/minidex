@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import type { PoolSummary, TokenMeta, TokenResponse, Provider } from '../../lib/types';
 import { pairs, token as fetchToken } from '../../lib/api';
+import { poolDataManager } from '../../lib/pool-manager';
 import PoolSwitcher from './PoolSwitcher';
 import ChartOnlyView from './ChartOnlyView';
 import DetailView from './DetailView';
@@ -75,6 +76,10 @@ export default function ChartPage() {
           return (b.liqUsd || 0) - (a.liqUsd || 0);
         });
         setPools(sorted);
+        
+        // Cache each pool individually
+        poolDataManager.cachePools(sorted);
+        
         const sel = sorted.find((p) => p.pairId === pairId) || sorted[0];
         setCurrentPool(sel || null);
         setNoData(!sel || !sel.poolAddress);
@@ -111,6 +116,10 @@ export default function ChartPage() {
 
   function handlePoolSwitch(p: PoolSummary) {
     const scroll = window.scrollY;
+    
+    // Update the pool data in the manager (in case there are any updates)
+    poolDataManager.updatePool(p);
+    
     setCurrentPool(p);
     setXDomain((d) => d);
     if (address) {

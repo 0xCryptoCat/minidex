@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1755347748705,
@@ -16,6 +16,10 @@
                 {
                     "date": 1755364214223,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -164,13 +164,8 @@\n \n           {/* View-specific content */}\n           {view === 'chart' && currentPool && currentPool.poolAddress && provider && address && (\n             <div className=\"chart-view-content\">\n-              {currentPool.gtSupported === false && (\n-                <div className=\"limitation-notice\">\n-                  Chart not available on this DEX; showing limited data.\n-                </div>\n-              )}\n               <div className=\"chart-container\">\n                 <ChartOnlyView\n                   pairId={currentPool.pairId}\n                   chain={currentPool.chain}\n@@ -185,13 +180,8 @@\n           )}\n \n           {view === 'trades' && currentPool && currentPool.poolAddress && address && (\n             <div className=\"trades-view-content\">\n-              {currentPool.gtSupported === false && (\n-                <div className=\"limitation-notice\">\n-                  Trades not available on this DEX; showing limited data.\n-                </div>\n-              )}\n               <div className=\"trades-container\">\n                 <TradesOnlyView\n                   pairId={currentPool.pairId}\n                   chain={currentPool.chain}\n"
+                },
+                {
+                    "date": 1755434210974,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,8 +1,9 @@\n import { useEffect, useState } from 'react';\n import { useParams, useNavigate, useSearchParams } from 'react-router-dom';\n import type { PoolSummary, TokenMeta, TokenResponse, Provider } from '../../lib/types';\n import { pairs, token as fetchToken } from '../../lib/api';\n+import { poolDataManager } from '../../lib/pool-manager';\n import PoolSwitcher from './PoolSwitcher';\n import ChartOnlyView from './ChartOnlyView';\n import DetailView from './DetailView';\n import DetailTop from './DetailTop';\n@@ -74,8 +75,12 @@\n           if (sup !== 0) return sup;\n           return (b.liqUsd || 0) - (a.liqUsd || 0);\n         });\n         setPools(sorted);\n+        \n+        // Cache each pool individually\n+        poolDataManager.cachePools(sorted);\n+        \n         const sel = sorted.find((p) => p.pairId === pairId) || sorted[0];\n         setCurrentPool(sel || null);\n         setNoData(!sel || !sel.poolAddress);\n       })\n@@ -110,8 +115,12 @@\n   }, [chain, address]);\n \n   function handlePoolSwitch(p: PoolSummary) {\n     const scroll = window.scrollY;\n+    \n+    // Update the pool data in the manager (in case there are any updates)\n+    poolDataManager.updatePool(p);\n+    \n     setCurrentPool(p);\n     setXDomain((d) => d);\n     if (address) {\n       navigate(`/t/${p.chain}/${address}/${p.pairId}`, { replace: true });\n"
                 }
             ],
             "date": 1755347748705,

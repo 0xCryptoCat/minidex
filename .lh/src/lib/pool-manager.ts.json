@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/lib/pool-manager.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755434210883,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755434210883,
+            "name": "Commit-0",
+            "content": "import type { PoolSummary } from './types';\nimport { getPoolDetailsCache, setPoolDetailsCache } from './cache';\n\n/**\n * Pool data manager to handle individual pool caching and data retrieval\n */\nexport class PoolDataManager {\n  private static instance: PoolDataManager;\n  private poolsMap: Map<string, PoolSummary> = new Map();\n\n  static getInstance(): PoolDataManager {\n    if (!PoolDataManager.instance) {\n      PoolDataManager.instance = new PoolDataManager();\n    }\n    return PoolDataManager.instance;\n  }\n\n  /**\n   * Cache pool data for individual pools\n   */\n  cachePools(pools: PoolSummary[]) {\n    pools.forEach(pool => {\n      this.poolsMap.set(pool.pairId, pool);\n      setPoolDetailsCache(pool.pairId, pool);\n    });\n  }\n\n  /**\n   * Get a specific pool by pairId from cache\n   */\n  getPool(pairId: string): PoolSummary | undefined {\n    // Try memory cache first\n    let pool = this.poolsMap.get(pairId);\n    if (pool) return pool;\n\n    // Try persistent cache\n    pool = getPoolDetailsCache(pairId);\n    if (pool) {\n      this.poolsMap.set(pairId, pool);\n      return pool;\n    }\n\n    return undefined;\n  }\n\n  /**\n   * Update a specific pool's data\n   */\n  updatePool(pool: PoolSummary) {\n    this.poolsMap.set(pool.pairId, pool);\n    setPoolDetailsCache(pool.pairId, pool);\n  }\n\n  /**\n   * Get all cached pools for a token (by base/quote symbol combination)\n   */\n  getPoolsForToken(baseSymbol: string, quoteSymbol?: string): PoolSummary[] {\n    const pools = Array.from(this.poolsMap.values());\n    return pools.filter(pool => {\n      const baseMatch = pool.base === baseSymbol || pool.baseToken?.symbol === baseSymbol;\n      if (!quoteSymbol) return baseMatch;\n      const quoteMatch = pool.quote === quoteSymbol || pool.quoteToken?.symbol === quoteSymbol;\n      return baseMatch && quoteMatch;\n    });\n  }\n\n  /**\n   * Clear cache\n   */\n  clear() {\n    this.poolsMap.clear();\n  }\n\n  /**\n   * Get all cached pools\n   */\n  getAllPools(): PoolSummary[] {\n    return Array.from(this.poolsMap.values());\n  }\n}\n\nexport const poolDataManager = PoolDataManager.getInstance();\n"
+        }
+    ]
+}

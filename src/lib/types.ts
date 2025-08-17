@@ -41,8 +41,47 @@ export interface PoolSummary {
   quote: string;           // quote symbol (e.g., "WETH")
   chain: ChainSlug;
   poolAddress?: Address;   // contract address for GeckoTerminal
+  pairAddress?: Address;   // pair contract address
   liqUsd?: number;         // liquidity for default selection
   gtSupported?: boolean;   // whether GT supports this pool
+  labels?: string[];       // e.g., ["v2"]
+  baseToken?: { address: Address; symbol: string; name: string };
+  quoteToken?: { address: Address; symbol: string; name: string };
+  info?: {                 // complete info object per pool
+    imageUrl?: string;
+    header?: string;
+    openGraph?: string;
+    description?: string;
+    websites?: { label: string; url: string }[];
+    socials?: { type: string; url: string }[];
+  };
+  priceUsd?: number;
+  priceNative?: number;
+  txns?: {
+    m5?: { buys: number; sells: number };
+    h1?: { buys: number; sells: number };
+    h6?: { buys: number; sells: number };
+    h24?: { buys: number; sells: number };
+  };
+  volume?: {
+    m5?: number;
+    h1?: number;
+    h6?: number;
+    h24?: number;
+  };
+  priceChange?: {
+    h1?: number;
+    h6?: number;
+    h24?: number;
+  };
+  liquidity?: {
+    usd?: number;
+    base?: number;
+    quote?: number;
+  };
+  fdv?: number;
+  marketCap?: number;
+  pairCreatedAt?: number;
 }
 
 /* ---------- /api/search ---------- */

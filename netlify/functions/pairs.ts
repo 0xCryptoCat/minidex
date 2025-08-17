@@ -252,8 +252,55 @@ export const handler: Handler = async (event) => {
           quote: p.quoteToken?.symbol,
           chain: chainSlug,
           poolAddress: poolAddr as Address,
+          pairAddress: p.pairAddress,
           liqUsd: liqUsd !== undefined ? Number(liqUsd) : undefined,
           gtSupported: isGtSupported(p.dexId, version),
+          labels: Array.isArray(p.labels) ? p.labels : undefined,
+          baseToken: p.baseToken ? {
+            address: p.baseToken.address,
+            symbol: p.baseToken.symbol,
+            name: p.baseToken.name
+          } : undefined,
+          quoteToken: p.quoteToken ? {
+            address: p.quoteToken.address,
+            symbol: p.quoteToken.symbol,
+            name: p.quoteToken.name
+          } : undefined,
+          info: p.info ? {
+            imageUrl: p.info.imageUrl,
+            header: p.info.header,
+            openGraph: p.info.openGraph,
+            description: p.info.description,
+            websites: Array.isArray(p.info.websites) ? p.info.websites : undefined,
+            socials: Array.isArray(p.info.socials) ? p.info.socials : undefined,
+          } : undefined,
+          priceUsd: p.priceUsd ? Number(p.priceUsd) : undefined,
+          priceNative: p.priceNative ? Number(p.priceNative) : undefined,
+          txns: p.txns ? {
+            m5: p.txns.m5 ? { buys: p.txns.m5.buys || 0, sells: p.txns.m5.sells || 0 } : undefined,
+            h1: p.txns.h1 ? { buys: p.txns.h1.buys || 0, sells: p.txns.h1.sells || 0 } : undefined,
+            h6: p.txns.h6 ? { buys: p.txns.h6.buys || 0, sells: p.txns.h6.sells || 0 } : undefined,
+            h24: p.txns.h24 ? { buys: p.txns.h24.buys || 0, sells: p.txns.h24.sells || 0 } : undefined,
+          } : undefined,
+          volume: p.volume ? {
+            m5: p.volume.m5,
+            h1: p.volume.h1,
+            h6: p.volume.h6,
+            h24: p.volume.h24,
+          } : undefined,
+          priceChange: p.priceChange ? {
+            h1: p.priceChange.h1,
+            h6: p.priceChange.h6,
+            h24: p.priceChange.h24,
+          } : undefined,
+          liquidity: p.liquidity ? {
+            usd: p.liquidity.usd,
+            base: p.liquidity.base,
+            quote: p.liquidity.quote,
+          } : undefined,
+          fdv: p.fdv,
+          marketCap: p.marketCap,
+          pairCreatedAt: p.pairCreatedAt,
         });
       }
 

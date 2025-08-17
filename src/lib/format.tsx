@@ -48,15 +48,16 @@ export function formatShortAddr(addr?: string): string {
 }
 
 export function subscriptZeros(frac: string): ReactNode[] {
-  return frac.split('').map((c, i) =>
-    c === '0' ? (
-      <span key={i} className="sub">
-        0
-      </span>
-    ) : (
-      c
-    )
-  );
+  const zeroCount = frac.length;
+  if (zeroCount === 0) return [];
+  if (zeroCount === 1) return [<span key={0} className="sub">0</span>];
+  
+  // For multiple zeros, show count as subscript
+  return [
+    <span key="subscript" className="sub">
+      {zeroCount}
+    </span>
+  ];
 }
 
 export function formatAmount(value?: number): ReactNode {
@@ -253,23 +254,21 @@ export function formatSmartAmountReact(value?: number): ReactNode {
   if (abs >= 1) return value.toFixed(2);
 
   // For small numbers < 1, limit to 4 decimal places and use subscript for leading zeros
-  const fixed = value.toFixed(8);
+  const fixed = value.toFixed(12); // Use more precision to capture small numbers
   const [intPart, fracPart = ''] = fixed.split('.');
   
-  // Find leading zeros
-  const leadingZerosMatch = fracPart.match(/^(0+)/);
-  if (leadingZerosMatch && leadingZerosMatch[1].length > 0) {
+  // Find leading zeros after decimal point
+  const leadingZerosMatch = fracPart.match(/^(0+)(\d+)/);
+  if (leadingZerosMatch && leadingZerosMatch[1].length >= 2) {
     const zeros = leadingZerosMatch[1];
-    const rest = fracPart.slice(zeros.length, zeros.length + 4);
-    if (zeros.length >= 2) {
-      return (
-        <>
-          {intPart}.
-          {subscriptZeros(zeros)}
-          {rest}
-        </>
-      );
-    }
+    const digits = leadingZerosMatch[2].slice(0, 4); // Keep 4 significant digits
+    return (
+      <>
+        {intPart}.0
+        <span className="sub">{zeros.length}</span>
+        {digits}
+      </>
+    );
   }
   
   // Default: show up to 4 decimal places

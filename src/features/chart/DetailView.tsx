@@ -1,6 +1,5 @@
-import { Fragment, useEffect, useState } from 'react';
-import type { PoolSummary, TokenResponse } from '../../lib/types';
-import { token as fetchToken } from '../../lib/api';
+import { Fragment, useState } from 'react';
+import type { PoolSummary } from '../../lib/types';
 import { formatUsd, formatCompact, formatShortAddr, formatSmallPrice } from '../../lib/format';
 import CopyButton from '../../components/CopyButton';
 import { addressUrl } from '../../lib/explorer';
@@ -41,29 +40,21 @@ const LINK_ICONS: Record<string, any> = {
 };
 
 export default function DetailView({ chain, address, pairId, pools, onSwitch, hideDetailTop = false }: Props) {
-  const [detail, setDetail] = useState<TokenResponse | null>(null);
   const [descExpanded, setDescExpanded] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    fetchToken(chain, address).then(({ data }) => {
-      if (cancelled) return;
-      if (!('error' in data)) setDetail(data);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [chain, address]);
-
-  if (!detail) return (
+  // Find the active pool from the provided pools data
+  const active = pools.find((p) => p.pairId === pairId) || pools[0];
+  
+  if (!active) return (
     <div className="detail">
       <div className="loading-skeleton" style={{ height: 200, marginBottom: 'var(--space-4)' }} />
       <div className="loading-skeleton" style={{ height: 100 }} />
     </div>
   );
 
-  const active = detail.pools.find((p) => p.pairId === pairId) || detail.pools[0];
-  const info = detail.info || {};
+  // Use the active pool's info, fallback to first pool's info if current has none
+  const info = active.info || pools.find(p => p.info)?.info || {};
+  
   const kpis = {
     priceUsd: active.priceUsd,
     priceNative: active.priceNative,
@@ -117,10 +108,10 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
   const pairExplorer = active.pairAddress
     ? addressUrl(chain as any, active.pairAddress)
     : undefined;
-  const baseExplorer = addressUrl(chain as any, active.baseToken.address as any);
-  const quoteExplorer = addressUrl(chain as any, active.quoteToken.address as any);
+  const baseExplorer = active.baseToken ? addressUrl(chain as any, active.baseToken.address as any) : undefined;
+  const quoteExplorer = active.quoteToken ? addressUrl(chain as any, active.quoteToken.address as any) : undefined;
 
-  const otherPools = detail.pools.filter((p) => p.pairId !== active.pairId);
+  const otherPools = pools.filter((p) => p.pairId !== active.pairId);
 
   return (
     <div className="detail animate-in">
@@ -137,8 +128,8 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
           <div className="detail-top">
             <div className="detail-avatar">
               {info.imageUrl ? 
-                <img src={info.imageUrl} alt={`${active.baseToken.symbol} logo`} /> : 
-                <div className="detail-letter">{active.baseToken.symbol?.[0]}</div>
+                <                img src={info.imageUrl} alt={`${active.baseToken?.symbol || active.base} logo`} /> : 
+                <div className="detail-letter">{active.baseToken?.symbol?.[0] || active.base?.[0]}</div>
               }
             </div>
             
@@ -146,7 +137,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
               <div className="detail-title">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                   <strong style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-                    {active.baseToken.symbol} / {active.quoteToken.symbol}
+                    {active.baseToken?.symbol || active.base} / {active.quoteToken?.symbol || active.quote}
                   </strong>
                   
                   {/* Pool Selector Dropdown */}
@@ -173,7 +164,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
               </div>
               
               <div className="detail-subline">
-                <span style={{ color: 'var(--text-secondary)' }}>{active.baseToken.name}</span>
+                <span style={{ color: 'var(--text-secondary)' }}>{active.baseToken?.name || `${active.baseToken?.symbol || active.base} Token`}</span>
                 <div className="badge chain-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   {getChainIcon(chain) && (
                     <img src={getChainIcon(chain)} alt={chain} style={{ width: 16, height: 16 }} />
@@ -292,30 +283,34 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
             </div>
           </div>
         )}
-        <div className="addr-row">
-          <span>{active.baseToken.symbol}:</span>
-          <div>
-            <span>{formatShortAddr(active.baseToken.address)}</span>
-            <CopyButton text={active.baseToken.address} label={`${active.baseToken.symbol} address`} />
-            {baseExplorer && (
-              <a href={baseExplorer} target="_blank" rel="noopener noreferrer">
-                <OpenInNewIcon sx={{ fontSize: 16 }} />
-              </a>
-            )}
+        {active.baseToken && (
+          <div className="addr-row">
+            <span>{active.baseToken.symbol}:</span>
+            <div>
+              <span>{formatShortAddr(active.baseToken.address)}</span>
+              <CopyButton text={active.baseToken.address} label={`${active.baseToken.symbol} address`} />
+              {baseExplorer && (
+                <a href={baseExplorer} target="_blank" rel="noopener noreferrer">
+                  <OpenInNewIcon sx={{ fontSize: 16 }} />
+                </a>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="addr-row">
-          <span>{active.quoteToken.symbol}:</span>
-          <div>
-            <span>{formatShortAddr(active.quoteToken.address)}</span>
-            <CopyButton text={active.quoteToken.address} label={`${active.quoteToken.symbol} address`} />
-            {quoteExplorer && (
-              <a href={quoteExplorer} target="_blank" rel="noopener noreferrer">
-                <OpenInNewIcon sx={{ fontSize: 16 }} />
-              </a>
-            )}
+        )}
+        {active.quoteToken && (
+          <div className="addr-row">
+            <span>{active.quoteToken.symbol}:</span>
+            <div>
+              <span>{formatShortAddr(active.quoteToken.address)}</span>
+              <CopyButton text={active.quoteToken.address} label={`${active.quoteToken.symbol} address`} />
+              {quoteExplorer && (
+                <a href={quoteExplorer} target="_blank" rel="noopener noreferrer">
+                  <OpenInNewIcon sx={{ fontSize: 16 }} />
+                </a>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* KPIs Grid */}
@@ -325,7 +320,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
           <strong>{formatSmallPrice(active.priceUsd)}</strong>
         </div>
         <div className="kpi-item">
-          <span>Price {active.quoteToken.symbol}</span>
+          <span>Price {active.quoteToken?.symbol || active.quote}</span>
           <strong>{active.priceNative ? formatSmallPrice(Number(active.priceNative)) : '—'}</strong>
         </div>
         
@@ -474,7 +469,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
                     {p.dex} {p.version && `(${p.version})`}
                   </span>
                   <span>—</span>
-                  <span>{p.baseToken.symbol}/{p.quoteToken.symbol}</span>
+                  <span>{p.baseToken?.symbol || p.base}/{p.quoteToken?.symbol || p.quote}</span>
                   <span>—</span>
                   <span style={{ color: 'var(--text-muted)' }}>
                     Liq ${p.liquidity?.usd ? formatCompact(p.liquidity.usd) : '—'}
@@ -497,6 +492,37 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
           ))}
         </div>
       )}
+
+      {/* Security Section */}
+      <div className="security-section">
+        <h3 style={{ margin: '0 0 var(--space-3) 0', fontSize: '1rem', fontWeight: 600 }}>Security Analysis</h3>
+        
+        {/* HoneyPot.is Row */}
+        <div className="security-row">
+          <div className="security-name">
+            <span>HoneyPot.is</span>
+          </div>
+          <div className="security-result">
+            <span className="security-status pending">Checking...</span>
+            <button className="security-expand" onClick={() => {/* TODO: Toggle expanded */}}>
+              <ExpandMoreIcon sx={{ fontSize: 16 }} />
+            </button>
+          </div>
+        </div>
+        
+        {/* Go+ Security Row */}
+        <div className="security-row">
+          <div className="security-name">
+            <span>Go+ Security</span>
+          </div>
+          <div className="security-result">
+            <span className="security-status pending">Checking...</span>
+            <button className="security-expand" onClick={() => {/* TODO: Toggle expanded */}}>
+              <ExpandMoreIcon sx={{ fontSize: 16 }} />
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

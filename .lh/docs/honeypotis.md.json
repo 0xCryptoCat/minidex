@@ -1,0 +1,22 @@
+{
+    "sourceFile": "docs/honeypotis.md",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1755432423607,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755432432639,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,48 +0,0 @@\n-Honeypot API Documentation\n-Use the Honeypot API to integrate honeypot checks into your product.\n-\n-Currently, API authentication is not required. You can skip the authentication steps.\n-\n-Quickstart\n-Terms of Service\n-Please read the Terms of Service before using the API.\n-\n-Getting started\n-To get started, retrieve your API key.\n-\n-IMPORTANT! API Key system is not yet implemented. Link will not work. You do NOT need to provide an API key to use the API at this time. Please keep an eye out on https://t.me/honeypotis_news for updates.\n-\n-Get your API key\n-Guides\n-Authentication\n-Learn how to authenticate your API requests.\n-\n-Read more\n-\n-Chains\n-See what chains and exchanges are supported by the API.\n-\n-Read more\n-\n-Errors\n-Read about the different types of errors returned by the API.\n-\n-Read more\n-\n-Premium API\n-Learn about the premium API offered by Honeypot API.\n-\n-Read more\n-\n-Resources\n-Honeypot Checks\n-Learn how to check if a token is a honeypot or not, and get the various details, such as taxes and gas for a token.\n-\n-Contracts\n-Learn about leveraging our powerful system to check if a contract is truly open source.\n-\n-Pairs\n-Learn about retrieving pair information using the Honeypot API.\n-\n-Top Holders\n-Learn about retrieving the top holders of a token using the Honeypot API.\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1755432423607,
+            "name": "Commit-0",
+            "content": "Honeypot API Documentation\nUse the Honeypot API to integrate honeypot checks into your product.\n\nCurrently, API authentication is not required. You can skip the authentication steps.\n\nQuickstart\nTerms of Service\nPlease read the Terms of Service before using the API.\n\nGetting started\nTo get started, retrieve your API key.\n\nIMPORTANT! API Key system is not yet implemented. Link will not work. You do NOT need to provide an API key to use the API at this time. Please keep an eye out on https://t.me/honeypotis_news for updates.\n\nGet your API key\nGuides\nAuthentication\nLearn how to authenticate your API requests.\n\nRead more\n\nChains\nSee what chains and exchanges are supported by the API.\n\nRead more\n\nErrors\nRead about the different types of errors returned by the API.\n\nRead more\n\nPremium API\nLearn about the premium API offered by Honeypot API.\n\nRead more\n\nResources\nHoneypot Checks\nLearn how to check if a token is a honeypot or not, and get the various details, such as taxes and gas for a token.\n\nContracts\nLearn about leveraging our powerful system to check if a contract is truly open source.\n\nPairs\nLearn about retrieving pair information using the Honeypot API.\n\nTop Holders\nLearn about retrieving the top holders of a token using the Honeypot API."
+        }
+    ]
+}

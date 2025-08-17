@@ -18,6 +18,9 @@ const ohlcCache = new Map<string, CacheOHLCEntry>();
 const tradesCache = new Map<string, CacheTradesEntry>();
 const tokenCache = new Map<string, CacheTokenEntry>();
 
+// Individual pool cache for detailed pool data
+const poolDetailsCache = new Map<string, { response: any; ts: number }>();
+
 const TTL_SECONDS = 30;
 const MAX_ENTRIES = 50;
 
@@ -105,5 +108,14 @@ export function getTokenCache(key: string): ApiResult<TokenResponse> | undefined
 }
 export function setTokenCache(key: string, response: ApiResult<TokenResponse>) {
   setMapEntry(tokenCache, `token:${key}`, response);
+}
+
+// Pool details cache
+export function getPoolDetailsCache(pairId: string): any | undefined {
+  return getMapEntry(poolDetailsCache, `pool:${pairId}`);
+}
+
+export function setPoolDetailsCache(pairId: string, data: any) {
+  setMapEntry(poolDetailsCache, `pool:${pairId}`, data);
 }
 

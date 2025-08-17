@@ -111,24 +111,23 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
   const baseExplorer = active.baseToken ? addressUrl(chain as any, active.baseToken.address as any) : undefined;
   const quoteExplorer = active.quoteToken ? addressUrl(chain as any, active.quoteToken.address as any) : undefined;
 
-  const otherPools = pools.filter((p) => p.pairId !== active.pairId);
-
   return (
     <div className="detail animate-in">
-      {/* Header Image and Detail Top - only if not hidden */}
+      {/* Header Image - always show if available */}
+      {info.header && (
+        <div className="detail-header-wrap">
+          <img src={info.header} alt="" className="detail-header" loading="lazy" />
+        </div>
+      )}
+      
+      {/* Detail Top Section - only if not hidden */}
       {!hideDetailTop && (
         <>
-          {info.header && (
-            <div className="detail-header-wrap">
-              <img src={info.header} alt="" className="detail-header" loading="lazy" />
-            </div>
-          )}
-          
           {/* Main Detail Section */}
           <div className="detail-top">
             <div className="detail-avatar">
               {info.imageUrl ? 
-                <                img src={info.imageUrl} alt={`${active.baseToken?.symbol || active.base} logo`} /> : 
+                <img src={info.imageUrl} alt={`${active.baseToken?.symbol || active.base} logo`} /> : 
                 <div className="detail-letter">{active.baseToken?.symbol?.[0] || active.base?.[0]}</div>
               }
             </div>
@@ -153,10 +152,13 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
                       >
                         {pools.map((p) => (
                           <option key={p.pairId} value={p.pairId}>
-                            {p.base}/{p.quote} [{p.dex} {p.version ? `${p.version} ` : ''}{formatShortAddr(p.poolAddress || p.pairId)}]
+                            {formatShortAddr(p.poolAddress || p.pairId)} {p.dex} {p.version || 'v1'} {p.baseToken?.symbol || p.base}/{p.quoteToken?.symbol || p.quote} ${p.liqUsd ? formatCompact(p.liqUsd) : '—'}
                           </option>
                         ))}
                       </select>
+                      <span className="pool-selector-current">
+                        {formatShortAddr(active.poolAddress || active.pairId)}
+                      </span>
                       <ExpandMoreIcon className="pool-selector-arrow" />
                     </div>
                   )}
@@ -165,12 +167,9 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
               
               <div className="detail-subline">
                 <span style={{ color: 'var(--text-secondary)' }}>{active.baseToken?.name || `${active.baseToken?.symbol || active.base} Token`}</span>
-                <div className="badge chain-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  {getChainIcon(chain) && (
-                    <img src={getChainIcon(chain)} alt={chain} style={{ width: 16, height: 16 }} />
-                  )}
-                  {chain}
-                </div>
+                {getChainIcon(chain) && (
+                  <img src={getChainIcon(chain)} alt={chain} style={{ width: 20, height: 20 }} />
+                )}
               </div>
               
               {info.description && (
@@ -265,6 +264,27 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
             </div>
           </div>
         </>
+      )}
+
+      {/* Project Links */}
+      {linkItems.length > 0 && (
+        <div className="detail-links">
+          {linkItems.map((l, i) => {
+            const IconComponent = LINK_ICONS[l.key] || WebsiteIcon;
+            return (
+              <a 
+                key={i} 
+                href={l.url} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                title={l.key}
+                className="detail-link"
+              >
+                <IconComponent sx={{ fontSize: 20 }} />
+              </a>
+            );
+          })}
+        </div>
       )}
 
       {/* Addresses */}
@@ -387,27 +407,30 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
               <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>TXNS</div>
             </div>
             <div style={{ width: '1px', height: '40px', background: 'var(--border-subtle)', margin: '0 12px' }} />
-            <div style={{ flex: 3, display: 'flex', alignItems: 'center' }}>
-              {active.txns?.h24 && (
+            <div style={{ flex: 3, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {active.txns?.h24 ? (
                 <>
-                  <div style={{ 
-                    background: 'var(--accent-lime)', 
-                    height: '8px',
-                    flex: active.txns.h24.buys,
-                    borderRadius: '4px 0 0 4px'
-                  }} />
-                  <div style={{ 
-                    background: 'var(--accent-maroon)', 
-                    height: '8px',
-                    flex: active.txns.h24.sells,
-                    borderRadius: '0 4px 4px 0'
-                  }} />
-                  <div style={{ marginLeft: '8px', fontSize: '12px' }}>
-                    <span style={{ color: 'var(--accent-lime)' }}>{active.txns.h24.buys}</span>
-                    <span style={{ margin: '0 4px' }}>—</span>
-                    <span style={{ color: 'var(--accent-maroon)' }}>{active.txns.h24.sells}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                    <span style={{ color: 'var(--accent-lime)', fontWeight: 600 }}>{active.txns.h24.buys}</span>
+                    <span style={{ color: 'var(--accent-maroon)', fontWeight: 600 }}>{active.txns.h24.sells}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
+                    <div style={{ 
+                      background: 'var(--accent-lime)', 
+                      height: '8px',
+                      flex: active.txns.h24.buys,
+                      borderRadius: '4px 0 0 4px'
+                    }} />
+                    <div style={{ 
+                      background: 'var(--accent-maroon)', 
+                      height: '8px',
+                      flex: active.txns.h24.sells,
+                      borderRadius: '0 4px 4px 0'
+                    }} />
                   </div>
                 </>
+              ) : (
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>—</div>
               )}
             </div>
           </div>
@@ -435,63 +458,6 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
           </div>
         </div>
       </div>
-
-      {/* Project Links */}
-      {linkItems.length > 0 && (
-        <div className="detail-links">
-          {linkItems.map((l, i) => {
-            const IconComponent = LINK_ICONS[l.key] || WebsiteIcon;
-            return (
-              <a key={i} href={l.url} target="_blank" rel="noopener noreferrer" title={l.key}>
-                <IconComponent sx={{ fontSize: 20 }} />
-              </a>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Other Pools */}
-      {otherPools.length > 0 && (
-        <div className="detail-pools">
-          <h3 style={{ 
-            fontSize: '1rem', 
-            fontWeight: 600, 
-            margin: '0 0 var(--space-3) 0',
-            color: 'var(--text-secondary)',
-          }}>
-            Other Pools
-          </h3>
-          {otherPools.slice(0, 3).map((p) => (
-            <details key={p.pairId} className="pool-item">
-              <summary>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                  <span style={{ fontWeight: 600 }}>
-                    {p.dex} {p.version && `(${p.version})`}
-                  </span>
-                  <span>—</span>
-                  <span>{p.baseToken?.symbol || p.base}/{p.quoteToken?.symbol || p.quote}</span>
-                  <span>—</span>
-                  <span style={{ color: 'var(--text-muted)' }}>
-                    Liq ${p.liquidity?.usd ? formatCompact(p.liquidity.usd) : '—'}
-                  </span>
-                  {!p.gtSupported && <span className="badge limited">Limited</span>}
-                </div>
-              </summary>
-              <div className="pool-body">
-                <div className="pool-switcher">
-                  <button 
-                    onClick={() => onSwitch(p)}
-                    className="btn-secondary"
-                    style={{ marginTop: 'var(--space-2)' }}
-                  >
-                    Switch to this pool
-                  </button>
-                </div>
-              </div>
-            </details>
-          ))}
-        </div>
-      )}
 
       {/* Security Section */}
       <div className="security-section">

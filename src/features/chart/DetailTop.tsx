@@ -15,7 +15,7 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
   const [descExpanded, setDescExpanded] = useState(false);
   
   const active = detail.pools.find((p) => p.pairId === pairId) || detail.pools[0];
-  const info = detail.info || {};
+  const info = active.info || pools.find(p => p.info)?.info || {};
 
   // Helper function to truncate long ticker symbols
   const truncateSymbol = (symbol: string, maxLength: number = 10) => {
@@ -24,13 +24,6 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
 
   return (
     <>
-      {/* Header Image */}
-      {info.header && (
-        <div className="detail-header-wrap">
-          <img src={info.header} alt="" className="detail-header" loading="lazy" />
-        </div>
-      )}
-      
       {/* Main Detail Section */}
       <div className="detail-top">
         <div className="detail-avatar">

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 3,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1755347748705,
@@ -20,6 +20,14 @@
                 {
                     "date": 1755440736997,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,7 +1,8 @@\n import { useState } from 'react';\n import { ExpandMore as ExpandMoreIcon, KeyboardArrowDown as ArrowDownIcon } from '@mui/icons-material';\n import type { PoolSummary, TokenResponse } from '../../lib/types';\n+import { formatShortAddr, formatCompact } from '../../lib/format';\n \n interface Props {\n   detail: TokenResponse;\n   pairId: string;\n@@ -15,8 +16,13 @@\n   \n   const active = detail.pools.find((p) => p.pairId === pairId) || detail.pools[0];\n   const info = detail.info || {};\n \n+  // Helper function to truncate long ticker symbols\n+  const truncateSymbol = (symbol: string, maxLength: number = 10) => {\n+    return symbol.length > maxLength ? `${symbol.slice(0, maxLength-2)}..` : symbol;\n+  };\n+\n   return (\n     <>\n       {/* Header Image */}\n       {info.header && (\n@@ -27,12 +33,24 @@\n       \n       {/* Main Detail Section */}\n       <div className=\"detail-top\">\n         <div className=\"detail-avatar\">\n-          {info.imageUrl ? \n-            <img src={info.imageUrl} alt={`${active.baseToken.symbol} logo`} /> : \n-            <div className=\"detail-letter\">{active.baseToken.symbol?.[0]}</div>\n-          }\n+          <img \n+            src={info.imageUrl} \n+            alt={`${active.baseToken.symbol} logo`} \n+            onError={(e) => {\n+              // Fallback to letter avatar\n+              e.currentTarget.style.display = 'none';\n+              const parent = e.currentTarget.parentElement;\n+              if (parent && !parent.querySelector('.detail-letter')) {\n+                const fallback = document.createElement('div');\n+                fallback.className = 'detail-letter';\n+                fallback.textContent = active.baseToken.symbol?.[0] || '?';\n+                parent.appendChild(fallback);\n+              }\n+            }}\n+            loading=\"lazy\" \n+          />\n         </div>\n         \n         <div className=\"detail-overview\">\n           <div className=\"detail-title\">\n@@ -53,13 +71,15 @@\n                     className=\"pool-selector\"\n                   >\n                     {pools.map((p) => (\n                       <option key={p.pairId} value={p.pairId}>\n-                        {p.dex} {p.version ? `(${p.version})` : ''} — {p.base}/{p.quote}\n-                        {p.gtSupported === false ? ' — Limited' : ''}\n+                        {formatShortAddr(p.poolAddress || p.pairId)} {p.dex} {p.version || p.labels?.[0] || 'v1'} {truncateSymbol(p.baseToken?.symbol || p.base)}/{truncateSymbol(p.quoteToken?.symbol || p.quote)} ${p.liqUsd ? formatCompact(p.liqUsd) : '—'}\n                       </option>\n                     ))}\n                   </select>\n+                  <span className=\"pool-selector-current\">\n+                    {active.dex} {active.version || active.labels?.[0] || 'v1'}\n+                  </span>\n                   <ArrowDownIcon className=\"pool-selector-arrow\" />\n                 </div>\n               )}\n             </div>\n"
+                },
+                {
+                    "date": 1755440872841,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -25,9 +25,9 @@\n   return (\n     <>\n       {/* Header Image */}\n       \n-      \n+    \n       {/* Main Detail Section */}\n       <div className=\"detail-top\">\n         <div className=\"detail-avatar\">\n           <img \n"
+                },
+                {
+                    "date": 1755440954882,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -14,9 +14,9 @@\n export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }: Props) {\n   const [descExpanded, setDescExpanded] = useState(false);\n   \n   const active = detail.pools.find((p) => p.pairId === pairId) || detail.pools[0];\n-  \n+    const info = active.info || pools.find(p => p.info)?.info || {};\n   const info = detail.info || {};\n \n   // Helper function to truncate long ticker symbols\n   const truncateSymbol = (symbol: string, maxLength: number = 10) => {\n"
                 }
             ],
             "date": 1755347748705,

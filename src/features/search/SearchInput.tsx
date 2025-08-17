@@ -118,9 +118,9 @@ export default function SearchInput({ autoFocus, large }: Props) {
     fontSize: '1rem',
     padding: 'var(--space-4)',
     borderRadius: 'var(--radius-pill)',
-    background: 'var(--bg-input)',
+    background: 'var(--bg)',
     border: '1px solid var(--border)',
-    color: 'var(--text)',
+    color: 'var(--text-muted)',
     transition: 'all var(--transition-fast)',
     outline: 'none',
   } : {
@@ -128,9 +128,9 @@ export default function SearchInput({ autoFocus, large }: Props) {
     fontSize: '1rem',
     padding: 'var(--space-3)',
     borderRadius: 'var(--radius-pill)',
-    background: 'var(--bg-input)',
+    background: 'var(--bg)',
     border: '1px solid var(--border)',
-    color: 'var(--text)',
+    color: 'var(--text-muted)',
     transition: 'all var(--transition-fast)',
     outline: 'none',
   };

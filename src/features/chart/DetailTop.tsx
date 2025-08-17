@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ExpandMore as ExpandMoreIcon, KeyboardArrowDown as ArrowDownIcon } from '@mui/icons-material';
 import type { PoolSummary, TokenResponse } from '../../lib/types';
+import { formatShortAddr, formatCompact } from '../../lib/format';
 
 interface Props {
   detail: TokenResponse;
@@ -16,6 +17,11 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
   const active = detail.pools.find((p) => p.pairId === pairId) || detail.pools[0];
   const info = detail.info || {};
 
+  // Helper function to truncate long ticker symbols
+  const truncateSymbol = (symbol: string, maxLength: number = 10) => {
+    return symbol.length > maxLength ? `${symbol.slice(0, maxLength-2)}..` : symbol;
+  };
+
   return (
     <>
       {/* Header Image */}
@@ -28,10 +34,22 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
       {/* Main Detail Section */}
       <div className="detail-top">
         <div className="detail-avatar">
-          {info.imageUrl ? 
-            <img src={info.imageUrl} alt={`${active.baseToken.symbol} logo`} /> : 
-            <div className="detail-letter">{active.baseToken.symbol?.[0]}</div>
-          }
+          <img 
+            src={info.imageUrl} 
+            alt={`${active.baseToken.symbol} logo`} 
+            onError={(e) => {
+              // Fallback to letter avatar
+              e.currentTarget.style.display = 'none';
+              const parent = e.currentTarget.parentElement;
+              if (parent && !parent.querySelector('.detail-letter')) {
+                const fallback = document.createElement('div');
+                fallback.className = 'detail-letter';
+                fallback.textContent = active.baseToken.symbol?.[0] || '?';
+                parent.appendChild(fallback);
+              }
+            }}
+            loading="lazy" 
+          />
         </div>
         
         <div className="detail-overview">
@@ -54,11 +72,13 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
                   >
                     {pools.map((p) => (
                       <option key={p.pairId} value={p.pairId}>
-                        {p.dex} {p.version ? `(${p.version})` : ''} — {p.base}/{p.quote}
-                        {p.gtSupported === false ? ' — Limited' : ''}
+                        {formatShortAddr(p.poolAddress || p.pairId)} {p.dex} {p.version || p.labels?.[0] || 'v1'} {truncateSymbol(p.baseToken?.symbol || p.base)}/{truncateSymbol(p.quoteToken?.symbol || p.quote)} ${p.liqUsd ? formatCompact(p.liqUsd) : '—'}
                       </option>
                     ))}
                   </select>
+                  <span className="pool-selector-current">
+                    {active.dex} {active.version || active.labels?.[0] || 'v1'}
+                  </span>
                   <ArrowDownIcon className="pool-selector-arrow" />
                 </div>
               )}

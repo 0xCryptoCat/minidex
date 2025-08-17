@@ -268,48 +268,6 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
         </>
       )}
 
-      {/* Minimal avatar display when detail top is hidden */}
-      {hideDetailTop && info.imageUrl && (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          padding: '16px 0 8px 0'
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            overflow: 'hidden',
-            background: 'var(--bg-elev-2)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <img 
-              src={info.imageUrl} 
-              alt={`${active.baseToken?.symbol || active.base} logo`} 
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover'
-              }}
-              onError={(e) => {
-                // Fallback to letter avatar
-                e.currentTarget.style.display = 'none';
-                const fallback = e.currentTarget.parentElement;
-                if (fallback) {
-                  fallback.style.fontSize = '18px';
-                  fallback.style.fontWeight = '600';
-                  fallback.style.color = 'var(--text)';
-                  fallback.textContent = (active.baseToken?.symbol || active.base)?.[0] || '?';
-                }
-              }}
-              loading="lazy" 
-            />
-          </div>
-        </div>
-      )}
-
       {/* Project Links */}
       {linkItems.length > 0 && (
         <div className="detail-links">

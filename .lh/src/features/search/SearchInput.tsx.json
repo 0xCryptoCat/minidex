@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 18,
+            "activePatchIndex": 21,
             "patches": [
                 {
                     "date": 1755347748704,
@@ -80,6 +80,18 @@
                 {
                     "date": 1755429397073,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -155,9 +155,9 @@\n             borderColor: 'var(--telegram-blue)',\n             background: 'var(--bg-elev)',\n           } : {}),\n           ...((results.length > 0 || isLoading) ? {\n-            \n+            borderRadius: 'var(--radius) var(--radius) 0 0',\n             borderBottomLeftRadius: 0,\n             borderBottomRightRadius: 0\n           } : {})\n         }}\n"
+                },
+                {
+                    "date": 1755440701874,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -117,9 +117,9 @@\n     width: '100%',\n     fontSize: '1rem',\n     padding: 'var(--space-4)',\n     borderRadius: 'var(--radius-pill)',\n-    background: 'var(--bg-input)',\n+    background: 'var(--bg)',\n     border: '1px solid var(--border)',\n     color: 'var(--text)',\n     transition: 'all var(--transition-fast)',\n     outline: 'none',\n@@ -156,10 +156,8 @@\n             background: 'var(--bg-elev)',\n           } : {}),\n           ...((results.length > 0 || isLoading) ? {\n             borderRadius: 'var(--radius) var(--radius) 0 0',\n-            borderBottomLeftRadius: 0,\n-            borderBottomRightRadius: 0\n           } : {})\n         }}\n       />\n       \n"
+                },
+                {
+                    "date": 1755440708447,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -119,17 +119,17 @@\n     padding: 'var(--space-4)',\n     borderRadius: 'var(--radius-pill)',\n     background: 'var(--bg)',\n     border: '1px solid var(--border)',\n-    color: 'var(--text)',\n+    color: 'var(--text-muted)',\n     transition: 'all var(--transition-fast)',\n     outline: 'none',\n   } : {\n     width: '100%',\n     fontSize: '1rem',\n     padding: 'var(--space-3)',\n     borderRadius: 'var(--radius-pill)',\n-    background: 'var(--bg-input)',\n+    background: 'var(--bg)',\n     border: '1px solid var(--border)',\n     color: 'var(--text)',\n     transition: 'all var(--transition-fast)',\n     outline: 'none',\n"
+                },
+                {
+                    "date": 1755440714754,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -129,9 +129,9 @@\n     padding: 'var(--space-3)',\n     borderRadius: 'var(--radius-pill)',\n     background: 'var(--bg)',\n     border: '1px solid var(--border)',\n-    color: 'var(--text)',\n+    color: 'var(--text-muted)',\n     transition: 'all var(--transition-fast)',\n     outline: 'none',\n   };\n \n"
                 }
             ],
             "date": 1755347748704,

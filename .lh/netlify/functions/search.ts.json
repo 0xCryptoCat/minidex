@@ -3,11 +3,19 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1755434210881,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755437786033,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -53,8 +53,9 @@\n   '10': 'optimism',\n   '42161': 'arbitrum',\n   '43114': 'avalanche',\n   '8453': 'base',\n+  // \n };\n \n function mapChainId(id: unknown): string {\n   const key = typeof id === 'number' ? String(id) : (id as string | undefined);\n"
+                },
+                {
+                    "date": 1755437795222,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -53,9 +53,8 @@\n   '10': 'optimism',\n   '42161': 'arbitrum',\n   '43114': 'avalanche',\n   '8453': 'base',\n-\n };\n \n function mapChainId(id: unknown): string {\n   const key = typeof id === 'number' ? String(id) : (id as string | undefined);\n"
                 }
             ],
             "date": 1755434210881,

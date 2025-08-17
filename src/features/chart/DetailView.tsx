@@ -3,7 +3,7 @@ import type { PoolSummary } from '../../lib/types';
 import { formatUsd, formatCompact, formatShortAddr, formatSmallPrice } from '../../lib/format';
 import CopyButton from '../../components/CopyButton';
 import { addressUrl } from '../../lib/explorer';
-import { getChainIcon, getProviderIcon, getSocialIcon } from '../../lib/chain-icons';
+import { getChainIcon, getSocialIcon } from '../../lib/chain-icons';
 import { 
   Language as WebsiteIcon,
   Description as DocsIcon,
@@ -44,6 +44,11 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
 
   // Find the active pool from the provided pools data
   const active = pools.find((p) => p.pairId === pairId) || pools[0];
+  
+  // Helper function to truncate long ticker symbols
+  const truncateSymbol = (symbol: string, maxLength: number = 10) => {
+    return symbol.length > maxLength ? `${symbol.slice(0, maxLength-2)}..` : symbol;
+  };
   
   if (!active) return (
     <div className="detail">
@@ -126,10 +131,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
           {/* Main Detail Section */}
           <div className="detail-top">
             <div className="detail-avatar">
-              {info.imageUrl ? 
-                <img src={info.imageUrl} alt={`${active.baseToken?.symbol || active.base} logo`} /> : 
-                <div className="detail-letter">{active.baseToken?.symbol?.[0] || active.base?.[0]}</div>
-              }
+              <img src={info.imageUrl} alt={`${active.baseToken?.symbol || active.base} logo`} loading="lazy" />
             </div>
             
             <div className="detail-overview">
@@ -152,12 +154,12 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
                       >
                         {pools.map((p) => (
                           <option key={p.pairId} value={p.pairId}>
-                            {formatShortAddr(p.poolAddress || p.pairId)} {p.dex} {p.version || 'v1'} {p.baseToken?.symbol || p.base}/{p.quoteToken?.symbol || p.quote} ${p.liqUsd ? formatCompact(p.liqUsd) : '—'}
+                            {formatShortAddr(p.poolAddress || p.pairId)} {p.dex} {p.version || p.labels?.[0] || 'v1'} {p.baseToken?.symbol || p.base}/{p.quoteToken?.symbol || p.quote} ${p.liqUsd ? formatCompact(p.liqUsd) : '—'}
                           </option>
                         ))}
                       </select>
                       <span className="pool-selector-current">
-                        {formatShortAddr(active.poolAddress || active.pairId)}
+                        {active.dex} {active.version || active.labels?.[0] || 'v1'}
                       </span>
                       <ExpandMoreIcon className="pool-selector-arrow" />
                     </div>
@@ -266,6 +268,48 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
         </>
       )}
 
+      {/* Minimal avatar display when detail top is hidden */}
+      {hideDetailTop && info.imageUrl && (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          padding: '16px 0 8px 0'
+        }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            overflow: 'hidden',
+            background: 'var(--bg-elev-2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <img 
+              src={info.imageUrl} 
+              alt={`${active.baseToken?.symbol || active.base} logo`} 
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover'
+              }}
+              onError={(e) => {
+                // Fallback to letter avatar
+                e.currentTarget.style.display = 'none';
+                const fallback = e.currentTarget.parentElement;
+                if (fallback) {
+                  fallback.style.fontSize = '18px';
+                  fallback.style.fontWeight = '600';
+                  fallback.style.color = 'var(--text)';
+                  fallback.textContent = (active.baseToken?.symbol || active.base)?.[0] || '?';
+                }
+              }}
+              loading="lazy" 
+            />
+          </div>
+        </div>
+      )}
+
       {/* Project Links */}
       {linkItems.length > 0 && (
         <div className="detail-links">
@@ -305,7 +349,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
         )}
         {active.baseToken && (
           <div className="addr-row">
-            <span>{active.baseToken.symbol}:</span>
+            <span>{truncateSymbol(active.baseToken.symbol)}:</span>
             <div>
               <span>{formatShortAddr(active.baseToken.address)}</span>
               <CopyButton text={active.baseToken.address} label={`${active.baseToken.symbol} address`} />
@@ -319,7 +363,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
         )}
         {active.quoteToken && (
           <div className="addr-row">
-            <span>{active.quoteToken.symbol}:</span>
+            <span>{truncateSymbol(active.quoteToken.symbol)}:</span>
             <div>
               <span>{formatShortAddr(active.quoteToken.address)}</span>
               <CopyButton text={active.quoteToken.address} label={`${active.quoteToken.symbol} address`} />
@@ -449,7 +493,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
                     {volume !== undefined ? formatUsd(volume) : '—'}
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    {period === 'm5' ? '5m' : period}
+                    {period === 'm5' ? '5m' : period === 'h1' ? '1h' : period === 'h6' ? '6h' : '24h'}
                   </div>
                   {i < 3 && <div style={{ position: 'absolute', right: `${(3-i) * 25}%`, top: '50%', transform: 'translateY(-50%)', width: '1px', height: '60%', background: 'var(--border-subtle)' }} />}
                 </div>

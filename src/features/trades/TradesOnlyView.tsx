@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, ReactNode, CSSProperties, useRef } from 'react';
-import { FixedSizeList as List } from 'react-window';
+import { VariableSizeList as List } from 'react-window';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import LaunchIcon from '@mui/icons-material/Launch';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -240,26 +240,92 @@ export default function TradesOnlyView({
   const Row = ({ index, style }: { index: number; style: CSSProperties }) => {
     const t = sorted[index];
     const typeClass = t.side === 'buy' ? 'buy' : 'sell';
+    const tradeId = `${t.ts}-${t.txHash}`;
+    const isExpanded = expandedRow === tradeId;
+    
     return (
-      <div 
-        style={style} 
-        className={`tr-row ${typeClass}`}
-        onMouseEnter={(e) => {
-          e.currentTarget.classList.add('hover');
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.classList.remove('hover');
-        }}
-        onClick={() => {
-          const tradeId = `${t.ts}-${t.txHash}`;
-          setExpandedRow(expandedRow === tradeId ? null : tradeId);
-        }}
-      >
-        {columns.map((c) => (
-          <div key={c.key} className={`tr-cell${c.className ? ' ' + c.className : ''}`}>
-            {c.render(t)}
+      <div style={style}>
+        <div 
+          className={`tr-row ${typeClass}`}
+          onMouseEnter={(e) => {
+            e.currentTarget.classList.add('hover');
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.classList.remove('hover');
+          }}
+          onClick={() => {
+            setExpandedRow(expandedRow === tradeId ? null : tradeId);
+          }}
+        >
+          {columns.map((c) => (
+            <div key={c.key} className={`tr-cell${c.className ? ' ' + c.className : ''}`}>
+              {c.render(t)}
+            </div>
+          ))}
+        </div>
+        
+        {isExpanded && (
+          <div className="tr-expanded">
+            <div className="tr-expanded-content">
+              {t.txHash && (
+                <div className="expanded-item">
+                  <span className="expanded-label">Transaction:</span>
+                  <div className="expanded-value">
+                    <span>{formatShortAddr(t.txHash)}</span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard?.writeText(t.txHash!);
+                      }}
+                      className="copy-btn"
+                    >
+                      <ContentCopyIcon sx={{ fontSize: 14 }} />
+                    </button>
+                    {txUrl(chain as any, t.txHash) && (
+                      <a 
+                        href={txUrl(chain as any, t.txHash)} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="external-link"
+                      >
+                        <LaunchIcon sx={{ fontSize: 14 }} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+              {t.wallet && (
+                <div className="expanded-item">
+                  <span className="expanded-label">Wallet:</span>
+                  <div className="expanded-value">
+                    <span>{formatShortAddr(t.wallet)}</span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard?.writeText(t.wallet!);
+                      }}
+                      className="copy-btn"
+                    >
+                      <ContentCopyIcon sx={{ fontSize: 14 }} />
+                    </button>
+                    {addressUrl(chain as any, t.wallet) && (
+                      <a 
+                        href={addressUrl(chain as any, t.wallet)} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="external-link"
+                      >
+                        <LaunchIcon sx={{ fontSize: 14 }} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        ))}
+        )}
       </div>
     );
   };
@@ -304,7 +370,11 @@ export default function TradesOnlyView({
           <List 
             height={containerHeight - 60} // Account for header height
             itemCount={sorted.length} 
-            itemSize={ROW_HEIGHT} 
+            itemSize={(index: number) => {
+              const t = sorted[index];
+              const tradeId = `${t.ts}-${t.txHash}`;
+              return expandedRow === tradeId ? ROW_HEIGHT + 80 : ROW_HEIGHT; // Extra height for expanded content
+            }}
             width="100%"
           >
             {Row}

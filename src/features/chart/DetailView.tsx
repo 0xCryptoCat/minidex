@@ -91,21 +91,6 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
       </Fragment>
     ));
 
-  const renderTxns = (tx?: { h24?: { buys: number; sells: number } }) => {
-    const h24 = tx?.h24;
-    if (!h24) return '—';
-    const total = h24.buys + h24.sells;
-    return `${total} | ${h24.buys} — ${h24.sells}`;
-  };
-
-  const renderVolume = (v?: { m5?: number; h1?: number; h6?: number; h24?: number }) =>
-    ['m5', 'h1', 'h6', 'h24'].map((k, i) => (
-      <Fragment key={k}>
-        {fmtCompactOrDash(v?.[k as keyof typeof v])}
-        {i < 3 && ' | '}
-      </Fragment>
-    ));
-
   const linkItems: { key: string; url: string }[] = [];
   info.websites?.forEach((w) => linkItems.push({ key: (w.label || 'website').toLowerCase(), url: w.url }));
   info.socials?.forEach((s) => linkItems.push({ key: (s.type || '').toLowerCase(), url: s.url }));
@@ -441,14 +426,20 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
         {/* Volume */}
         <div className="kpi-item kpi-wide">
           <span>Volume</span>
+          
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             {['m5', 'h1', 'h6', 'h24'].map((period, i) => {
               const volume = active.volume?.[period as keyof typeof active.volume];
+
+              // since Argument of type 'string' is not assignable to parameter of type 'number' we must ensure volume is a number 
+              const isLargeFormat = volume !== undefined && volume >= 1000000;
+              const formattedVolume = isLargeFormat ? formatCompact(volume) : formatSmallPrice(volume);
+              const usdFormattedVolume = formatUsd(volume)
               
               return (
                 <div key={period} style={{ textAlign: 'center', flex: 1 }}>
                   <div style={{ color: 'var(--text)', fontWeight: 600 }}>
-                    {volume !== undefined ? formatUsd(volume) : '—'}
+                    {volume !== undefined ? usdFormattedVolume : '—'}
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                     {period === 'm5' ? '5m' : period === 'h1' ? '1h' : period === 'h6' ? '6h' : '24h'}

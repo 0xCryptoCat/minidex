@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ExpandMore as ExpandMoreIcon, KeyboardArrowDown as ArrowDownIcon } from '@mui/icons-material';
 import type { PoolSummary, TokenResponse } from '../../lib/types';
 import { formatShortAddr, formatCompact } from '../../lib/format';
+import { getChainIcon } from '../../lib/chain-icons';
 
 interface Props {
   detail: TokenResponse;
@@ -79,11 +80,11 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
           </div>
           
           <div className="detail-subline">
-            <span className="token-name">{active.baseToken.name}</span>
-            <span className="badge chain-badge">{chain}</span>
-            <span className="badge provider-badge">{detail.provider}</span>
-            {active.gtSupported === false && <span className="badge limited-badge">Limited</span>}
-          </div>
+            <span style={{ color: 'var(--text-secondary)' }}>{active.baseToken?.name || `${active.baseToken?.symbol || active.base} Token`}</span>
+            {getChainIcon(chain) && (
+            <img src={getChainIcon(chain)} alt={chain} style={{ width: 20, height: 20 }} />
+            )}
+        </div>
           
           {info.description && (
             <div className="detail-desc">

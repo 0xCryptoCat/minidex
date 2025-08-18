@@ -18,8 +18,6 @@ import {
 import { addressUrl, txUrl } from '../../lib/explorer';
 import ChartLoader from '../../components/ChartLoader';
 import '../../styles/trades.css';
-import '../../styles/theme.css';
-import '../../styles/global.css';
 
 const ROW_HEIGHT = 52;
 
@@ -316,9 +314,14 @@ export default function TradesOnlyView({
               key={c.key} 
               className={`tr-cell${c.className ? ' ' + c.className : ''}`}
               style={{
-                // Ensure cell visibility with proper colors
-                color: 'var(--text)',
-                backgroundColor: 'transparent',
+                // EMERGENCY DEBUG: Force cell visibility
+                backgroundColor: '#ff00ff', // Bright magenta
+                color: '#ffffff', // White text
+                border: '1px solid white',
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                fontWeight: 'bold',
               }}
             >
               {c.render(t)}
@@ -476,7 +479,17 @@ export default function TradesOnlyView({
               key={c.key}
               className="tr-cell"
               onClick={() => handleSort(c.key)}
-              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '4px',
+                // EMERGENCY DEBUG: Force header cell visibility
+                backgroundColor: '#00ffff', // Bright cyan
+                color: '#000000', // Black text
+                border: '1px solid black',
+                padding: '4px',
+                fontWeight: 'bold',
+              }}
             >
               {c.header}
               {sortKey === c.key && (
@@ -508,7 +521,7 @@ export default function TradesOnlyView({
                   borderRadius: 'var(--radius-small)',
                   margin: 'var(--space-2) 0'
                 }}>
-                  Telegram miniapp detected - using optimized rendering
+                  🔄 Telegram webapp detected - using optimized rendering
                 </div>
               )}
               {sorted.map((trade, index) => {

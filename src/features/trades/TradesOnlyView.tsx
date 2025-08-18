@@ -270,65 +270,67 @@ export default function TradesOnlyView({
               {t.wallet && (
                 <>
                   <div className="expanded-section">
-                    <h4 className="expanded-section-title">Transaction Details</h4>
-                    <div className="expanded-item">
-                      <span className="expanded-label">Wallet:</span>
-                      <div className="expanded-value">
-                        <span>{formatShortAddr(t.wallet)}</span>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigator.clipboard?.writeText(t.wallet!);
-                          }}
-                          className="copy-btn"
-                          title="Copy wallet address"
-                        >
-                          <ContentCopyIcon sx={{ fontSize: 14 }} />
-                        </button>
-                        {addressUrl(chain as any, t.wallet) && (
-                          <a 
-                            href={addressUrl(chain as any, t.wallet)} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="external-link"
-                            title="View on explorer"
-                          >
-                            <LaunchIcon sx={{ fontSize: 14 }} />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                    {t.txHash && (
+                    <h4 className="expanded-section-title">TXn Details</h4>
+                    <div className="expanded-details">
                       <div className="expanded-item">
-                        <span className="expanded-label">Transaction:</span>
-                        <div className="expanded-value">
-                          <span>{formatShortAddr(t.txHash)}</span>
+                        <span className="stat-label">Wallet:</span>
+                        <div className="stat-value">
+                          <span>{formatShortAddr(t.wallet)}</span>
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigator.clipboard?.writeText(t.txHash!);
+                              navigator.clipboard?.writeText(t.wallet!);
                             }}
                             className="copy-btn"
-                            title="Copy transaction hash"
+                            title="Copy wallet address"
                           >
                             <ContentCopyIcon sx={{ fontSize: 14 }} />
                           </button>
-                          {txUrl(chain as any, t.txHash) && (
+                          {addressUrl(chain as any, t.wallet) && (
                             <a 
-                              href={txUrl(chain as any, t.txHash)} 
+                              href={addressUrl(chain as any, t.wallet)} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
                               className="external-link"
-                              title="View transaction on explorer"
+                              title="View on explorer"
                             >
                               <LaunchIcon sx={{ fontSize: 14 }} />
                             </a>
                           )}
                         </div>
                       </div>
-                    )}
+                      {t.txHash && (
+                        <div className="expanded-item">
+                          <span className="stat-label">Tx Hash:</span>
+                          <div className="stat-value">
+                            <span>{formatShortAddr(t.txHash)}</span>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard?.writeText(t.txHash!);
+                              }}
+                              className="copy-btn"
+                              title="Copy transaction hash"
+                            >
+                              <ContentCopyIcon sx={{ fontSize: 14 }} />
+                            </button>
+                            {txUrl(chain as any, t.txHash) && (
+                              <a 
+                                href={txUrl(chain as any, t.txHash)} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="external-link"
+                                title="View transaction on explorer"
+                              >
+                                <LaunchIcon sx={{ fontSize: 14 }} />
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div> 
                   </div>
                   
                   {(() => {
@@ -415,7 +417,7 @@ export default function TradesOnlyView({
               const tradeId = `${t.ts}-${t.txHash}`;
               if (expandedRow === tradeId) {
                 // Base expanded height + additional height for trader stats if available
-                const baseHeight = 120;
+                const baseHeight = 100;
                 const stats = t.wallet ? getTraderStats(t.wallet) : null;
                 const statsHeight = stats && stats.tradeCount > 1 ? 80 : 0;
                 return ROW_HEIGHT + baseHeight + statsHeight;

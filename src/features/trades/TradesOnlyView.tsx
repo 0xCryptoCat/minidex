@@ -314,10 +314,7 @@ export default function TradesOnlyView({
               key={c.key} 
               className={`tr-cell${c.className ? ' ' + c.className : ''}`}
               style={{
-                // EMERGENCY DEBUG: Force cell visibility
-                backgroundColor: '#ff00ff', // Bright magenta
-                color: '#ffffff', // White text
-                border: '1px solid white',
+                // Force cell visibility
                 padding: '4px',
                 display: 'flex',
                 alignItems: 'center',
@@ -472,10 +469,9 @@ export default function TradesOnlyView({
       className="trades-scroll" 
       ref={containerRef}
       style={{
-        // EMERGENCY DEBUG: Force visibility
+        // Force visibility
         minHeight: '500px',
-        backgroundColor: '#ff0000', // Bright red background to see if container exists
-        border: '5px solid yellow', // Very visible border
+        backgroundColor: 'var(--bg)' ,
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
@@ -484,9 +480,8 @@ export default function TradesOnlyView({
       <div 
         className="trades-table"
         style={{
-          // EMERGENCY DEBUG: Force table visibility
-          backgroundColor: '#00ff00', // Bright green
-          border: '3px solid blue',
+          // Force table visibility
+          backgroundColor: 'var(--bg-elev)',
           width: '100%',
           flex: 1,
           display: 'flex',
@@ -496,15 +491,14 @@ export default function TradesOnlyView({
         <div 
           className="trades-header"
           style={{
-            // EMERGENCY DEBUG: Force header visibility
-            backgroundColor: '#ffff00', // Bright yellow
-            border: '2px solid red',
-            color: '#000000', // Black text on yellow
+            // Force header visibility
+            backgroundColor: 'var(--bg)',
+            color: 'var(--text)',
             padding: '12px 16px',
             fontWeight: 'bold',
             fontSize: '16px',
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr',
+            gridTemplateColumns: '0.8fr 0.8fr 0.8fr 1fr 1fr 1fr',
             gap: '8px',
           }}
         >
@@ -517,10 +511,7 @@ export default function TradesOnlyView({
                 display: 'flex', 
                 alignItems: 'center', 
                 gap: '4px',
-                // EMERGENCY DEBUG: Force header cell visibility
-                backgroundColor: '#00ffff', // Bright cyan
-                color: '#000000', // Black text
-                border: '1px solid black',
+                // Force header cell visibility
                 padding: '4px',
                 fontWeight: 'bold',
               }}

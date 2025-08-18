@@ -471,9 +471,43 @@ export default function TradesOnlyView({
     <div 
       className="trades-scroll" 
       ref={containerRef}
+      style={{
+        // EMERGENCY DEBUG: Force visibility
+        minHeight: '500px',
+        backgroundColor: '#ff0000', // Bright red background to see if container exists
+        border: '5px solid yellow', // Very visible border
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
     >
-      <div className="trades-table">
-        <div className="trades-header">
+      <div 
+        className="trades-table"
+        style={{
+          // EMERGENCY DEBUG: Force table visibility
+          backgroundColor: '#00ff00', // Bright green
+          border: '3px solid blue',
+          width: '100%',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <div 
+          className="trades-header"
+          style={{
+            // EMERGENCY DEBUG: Force header visibility
+            backgroundColor: '#ffff00', // Bright yellow
+            border: '2px solid red',
+            color: '#000000', // Black text on yellow
+            padding: '12px 16px',
+            fontWeight: 'bold',
+            fontSize: '16px',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr',
+            gap: '8px',
+          }}
+        >
           {columns.map((c) => (
             <div
               key={c.key}

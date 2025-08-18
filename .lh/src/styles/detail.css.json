@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 14,
+            "activePatchIndex": 16,
             "patches": [
                 {
                     "date": 1755347696690,
@@ -64,6 +64,14 @@
                 {
                     "date": 1755517120805,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -77,9 +77,8 @@\n /* Detail Top Section */\n .detail-top { \n   display: flex;\n   align-items: center;\n-  align-items: flex-start;\n   gap: 16px;\n   padding: 16px;\n   background: var(--bg);\n   position: relative;\n@@ -288,8 +287,20 @@\n .kpi-wide {\n   grid-column: span 2;\n }\n \n+.kpi-three-col {\n+  display: grid;\n+  grid-template-columns: 1fr 1fr 1fr;\n+  gap: 12px;\n+  grid-column: 1 / -1; /* Span full width */\n+  \n+  /* For mobile, stack them vertically */\n+  @media (max-width: 640px) {\n+    grid-template-columns: 1fr;\n+  }\n+}\n+\n @media (min-width: 768px) {\n   .kpi-wide {\n     grid-column: span 3;\n   }\n"
+                },
+                {
+                    "date": 1755517937334,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -295,9 +295,9 @@\n   grid-column: 1 / -1; /* Span full width */\n   \n   /* For mobile, stack them vertically */\n   @media (max-width: 640px) {\n-    grid-template-columns: 1fr;\n+    grid-template-columns: 1fr 1fr 1 fr;\n   }\n }\n \n @media (min-width: 768px) {\n"
+                },
+                {
+                    "date": 1755517942894,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -292,13 +292,8 @@\n   display: grid;\n   grid-template-columns: 1fr 1fr 1fr;\n   gap: 12px;\n   grid-column: 1 / -1; /* Span full width */\n-  \n-  /* For mobile, stack them vertically */\n-  @media (max-width: 640px) {\n-    grid-template-columns: 1fr 1fr 1 fr;\n-  }\n }\n \n @media (min-width: 768px) {\n   .kpi-wide {\n"
                 }
             ],
             "date": 1755347696690,

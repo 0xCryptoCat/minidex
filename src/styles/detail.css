@@ -293,11 +293,6 @@
   grid-template-columns: 1fr 1fr 1fr;
   gap: 12px;
   grid-column: 1 / -1; /* Span full width */
-  
-  /* For mobile, stack them vertically */
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (min-width: 768px) {

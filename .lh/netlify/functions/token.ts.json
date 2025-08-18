@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1755456083081,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755518756791,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -21,10 +21,49 @@\n function isValidChain(chain?: string): chain is string {\n   return !!chain;\n }\n \n-function isValidAddress(addr?: string): addr is string {\n-  return !!addr && /^0x[a-fA-F0-9]{40}$/.test(addr);\n+function isValidAddress(addr?: string, chain?: string): addr is string {\n+  if (!addr) return false;\n+  \n+  // EVM chains: 0x followed by 40 hex characters\n+  if (chain && ['ethereum', 'bsc', 'polygon', 'arbitrum', 'optimism', 'avalanche', 'base', 'fantom', 'linea', 'scroll', 'zksync', 'mantle', 'moonbeam', 'moonriver', 'cronos', 'harmony', 'celo', 'aurora', 'metis', 'boba', 'kava', 'gnosis'].includes(chain)) {\n+    return /^0x[a-fA-F0-9]{40}$/.test(addr);\n+  }\n+  \n+  // Solana: base58 encoded, typically 32-44 chars\n+  if (chain === 'solana') {\n+    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);\n+  }\n+  \n+  // TON: EQxxxx or UQxxxx format\n+  if (chain === 'ton') {\n+    return /^(EQ|UQ)[A-Za-z0-9_-]{46}$/.test(addr);\n+  }\n+  \n+  // SUI: 0x followed by 64 hex characters\n+  if (chain === 'sui') {\n+    return /^0x[a-fA-F0-9]{64}$/.test(addr);\n+  }\n+  \n+  // Aptos: 0x followed by up to 64 hex characters (can be shorter)\n+  if (chain === 'aptos') {\n+    return /^0x[a-fA-F0-9]{1,64}$/.test(addr);\n+  }\n+  \n+  // Near: account names ending with .near or implicit accounts (hex)\n+  if (chain === 'near') {\n+    return /^[a-z0-9._-]+\\.near$/.test(addr) || /^[a-f0-9]{64}$/.test(addr);\n+  }\n+  \n+  // Cosmos ecosystem: bech32 addresses starting with various prefixes\n+  if (['cosmos', 'osmosis', 'sei', 'injective', 'juno', 'stargaze', 'canto', 'evmos'].includes(chain || '')) {\n+    return /^[a-z]{1,10}1[a-z0-9]{38,58}$/.test(addr);\n+  }\n+  \n+  // For other chains or unknown chains, accept various formats\n+  // This is more permissive to handle new chains\n+  return addr.length >= 10 && addr.length <= 100;\n }\n \n async function fetchCgToken(chain: string, address: string): Promise<any> {\n   const urls = [\n@@ -59,9 +98,9 @@\n     'x-ds-info': 'missing',\n   };\n   const attempted: string[] = [];\n \n-  if (!isValidChain(chain) || !isValidAddress(address)) {\n+  if (!isValidChain(chain) || !isValidAddress(address, chain)) {\n     const body: ApiError = { error: 'invalid_request', provider: 'none' };\n     log('response', event.rawUrl, 400, 0, 'none');\n     return { statusCode: 400, headers, body: JSON.stringify(body) };\n   }\n"
                 }
             ],
             "date": 1755456083081,

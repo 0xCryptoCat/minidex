@@ -24,6 +24,38 @@ function isValidPair(id?: string): id is string {
   return !!id;
 }
 
+function isValidPoolAddress(addr?: string, chain?: string): boolean {
+  if (!addr) return false;
+  
+  // EVM chains: 0x followed by 40 hex characters
+  if (chain && ['ethereum', 'bsc', 'polygon', 'arbitrum', 'optimism', 'avalanche', 'base', 'fantom', 'linea', 'scroll', 'zksync', 'mantle', 'moonbeam', 'moonriver', 'cronos', 'harmony', 'celo', 'aurora', 'metis', 'boba', 'kava', 'gnosis'].includes(chain)) {
+    return /^0x[a-fA-F0-9]{40}$/.test(addr);
+  }
+  
+  // Solana: base58 encoded, typically 32-44 chars
+  if (chain === 'solana') {
+    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);
+  }
+  
+  // TON: EQxxxx or UQxxxx format
+  if (chain === 'ton') {
+    return /^(EQ|UQ)[A-Za-z0-9_-]{46}$/.test(addr);
+  }
+  
+  // SUI: 0x followed by 64 hex characters
+  if (chain === 'sui') {
+    return /^0x[a-fA-F0-9]{64}$/.test(addr);
+  }
+  
+  // For other chains, be more permissive
+  return addr.length >= 10 && addr.length <= 100;
+}
+
+function isValidTokenAddress(addr?: string, chain?: string): boolean {
+  if (!addr) return false;
+  return isValidPoolAddress(addr, chain); // Same logic for now
+}
+
 async function readFixture(path: string): Promise<TradesResponse> {
   const url = new URL(path, import.meta.url);
   const data = await fs.readFile(url, 'utf8');
@@ -40,8 +72,8 @@ export const handler: Handler = async (event) => {
   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;
   const gtSupported = event.queryStringParameters?.gtSupported !== 'false';
   const gtNetwork = chain ? CHAIN_TO_GT_NETWORK[chain] : undefined;
-  const validPool = /^0x[0-9a-fA-F]{40}$/.test(poolAddress || '');
-  const tokenOfInterest = tokenParam && /^0x[0-9a-fA-F]{40}$/.test(tokenParam)
+  const validPool = isValidPoolAddress(poolAddress, chain);
+  const tokenOfInterest = tokenParam && isValidTokenAddress(tokenParam, chain)
     ? tokenParam.toLowerCase()
     : undefined;
 

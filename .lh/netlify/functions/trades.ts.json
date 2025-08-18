@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1755456083101,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755518756809,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -23,8 +23,40 @@\n function isValidPair(id?: string): id is string {\n   return !!id;\n }\n \n+function isValidPoolAddress(addr?: string, chain?: string): boolean {\n+  if (!addr) return false;\n+  \n+  // EVM chains: 0x followed by 40 hex characters\n+  if (chain && ['ethereum', 'bsc', 'polygon', 'arbitrum', 'optimism', 'avalanche', 'base', 'fantom', 'linea', 'scroll', 'zksync', 'mantle', 'moonbeam', 'moonriver', 'cronos', 'harmony', 'celo', 'aurora', 'metis', 'boba', 'kava', 'gnosis'].includes(chain)) {\n+    return /^0x[a-fA-F0-9]{40}$/.test(addr);\n+  }\n+  \n+  // Solana: base58 encoded, typically 32-44 chars\n+  if (chain === 'solana') {\n+    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);\n+  }\n+  \n+  // TON: EQxxxx or UQxxxx format\n+  if (chain === 'ton') {\n+    return /^(EQ|UQ)[A-Za-z0-9_-]{46}$/.test(addr);\n+  }\n+  \n+  // SUI: 0x followed by 64 hex characters\n+  if (chain === 'sui') {\n+    return /^0x[a-fA-F0-9]{64}$/.test(addr);\n+  }\n+  \n+  // For other chains, be more permissive\n+  return addr.length >= 10 && addr.length <= 100;\n+}\n+\n+function isValidTokenAddress(addr?: string, chain?: string): boolean {\n+  if (!addr) return false;\n+  return isValidPoolAddress(addr, chain); // Same logic for now\n+}\n+\n async function readFixture(path: string): Promise<TradesResponse> {\n   const url = new URL(path, import.meta.url);\n   const data = await fs.readFile(url, 'utf8');\n   return JSON.parse(data) as TradesResponse;\n@@ -39,10 +71,10 @@\n   const windowH = Number(event.queryStringParameters?.window) || 24;\n   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;\n   const gtSupported = event.queryStringParameters?.gtSupported !== 'false';\n   const gtNetwork = chain ? CHAIN_TO_GT_NETWORK[chain] : undefined;\n-  const validPool = /^0x[0-9a-fA-F]{40}$/.test(poolAddress || '');\n-  const tokenOfInterest = tokenParam && /^0x[0-9a-fA-F]{40}$/.test(tokenParam)\n+  const validPool = isValidPoolAddress(poolAddress, chain);\n+  const tokenOfInterest = tokenParam && isValidTokenAddress(tokenParam, chain)\n     ? tokenParam.toLowerCase()\n     : undefined;\n \n   const SUPPORTED_CHAINS = Object.keys(CHAIN_TO_GT_NETWORK);\n"
                 }
             ],
             "date": 1755456083101,

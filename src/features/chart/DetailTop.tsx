@@ -16,13 +16,22 @@ interface Props {
 export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }: Props) {
   const [descExpanded, setDescExpanded] = useState(false);
   
-  const active = detail.pools.find((p) => p.pairId === pairId) || detail.pools[0];
-  const info = active.info || pools.find(p => p.info)?.info || {};
+  // Find the active pool based on current pairId - this will update when pairId changes
+  const active = pools.find((p) => p.pairId === pairId) || detail.pools.find((p) => p.pairId === pairId) || detail.pools[0];
+  const info = active?.info || pools.find(p => p.info)?.info || {};
 
   // Helper function to truncate long ticker symbols
   const truncateSymbol = (symbol: string, maxLength: number = 10) => {
     return symbol.length > maxLength ? `${symbol.slice(0, maxLength-2)}..` : symbol;
   };
+
+  if (!active) {
+    return (
+      <div className="detail-top">
+        <div className="loading-skeleton" style={{ height: 200 }} />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -31,7 +40,7 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
         <div className="detail-avatar">
           <img 
             src={info.imageUrl} 
-            alt={`${active.baseToken.symbol} logo`} 
+            alt={`${active.baseToken?.symbol || 'Token'} logo`} 
             onError={(e) => {
               // Fallback to letter avatar
               e.currentTarget.style.display = 'none';
@@ -39,7 +48,7 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
               if (parent && !parent.querySelector('.detail-letter')) {
                 const fallback = document.createElement('div');
                 fallback.className = 'detail-letter';
-                fallback.textContent = active.baseToken.symbol?.[0] || '?';
+                fallback.textContent = active.baseToken?.symbol?.[0] || '?';
                 parent.appendChild(fallback);
               }
             }}
@@ -51,7 +60,7 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
           <div className="detail-title">
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               <strong style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-                {active.baseToken.symbol} / {active.quoteToken.symbol}
+                {active.baseToken?.symbol || active.base || 'Token'} / {active.quoteToken?.symbol || active.quote || 'Token'}
               </strong>
               
               {/* Pool Selector Dropdown - Always show */}
@@ -91,13 +100,13 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
                 src={getDexIcon(active.dex)} 
                 alt={active.dex}
                 style={{ 
-                  width: 18, 
-                  height: 18, 
+                  width: 20, 
+                  height: 20, 
                   borderRadius: '50%',
                   border: '1.5px solid var(--bg-card)'
                 }}
                 onError={(e) => {
-                  e.currentTarget.src = `https://placehold.co/18x18/6366f1/ffffff?text=${active.dex[0].toUpperCase()}`;
+                  e.currentTarget.src = `https://placehold.co/20x20/6366f1/ffffff?text=${active.dex[0].toUpperCase()}`;
                 }}
                 title={`${active.dex} ${active.version || active.labels?.[0] || ''}`}
               />

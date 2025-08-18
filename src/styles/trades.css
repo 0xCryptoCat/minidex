@@ -74,6 +74,9 @@
   border-top: 1px solid var(--border-subtle);
   padding-top: 12px;
   padding-bottom: 12px;
+  /* Fallback styling for visibility */
+  color: #ffffff;
+  background: #1c1c1e;
 }
 
 .trades-header .tr-cell {
@@ -124,6 +127,9 @@
   align-items: center;
   font-size: 14px;
   color: var(--text);
+  /* Fallback colors for better visibility */
+  color: #ffffff;
+  min-height: 20px;
 }
 
 /* Time Cell Styling */

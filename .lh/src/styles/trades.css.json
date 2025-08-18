@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 18,
+            "activePatchIndex": 24,
             "patches": [
                 {
                     "date": 1755347648452,
@@ -80,6 +80,30 @@
                 {
                     "date": 1755533759224,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -322,9 +322,9 @@\n   animation: expandRow .3s ease-out;\n   border-left: 3px solid var(--brand-primary);\n   border-right: 3px solid var(--brand-primary);\n   border-radius: 0 0 16px 16px;\n-      margin-top: -0.3rem;\n+  margin-top: -0.3rem;\n }\n \n @keyframes expandRow {\n   from {\n@@ -442,4 +442,27 @@\n   display: flex;\n   flex-direction: column;\n   min-height: 0; /* Allow flex shrinking */\n }\n+\n+/* Fallback trades list for Telegram webapp */\n+.trades-list-fallback {\n+  scrollbar-width: thin;\n+  scrollbar-color: var(--border) transparent;\n+}\n+\n+.trades-list-fallback::-webkit-scrollbar {\n+  width: 6px;\n+}\n+\n+.trades-list-fallback::-webkit-scrollbar-track {\n+  background: transparent;\n+}\n+\n+.trades-list-fallback::-webkit-scrollbar-thumb {\n+  background: var(--border);\n+  border-radius: 3px;\n+}\n+\n+.trades-list-fallback::-webkit-scrollbar-thumb:hover {\n+  background: var(--text-muted);\n+}\n"
+                },
+                {
+                    "date": 1755534344944,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -20,9 +20,9 @@\n }\n \n .trades-list-container {\n   flex: 1;\n-  min-height: 100vh;\n+  \n }\n \n .trades-header,\n .tr-row {\n"
+                },
+                {
+                    "date": 1755534533708,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -71,10 +71,8 @@\n   color: var(--text-muted);\n   z-index: 1;\n   border-bottom: 1px solid var(--border-subtle);\n   border-top: 1px solid var(--border-subtle);\n-  border-top-left-radius: 16px;\n-  border-top-right-radius: 16px;\n   padding-top: 12px;\n   padding-bottom: 12px;\n }\n \n"
+                },
+                {
+                    "date": 1755534580285,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -35,9 +35,9 @@\n \n @media (max-width: 768px) {\n   .trades-header,\n   .tr-row {\n-    grid-template-columns: 1fr 0.8fr 0.8fr 1fr 50px 40px;\n+    grid-template-columns: .7fr 0.8fr 0.8fr 1fr 50px 40px;\n     gap: 4px;\n     padding: 0 12px;\n   }\n \n"
+                },
+                {
+                    "date": 1755534614257,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -35,9 +35,9 @@\n \n @media (max-width: 768px) {\n   .trades-header,\n   .tr-row {\n-    grid-template-columns: .7fr 0.8fr 0.8fr 1fr 50px 40px;\n+    grid-template-columns: 0.7fr 0.8fr 0.8fr 1fr 1fr 40px;\n     gap: 4px;\n     padding: 0 12px;\n   }\n \n"
+                },
+                {
+                    "date": 1755534622953,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,18 +26,18 @@\n \n .trades-header,\n .tr-row {\n   display: grid;\n-  grid-template-columns: 1fr 1fr 1fr 1fr 1.2fr 60px;\n+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 60px;\n   align-items: center;\n   gap: 8px;\n   padding: 0 16px;\n }\n \n @media (max-width: 768px) {\n   .trades-header,\n   .tr-row {\n-    grid-template-columns: 0.7fr 0.8fr 0.8fr 1fr 1fr 40px;\n+    grid-template-columns: 0.7fr 0.8fr 0.8fr 1fr 1fr 1fr;\n     gap: 4px;\n     padding: 0 12px;\n   }\n \n"
+                },
+                {
+                    "date": 1755534656594,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -26,18 +26,18 @@\n \n .trades-header,\n .tr-row {\n   display: grid;\n-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 60px;\n+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;\n   align-items: center;\n   gap: 8px;\n   padding: 0 16px;\n }\n \n @media (max-width: 768px) {\n   .trades-header,\n   .tr-row {\n-    grid-template-columns: 0.7fr 0.8fr 0.8fr 1fr 1fr 1fr;\n+    grid-template-columns: 0.8fr 0.8fr 0.8fr 1fr 1fr 1fr;\n     gap: 4px;\n     padding: 0 12px;\n   }\n \n"
                 }
             ],
             "date": 1755347648452,

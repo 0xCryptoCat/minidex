@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/components/ChartLoader.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755535034362,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755535034362,
+            "name": "Commit-0",
+            "content": "import { useEffect, useRef } from 'react';\nimport lottie from 'lottie-web';\n\ninterface Props {\n  message?: string;\n  className?: string;\n}\n\nexport default function ChartLoader({ message = 'Loading chart...', className = '' }: Props) {\n  const containerRef = useRef<HTMLDivElement>(null);\n  const animationRef = useRef<any>(null);\n\n  useEffect(() => {\n    if (!containerRef.current) return;\n\n    // Load the logo animation\n    animationRef.current = lottie.loadAnimation({\n      container: containerRef.current,\n      renderer: 'svg',\n      loop: true,\n      autoplay: true,\n      path: '/logo_animation.json',\n    });\n\n    return () => {\n      if (animationRef.current) {\n        animationRef.current.destroy();\n      }\n    };\n  }, []);\n\n  return (\n    <div className={`chart-loader ${className}`}>\n      <div className=\"chart-loader-content\">\n        <div \n          ref={containerRef} \n          className=\"chart-loader-animation\"\n          style={{\n            width: '80px',\n            height: '80px',\n          }}\n        />\n        <div className=\"chart-loader-text\">{message}</div>\n      </div>\n    </div>\n  );\n}\n"
+        }
+    ]
+}

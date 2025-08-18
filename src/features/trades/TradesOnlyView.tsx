@@ -468,16 +468,29 @@ export default function TradesOnlyView({
           ))}
         </div>
         <div className="trades-list-container">
-          {/* Use fallback rendering for Telegram webapp or when height is uncertain */}
-          {(window as any).Telegram?.WebApp || containerHeight < 300 ? (
+          {/* Enhanced Telegram webapp compatibility - always use fallback in Telegram */}
+          {(window as any).Telegram?.WebApp ? (
             <div 
               className="trades-list-fallback"
               style={{ 
                 height: Math.max(400, containerHeight - 60),
                 overflow: 'auto',
-                maxHeight: '70vh'
+                maxHeight: 'calc(100vh - 200px)', // Better viewport handling
+                WebkitOverflowScrolling: 'touch', // iOS smooth scrolling
               }}
             >
+              {(window as any).Telegram?.WebApp && (
+                <div style={{ 
+                  padding: 'var(--space-2)', 
+                  background: 'var(--bg-elev-2)', 
+                  fontSize: '12px',
+                  color: 'var(--text-muted)',
+                  borderRadius: 'var(--radius-small)',
+                  margin: 'var(--space-2) 0'
+                }}>
+                  🔄 Telegram webapp detected - using optimized rendering
+                </div>
+              )}
               {sorted.map((trade, index) => {
                 const tradeId = `${trade.ts}-${trade.txHash}`;
                 const isExpanded = expandedRow === tradeId;
@@ -490,7 +503,8 @@ export default function TradesOnlyView({
                     key={tradeId}
                     style={{ 
                       height: baseHeight + expandedHeight,
-                      width: '100%'
+                      width: '100%',
+                      flexShrink: 0,
                     }}
                   >
                     {Row({ index, style: { height: baseHeight + expandedHeight, width: '100%' } })}
@@ -500,7 +514,7 @@ export default function TradesOnlyView({
             </div>
           ) : (
             <List
-              height={containerHeight - 60}
+              height={Math.max(300, containerHeight - 60)}
               itemCount={sorted.length}
               itemSize={(index: number) => {
                 const t = sorted[index];

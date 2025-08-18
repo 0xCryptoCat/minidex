@@ -183,6 +183,7 @@ export default function ChartPage() {
                   xDomain={xDomain}
                   onXDomainChange={setXDomain}
                   tokenAddress={address}
+                  tokenDetail={tokenDetail}
                 />
               </div>
             </div>

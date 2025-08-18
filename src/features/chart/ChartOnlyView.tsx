@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import type { Timeframe, Provider } from '../../lib/types';
+import type { Timeframe, Provider, TokenResponse } from '../../lib/types';
 import PriceChart from './PriceChart';
 import TimeframeSelector from './TimeframeSelector';
 import { getTradeMarkers, type TradeMarkerCluster } from '../trades/TradeMarkers';
@@ -7,6 +7,8 @@ import { ohlc } from '../../lib/api';
 import { getCachedTf, setCachedTf } from '../../lib/tf-cache';
 import { getTradesCache } from '../../lib/cache';
 import { formatFetchMeta, type FetchMeta } from '../../lib/format';
+
+type DisplayMode = 'price' | 'marketcap';
 
 interface Props {
   pairId: string;
@@ -16,6 +18,7 @@ interface Props {
   xDomain: [number, number] | null;
   onXDomainChange?: (d: [number, number]) => void;
   tokenAddress: string;
+  tokenDetail?: TokenResponse | null;
 }
 
 export default function ChartOnlyView({
@@ -26,6 +29,7 @@ export default function ChartOnlyView({
   xDomain,
   onXDomainChange,
   tokenAddress,
+  tokenDetail = null,
 }: Props) {
   const [showMarkers, setShowMarkers] = useState(false);
   const [markers, setMarkers] = useState<TradeMarkerCluster[]>([]);
@@ -34,6 +38,7 @@ export default function ChartOnlyView({
   const [availableTfs, setAvailableTfs] = useState<Timeframe[]>([]);
   const [tfLoading, setTfLoading] = useState(true);
   const [tfError, setTfError] = useState(false);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('price');
   const [meta, setMeta] = useState<FetchMeta | null>(null);
   const loggedRef = useRef(false);
   const DEBUG = (import.meta as any).env?.DEBUG === 'true';
@@ -144,6 +149,23 @@ export default function ChartOnlyView({
             onTfChange={handleTfChange}
             disabled={tfLoading}
           />
+          <div className="chart-display-mode">
+            <button
+              className={`chart-mode-button ${displayMode === 'price' ? 'selected' : ''}`}
+              onClick={() => setDisplayMode('price')}
+              type="button"
+            >
+              Price
+            </button>
+            <button
+              className={`chart-mode-button ${displayMode === 'marketcap' ? 'selected' : ''}`}
+              onClick={() => setDisplayMode('marketcap')}
+              disabled={!tokenDetail?.info}
+              type="button"
+            >
+              Market Cap
+            </button>
+          </div>
         </div>
         <div className="chart-controls-right">
           <label className="trade-markers-toggle">
@@ -152,7 +174,7 @@ export default function ChartOnlyView({
               checked={showMarkers} 
               onChange={handleToggle}
             /> 
-            <span>Trade markers</span>
+            <span>Trades</span>
           </label>
         </div>
       </div>
@@ -174,6 +196,9 @@ export default function ChartOnlyView({
           chain={chain}
           poolAddress={poolAddress}
           tokenAddress={tokenAddress}
+          tokenDetail={tokenDetail}
+          displayMode={displayMode}
+          onDisplayModeChange={setDisplayMode}
         />
       </div>
     </div>

@@ -515,39 +515,42 @@ body.keyboard-open {
   gap: var(--space-3);
 }
 
+/* Timeframe selector styles */
 .timeframe-selector {
   display: flex;
+  align-items: center;
   background: var(--bg-input);
-  border-radius: var(--radius-small);
+  border-radius: var(--radius-pill);
   padding: 2px;
   gap: 2px;
 }
 
 .timeframe-button {
-  padding: var(--space-2) var(--space-3);
-  background: transparent;
+  padding: var(--space-1) var(--space-3);
   border: none;
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 500;
-  border-radius: calc(var(--radius-small) - 2px);
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
-  min-width: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  white-space: nowrap;
+  min-width: 40px;
+  text-align: center;
 }
 
-.timeframe-button:hover:not(.disabled):not(.selected) {
+.timeframe-button:hover:not(.selected):not(.disabled) {
   background: var(--hover);
   color: var(--text);
+  transform: scale(1.05);
 }
 
 .timeframe-button.selected {
   background: var(--brand-primary);
   color: white;
-  box-shadow: 0 1px 3px rgba(0, 122, 255, 0.3);
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
 }
 
 .timeframe-button.disabled {
@@ -560,33 +563,35 @@ body.keyboard-open {
   align-items: center;
   gap: var(--space-2);
   font-size: 14px;
-  color: var(--text-secondary);
+  color: var(--text);
   cursor: pointer;
   user-select: none;
-  transition: color var(--transition-fast);
-}
-
-.trade-markers-toggle:hover {
-  color: var(--text);
 }
 
 .trade-markers-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
   accent-color: var(--brand-primary);
-  margin: 0;
+  cursor: pointer;
+}
+
+.trade-markers-toggle span {
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .no-trades-notice {
-  padding: var(--space-3) var(--space-4);
-  font-size: 13px;
-  color: var(--text-muted);
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-elev-2);
   border-bottom: 1px solid var(--border);
-  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-size: 13px;
 }
 
 .no-trades-notice .meta-info {
   font-size: 11px;
   margin-top: var(--space-1);
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 /* Chart container improvements */
@@ -631,5 +636,97 @@ body.keyboard-open {
     flex: 1;
     min-width: 0;
   }
+}
+
+/* Chart loader styles */
+.chart-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  border-radius: var(--radius);
+}
+
+.chart-loader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.chart-loader-animation {
+  opacity: 0.8;
+  filter: brightness(0.9);
+}
+
+.chart-loader-text {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Modern chart container */
+.modern-chart-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-small);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Chart controls improvements */
+.chart-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elev);
+  gap: var(--space-3);
+}
+
+.chart-controls-left,
+.chart-controls-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.chart-display-mode {
+  display: flex;
+  align-items: center;
+  background: var(--bg-input);
+  border-radius: var(--radius-pill);
+  padding: 2px;
+}
+
+.chart-mode-button {
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.chart-mode-button.selected {
+  background: var(--brand-primary);
+  color: white;
+  transform: scale(1.02);
+}
+
+.chart-mode-button:hover:not(.selected) {
+  background: var(--hover);
+  color: var(--text);
 }
 

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/lib/time.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755535140119,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755535140119,
+            "name": "Commit-0",
+            "content": "import type { Timeframe, Candle } from './types';\n\nexport function timeframeToSeconds(tf: Timeframe): number {\n  switch (tf) {\n    case '1m':\n      return 60;\n    case '5m':\n      return 300;\n    case '15m':\n      return 900;\n    case '30m':\n      return 1800;\n    case '1h':\n      return 3600;\n    case '2h':\n      return 7200;\n    case '4h':\n      return 14400;\n    case '6h':\n      return 21600;\n    case '12h':\n      return 43200;\n    case '1d':\n      return 86400;\n    default:\n      return 3600; // Default to 1 hour\n  }\n}\n\nexport function nowSeconds(): number {\n  return Math.floor(Date.now() / 1000);\n}\n\nexport function rollupCandles(candles: Candle[], fromTf: Timeframe, toTf: Timeframe): Candle[] {\n  const fromSec = timeframeToSeconds(fromTf);\n  const toSec = timeframeToSeconds(toTf);\n  if (toSec <= fromSec || toSec % fromSec !== 0) return candles;\n  const result: Candle[] = [];\n  let current: Candle | null = null;\n  for (const c of candles) {\n    const bucketStart = Math.floor(c.t / toSec) * toSec;\n    if (!current || current.t !== bucketStart) {\n      if (current) result.push(current);\n      current = { t: bucketStart, o: c.o, h: c.h, l: c.l, c: c.c, v: c.v };\n    } else {\n      current.h = Math.max(current.h, c.h);\n      current.l = Math.min(current.l, c.l);\n      current.c = c.c;\n      if (c.v !== undefined) current.v = (current.v || 0) + c.v;\n    }\n  }\n  if (current) result.push(current);\n  return result;\n}\n\n"
+        }
+    ]
+}

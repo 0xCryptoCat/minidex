@@ -21,13 +21,13 @@
 
 .trades-list-container {
   flex: 1;
-  min-height: 100vh;
+  
 }
 
 .trades-header,
 .tr-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1.2fr 60px;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
   align-items: center;
   gap: 8px;
   padding: 0 16px;
@@ -36,7 +36,7 @@
 @media (max-width: 768px) {
   .trades-header,
   .tr-row {
-    grid-template-columns: 1fr 0.8fr 0.8fr 1fr 50px 40px;
+    grid-template-columns: 0.8fr 0.8fr 0.8fr 1fr 1fr 1fr;
     gap: 4px;
     padding: 0 12px;
   }
@@ -72,8 +72,6 @@
   z-index: 1;
   border-bottom: 1px solid var(--border-subtle);
   border-top: 1px solid var(--border-subtle);
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
   padding-top: 12px;
   padding-bottom: 12px;
 }

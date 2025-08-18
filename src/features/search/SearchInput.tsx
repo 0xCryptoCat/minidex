@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ContentPaste as PasteIcon } from '@mui/icons-material';
 import { search as apiSearch } from '../../lib/api';
 import type { SearchTokenSummary, PoolSummary } from '../../lib/types';
 import { getChainIcon, getDexIcon } from '../../lib/icons';
@@ -122,6 +123,20 @@ export default function SearchInput({ autoFocus, large }: Props) {
     runSearch(newValue, true);
   }
 
+  async function handlePasteButton() {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setQuery(text);
+        if (timer.current) clearTimeout(timer.current);
+        runSearch(text, true);
+        inputRef.current?.focus();
+      }
+    } catch (err) {
+      console.warn('Failed to read clipboard:', err);
+    }
+  }
+
   function handleSelect(r: SearchTokenSummary) {
     const pool =
       r.pools?.find((p) => p.gtSupported) ||
@@ -193,20 +208,36 @@ export default function SearchInput({ autoFocus, large }: Props) {
             } : {}),
             ...((results.length > 0 || isLoading || hasError) ? {
               borderRadius: 'var(--radius) var(--radius) 0 0',
-            } : {})
+            } : {}),
+            paddingRight: '50px'
           }}
         />
+        <button
+          type="button"
+          onClick={handlePasteButton}
+          className="search-paste-button"
+          style={{
+            position: 'absolute',
+            right: '12px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--text-muted)',
+            padding: '4px',
+            borderRadius: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '14px'
+          }}
+          aria-label="Paste from clipboard"
+          title="Paste from clipboard"
+        >
+          <PasteIcon fontSize="inherit" />
+        </button>
         <div className="search-status-indicator">
-          {isLoading && (
-            <div style={{
-              width: 16,
-              height: 16,
-              border: '2px solid #ddd',
-              borderTop: '2px solid var(--telegram-blue)',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }} />
-          )}
           {hasError && !isLoading && (
             <span style={{ color: '#ef4444', fontSize: '16px' }}>⚠️</span>
           )}
@@ -241,7 +272,19 @@ export default function SearchInput({ autoFocus, large }: Props) {
               padding: 'var(--space-3)', 
               color: 'var(--text-muted)',
               textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
             }}>
+              <div style={{
+                width: 16,
+                height: 16,
+                border: '2px solid #ddd',
+                borderTop: '2px solid var(--telegram-blue)',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }} />
               Searching...
             </div>
           ) : (

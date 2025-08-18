@@ -70,18 +70,77 @@ export default function PriceChart({
 
   useEffect(() => {
     if (!containerRef.current) return;
+    
+    // Create chart with modern theme
     const chart = createChart(containerRef.current, { 
       height: containerRef.current.clientHeight || 400,
-      width: containerRef.current.clientWidth || 800 
+      width: containerRef.current.clientWidth || 800,
+      layout: {
+        background: { color: 'transparent' },
+        textColor: '#ffffff',
+        fontSize: 12,
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      },
+      grid: {
+        vertLines: { color: 'rgba(255, 255, 255, 0.1)' },
+        horzLines: { color: 'rgba(255, 255, 255, 0.1)' },
+      },
+      crosshair: {
+        mode: 1, // Normal crosshair mode
+        vertLine: {
+          color: 'rgba(255, 255, 255, 0.3)',
+          width: 1,
+          style: 2, // Dashed line
+        },
+        horzLine: {
+          color: 'rgba(255, 255, 255, 0.3)',
+          width: 1,
+          style: 2, // Dashed line
+        },
+      },
+      timeScale: {
+        timeVisible: true,
+        secondsVisible: false,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        rightOffset: 12,
+        barSpacing: 6,
+      },
+      rightPriceScale: {
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.2,
+        },
+      },
+      leftPriceScale: {
+        visible: false,
+      },
+      handleScroll: true,
+      handleScale: true,
     });
-    const candleSeries = chart.addCandlestickSeries();
+    
+    // Add candlestick series with theme colors
+    const candleSeries = chart.addCandlestickSeries({
+      upColor: '#34c759', // --buy-primary
+      downColor: '#e13232', // --sell-primary
+      borderUpColor: '#34c759',
+      borderDownColor: '#e13232',
+      wickUpColor: '#34c759',
+      wickDownColor: '#e13232',
+    });
+    
+    // Add volume series with theme colors
     const volumeSeries = chart.addHistogramSeries({
       priceScaleId: '',
       priceFormat: { type: 'volume' },
+      color: 'rgba(255, 255, 255, 0.2)',
     });
+    
     volumeSeries.priceScale().applyOptions({
       scaleMargins: { top: 0.8, bottom: 0 },
+      borderColor: 'rgba(255, 255, 255, 0.2)',
     });
+    
     chartRef.current = chart;
     candleSeriesRef.current = candleSeries;
     volumeSeriesRef.current = volumeSeries;
@@ -158,7 +217,7 @@ export default function PriceChart({
       const formatted = markers.map((m) => ({
         time: m.ts as UTCTimestamp,
         position: m.side === 'buy' ? 'belowBar' : 'aboveBar',
-        color: m.side === 'buy' ? '#32cd32' : '#ff00ff',
+        color: m.side === 'buy' ? 'var(--accent-lime)' : 'var(--accent-magenta)',
         shape: m.side === 'buy' ? 'arrowUp' : 'arrowDown',
         text: m.clusterSize && m.clusterSize > 1 ? String(m.clusterSize) : undefined,
       }));
@@ -196,7 +255,7 @@ export default function PriceChart({
           return {
             time: cd.time as UTCTimestamp,
             value: vol,
-            color: cd.close >= cd.open ? '#26a69a' : '#ef5350',
+            color: cd.close >= cd.open ? 'var(--accent-lime)' : 'var(--accent-magenta)',
           };
         });
         candleSeriesRef.current?.setData(c);
@@ -241,15 +300,17 @@ export default function PriceChart({
   }, [hasData, meta]);
 
   return (
+    // Render the chart container
     <div style={{ position: 'relative', height: '100%', minHeight: '400px' }}>
       {degraded && (
+        // Show degraded state if data fetching fails
         <div
           style={{
             position: 'absolute',
             top: 0,
             left: 0,
             right: 0,
-            background: 'rgba(255,46,209,0.2)',
+            background: 'var(--bg)',
             color: 'var(--accent-magenta)',
             padding: '2px 4px',
             fontSize: '12px',
@@ -257,9 +318,10 @@ export default function PriceChart({
             zIndex: 1,
           }}
         >
-          degraded
+          Degraded
         </div>
       )}
+      {/* Render the chart container */}
       <div ref={containerRef} style={{ height: '100%', minHeight: '400px' }} />
       {!hasData && (
         <div
@@ -278,11 +340,12 @@ export default function PriceChart({
           }}
         >
           <div>No chart data available</div>
-          {meta && formatFetchMeta(meta) && (
+          {/* {meta && formatFetchMeta(meta) && (
             <div style={{ fontSize: '10px', marginTop: 4 }}>{formatFetchMeta(meta)}</div>
-          )}
+          )} */}
         </div>
       )}
+      {/* Show hovered markers if any */}
       {hoveredMarkers && hoveredMarkers.length > 0 && (
         <div
           style={{
@@ -299,6 +362,7 @@ export default function PriceChart({
           {hoveredMarkers.map((m, i) => {
             const link = explorerTemplate && m.txHash ? explorerTemplate.replace('{tx}', m.txHash) : undefined;
             return (
+              // Render each marker info
               <div key={i} style={{ marginBottom: 4 }}>
                 <div style={{ color: m.side === 'buy' ? 'var(--accent-lime)' : 'var(--accent-magenta)' }}>
                   {m.side} {m.size?.toFixed(2)} @ {formatUsd(m.price)}
@@ -318,6 +382,7 @@ export default function PriceChart({
         </div>
       )}
       {effectiveTf && effectiveTf !== tf && (
+        // Show effective timeframe if different from requested
         <div
           style={{
             position: 'absolute',

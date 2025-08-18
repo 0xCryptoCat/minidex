@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Timeframe, Provider } from '../../lib/types';
 import PriceChart from './PriceChart';
+import TimeframeSelector from './TimeframeSelector';
 import { getTradeMarkers, type TradeMarkerCluster } from '../trades/TradeMarkers';
 import { ohlc } from '../../lib/api';
 import { getCachedTf, setCachedTf } from '../../lib/tf-cache';
@@ -30,6 +31,7 @@ export default function ChartOnlyView({
   const [markers, setMarkers] = useState<TradeMarkerCluster[]>([]);
   const [noTrades, setNoTrades] = useState(false);
   const [tf, setTf] = useState<Timeframe | null>(null);
+  const [availableTfs, setAvailableTfs] = useState<Timeframe[]>([]);
   const [tfLoading, setTfLoading] = useState(true);
   const [tfError, setTfError] = useState(false);
   const [meta, setMeta] = useState<FetchMeta | null>(null);
@@ -43,30 +45,47 @@ export default function ChartOnlyView({
       setTfLoading(false);
       return;
     }
+    
+    const allTimeframes: Timeframe[] = ['1m', '5m', '15m', '1h', '4h', '1d'];
     const order: Timeframe[] =
-      provider === 'cg' ? ['1m', '5m'] : provider === 'gt' ? ['5m', '15m', '1h'] : ['1m'];
+      provider === 'cg' ? ['1m', '5m'] : provider === 'gt' ? ['5m', '15m', '1h'] : allTimeframes;
+      
     (async () => {
       setTfLoading(true);
       setTfError(false);
-      for (const t of order) {
+      const availableTfList: Timeframe[] = [];
+      
+      // Test all timeframes to see which are available
+      for (const t of allTimeframes) {
         try {
           const res = await ohlc({ pairId, chain, poolAddress, tf: t });
           if (res.data.candles.length > 0 || res.data.effectiveTf) {
-            const eff = res.data.effectiveTf || t;
-            setTf(eff);
-            setCachedTf(pairId, provider, eff);
-            setTfLoading(false);
-            return;
+            availableTfList.push(res.data.effectiveTf || t);
           }
         } catch {
           /* ignore and try next */
         }
       }
-      // If we get here, no timeframes worked
-      setTfError(true);
-      setTfLoading(false);
+      
+      setAvailableTfs(availableTfList);
+      
+      // Set initial timeframe from available ones
+      const initialTf = order.find(t => availableTfList.includes(t)) || availableTfList[0];
+      if (initialTf) {
+        setTf(initialTf);
+        setCachedTf(pairId, provider, initialTf);
+        setTfLoading(false);
+      } else {
+        setTfError(true);
+        setTfLoading(false);
+      }
     })();
   }, [pairId, provider, chain, poolAddress]);
+
+  const handleTfChange = (newTf: Timeframe) => {
+    setTf(newTf);
+    setCachedTf(pairId, provider, newTf);
+  };
 
   useEffect(() => {
     if (showMarkers) {
@@ -117,33 +136,31 @@ export default function ChartOnlyView({
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '16px 16px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
-        <label style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '8px',
-          fontSize: '14px',
-          cursor: 'pointer'
-        }}>
-          <input 
-            type="checkbox" 
-            checked={showMarkers} 
-            onChange={handleToggle}
-            style={{ accentColor: 'var(--accent-telegram)' }}
-          /> 
-          Trade markers
-        </label>
+      <div className="chart-controls">
+        <div className="chart-controls-left">
+          <TimeframeSelector 
+            selectedTf={tf}
+            availableTfs={availableTfs}
+            onTfChange={handleTfChange}
+            disabled={tfLoading}
+          />
+        </div>
+        <div className="chart-controls-right">
+          <label className="trade-markers-toggle">
+            <input 
+              type="checkbox" 
+              checked={showMarkers} 
+              onChange={handleToggle}
+            /> 
+            <span>Trade markers</span>
+          </label>
+        </div>
       </div>
       {showMarkers && noTrades && (
-        <div style={{ 
-          padding: '8px 16px', 
-          fontSize: '13px', 
-          color: 'var(--text-muted)',
-          borderBottom: '1px solid var(--border-subtle)'
-        }}>
+        <div className="no-trades-notice">
           <div>No trades available</div>
           {meta && formatFetchMeta(meta) && (
-            <div style={{ fontSize: '11px', marginTop: '4px' }}>{formatFetchMeta(meta)}</div>
+            <div className="meta-info">{formatFetchMeta(meta)}</div>
           )}
         </div>
       )}

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/features/chart/TimeframeSelector.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755531727741,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755531727741,
+            "name": "Commit-0",
+            "content": "import { useMemo } from 'react';\nimport type { Timeframe } from '../../lib/types';\n\ninterface Props {\n  selectedTf: Timeframe;\n  availableTfs: Timeframe[];\n  onTfChange: (tf: Timeframe) => void;\n  disabled?: boolean;\n}\n\nconst timeframeLabels: Record<Timeframe, string> = {\n  '1m': '1M',\n  '5m': '5M', \n  '15m': '15M',\n  '1h': '1H',\n  '4h': '4H',\n  '1d': '1D',\n};\n\nexport default function TimeframeSelector({ selectedTf, availableTfs, onTfChange, disabled = false }: Props) {\n  const sortedTfs = useMemo(() => {\n    const order: Timeframe[] = ['1m', '5m', '15m', '1h', '4h', '1d'];\n    return order.filter(tf => availableTfs.includes(tf));\n  }, [availableTfs]);\n\n  if (sortedTfs.length <= 1) {\n    return null; // Don't show selector if only one option\n  }\n\n  return (\n    <div className=\"timeframe-selector\">\n      {sortedTfs.map((tf) => (\n        <button\n          key={tf}\n          className={`timeframe-button ${tf === selectedTf ? 'selected' : ''} ${disabled ? 'disabled' : ''}`}\n          onClick={() => !disabled && onTfChange(tf)}\n          disabled={disabled}\n          type=\"button\"\n        >\n          {timeframeLabels[tf]}\n        </button>\n      ))}\n    </div>\n  );\n}\n"
+        }
+    ]
+}

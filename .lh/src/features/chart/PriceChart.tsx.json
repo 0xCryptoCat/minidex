@@ -3,11 +3,23 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1755352612658,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755530769683,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -157,9 +157,9 @@\n     if (candleSeriesRef.current) {\n       const formatted = markers.map((m) => ({\n         time: m.ts as UTCTimestamp,\n         position: m.side === 'buy' ? 'belowBar' : 'aboveBar',\n-        color: m.side === 'buy' ? '#32cd32' : '#ff00ff',\n+        color: m.side === 'buy' ? 'var(' : '#ff00ff',\n         shape: m.side === 'buy' ? 'arrowUp' : 'arrowDown',\n         text: m.clusterSize && m.clusterSize > 1 ? String(m.clusterSize) : undefined,\n       }));\n       candleSeriesRef.current.setMarkers(formatted);\n"
+                },
+                {
+                    "date": 1755530769739,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -157,9 +157,9 @@\n     if (candleSeriesRef.current) {\n       const formatted = markers.map((m) => ({\n         time: m.ts as UTCTimestamp,\n         position: m.side === 'buy' ? 'belowBar' : 'aboveBar',\n-        color: m.side === 'buy' ? 'var(--)' : '#ff00ff',\n+        color: m.side === 'buy' ? 'var(--acce)' : '#ff00ff',\n         shape: m.side === 'buy' ? 'arrowUp' : 'arrowDown',\n         text: m.clusterSize && m.clusterSize > 1 ? String(m.clusterSize) : undefined,\n       }));\n       candleSeriesRef.current.setMarkers(formatted);\n"
+                },
+                {
+                    "date": 1755531032223,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -240,9 +240,9 @@\n     }\n   }, [hasData, meta]);\n \n   return (\n-    \n+    // \n     <div style={{ position: 'relative', height: '100%', minHeight: '400px' }}>\n       {degraded && (\n         <div\n           style={{\n"
                 }
             ],
             "date": 1755352612658,

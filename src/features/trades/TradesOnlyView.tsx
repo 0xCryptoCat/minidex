@@ -301,9 +301,34 @@ export default function TradesOnlyView({
           onClick={() => {
             setExpandedRow(expandedRow === tradeId ? null : tradeId);
           }}
+          style={{
+            // Force visibility and basic styling as a diagnostic fix
+            opacity: 1,
+            visibility: 'visible',
+            display: 'grid',
+            color: '#ffffff',
+            backgroundColor: index % 2 === 0 ? 'rgba(255, 255, 255, 0.02)' : 'transparent',
+            border: '1px solid rgba(255, 255, 255, 0.1)', // temporary debug border
+            minHeight: '56px',
+            padding: '8px 16px',
+          }}
         >
           {columns.map((c) => (
-            <div key={c.key} className={`tr-cell${c.className ? ' ' + c.className : ''}`}>
+            <div 
+              key={c.key} 
+              className={`tr-cell${c.className ? ' ' + c.className : ''}`}
+              style={{
+                // Force cell visibility
+                opacity: 1,
+                visibility: 'visible',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '4px',
+                fontSize: '14px',
+                border: '1px solid rgba(255, 255, 255, 0.1)', // temporary debug border
+              }}
+            >
               {c.render(t)}
             </div>
           ))}
@@ -448,15 +473,81 @@ export default function TradesOnlyView({
   }
 
   return (
-    <div className="trades-scroll" ref={containerRef}>
-      <div className="trades-table">
-        <div className="trades-header">
+    <>
+      {/* DEBUG: Visible indicator that component is rendering */}
+      <div style={{
+        position: 'fixed',
+        top: '80px',
+        right: '20px',
+        background: 'red',
+        color: 'white',
+        padding: '10px',
+        zIndex: 9999,
+        fontSize: '14px',
+        fontWeight: 'bold',
+        border: '2px solid white',
+        borderRadius: '8px',
+      }}>
+        TRADES TABLE DEBUG: {sorted.length} trades
+      </div>
+      
+      <div 
+        className="trades-scroll" 
+        ref={containerRef}
+        style={{
+          // Force container to be visible and properly positioned
+          position: 'relative',
+          minHeight: '500px',
+          maxHeight: '80vh',
+          height: `${containerHeight}px`,
+          overflow: 'visible', // temporarily change from auto
+          border: '3px solid red', // DEBUG: Very visible container border
+          backgroundColor: '#1c1c1e',
+          display: 'flex',
+          flexDirection: 'column',
+          margin: '20px 0', // Add some margin so it's not against edges
+        }}
+      >
+      <div 
+        className="trades-table"
+        style={{
+          // Force table container to be visible
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          border: '2px solid green', // DEBUG: Table container border
+          backgroundColor: '#2c2c2e',
+        }}
+      >
+        <div className="trades-header" style={{
+          // Force header visibility
+          opacity: 1,
+          visibility: 'visible',
+          color: '#ffffff',
+          backgroundColor: '#1c1c1e',
+          border: '2px solid rgba(255, 255, 255, 0.2)', // temporary debug border
+          padding: '12px 16px',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr',
+          gap: '8px',
+        }}>
           {columns.map((c) => (
             <div
               key={c.key}
               className="tr-cell"
               onClick={() => handleSort(c.key)}
-              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '4px',
+                color: '#ffffff',
+                fontWeight: '600',
+                fontSize: '14px',
+                opacity: 1,
+                visibility: 'visible',
+              }}
             >
               {c.header}
               {sortKey === c.key && (
@@ -467,7 +558,17 @@ export default function TradesOnlyView({
             </div>
           ))}
         </div>
-        <div className="trades-list-container">
+        <div 
+          className="trades-list-container"
+          style={{
+            // Force list container to be visible
+            flex: 1,
+            overflow: 'visible', // temporarily change from auto
+            border: '2px solid blue', // DEBUG: List container border
+            backgroundColor: '#3a3a3c',
+            minHeight: '300px',
+          }}
+        >
           {/* Enhanced Telegram webapp compatibility - always use fallback in Telegram */}
           {(window as any).Telegram?.WebApp ? (
             <div 
@@ -532,8 +633,8 @@ export default function TradesOnlyView({
               {Row}
             </List>
           )}
-        </div>
+        </div>        </div>
       </div>
-    </div>
+    </>
   );
 }

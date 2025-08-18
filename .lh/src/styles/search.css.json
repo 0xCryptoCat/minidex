@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1755352612658,
@@ -16,6 +16,10 @@
                 {
                     "date": 1755517120808,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -244,20 +244,26 @@\n \n .dex-icons {\n   display: flex;\n   align-items: center;\n-  gap: 2px;\n+  gap: 0px; /* Remove gap to allow manual overlap */\n   margin-top: 2px;\n }\n \n .dex-icon {\n   width: 16px;\n   height: 16px;\n   border-radius: 50%;\n   object-fit: cover;\n-  border: 1px solid var(--border);\n+  border: 1.5px solid var(--bg-card);\n+  transition: transform 0.2s ease;\n }\n \n+.dex-icon:hover {\n+  transform: scale(1.1);\n+  z-index: 999 !important;\n+}\n+\n .dex-more {\n   font-size: 0.7rem;\n   color: var(--text-muted);\n   margin-left: 2px;\n"
+                },
+                {
+                    "date": 1755519434358,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -389,4 +389,19 @@\n @keyframes loading {\n   0% { background-position: 200% 0; }\n   100% { background-position: -200% 0; }\n }\n+\n+/* Search paste button */\n+.search-paste-button {\n+  transition: all 0.2s ease;\n+}\n+\n+.search-paste-button:hover {\n+  color: var(--accent-telegram) !important;\n+  background: var(--bg-elev) !important;\n+  transform: translateY(-50%) scale(1.1);\n+}\n+\n+.search-paste-button:active {\n+  transform: translateY(-50%) scale(0.95);\n+}\n"
                 }
             ],
             "date": 1755352612658,

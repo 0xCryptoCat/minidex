@@ -1,0 +1,18 @@
+{
+    "sourceFile": "src/components/BottomTabs.tsx",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755519434355,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755519434355,
+            "name": "Commit-0",
+            "content": "import { Link, useLocation } from 'react-router-dom';\n\nconst tabs = [\n  { view: 'detail', label: 'Detail' },\n  { view: 'chart', label: 'Chart' },\n  { view: 'trades', label: 'Trades' },\n];\n\nexport default function BottomTabs() {\n  const location = useLocation();\n  const { pathname, search } = location;\n  const currentView = new URLSearchParams(search).get('view') || 'detail';\n\n  return (\n    <>\n      {/* Gradient backdrop behind tabs */}\n      <div className=\"bottom-tabs-backdrop\" />\n      \n      <nav className=\"bottom-tabs\" role=\"tablist\" aria-label=\"Views\">\n      {tabs.map((tab) => {\n        const qs = new URLSearchParams(search);\n        qs.set('view', tab.view);\n        const to = `${pathname}?${qs.toString()}`;\n        const isActive = currentView === tab.view;\n        return (\n          <Link\n            key={tab.view}\n            to={to}\n            role=\"tab\"\n            aria-selected={isActive}\n            tabIndex={isActive ? 0 : -1}\n            className={isActive ? 'active' : ''}\n          >\n            {tab.label}\n          </Link>\n        );\n      })}\n    </nav>\n    </>\n  );\n}\n"
+        }
+    ]
+}

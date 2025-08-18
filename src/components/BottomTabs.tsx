@@ -12,7 +12,11 @@ export default function BottomTabs() {
   const currentView = new URLSearchParams(search).get('view') || 'detail';
 
   return (
-    <nav className="bottom-tabs" role="tablist" aria-label="Views">
+    <>
+      {/* Gradient backdrop behind tabs */}
+      <div className="bottom-tabs-backdrop" />
+      
+      <nav className="bottom-tabs" role="tablist" aria-label="Views">
       {tabs.map((tab) => {
         const qs = new URLSearchParams(search);
         qs.set('view', tab.view);
@@ -32,5 +36,6 @@ export default function BottomTabs() {
         );
       })}
     </nav>
+    </>
   );
 }

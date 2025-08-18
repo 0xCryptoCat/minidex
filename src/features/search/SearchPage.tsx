@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { ContentPaste as PasteIcon } from '@mui/icons-material';
 import type { SearchTokenSummary, Provider } from '../../lib/types';
 import { search } from '../../lib/api';
 import copy from '../../copy/en.json';
@@ -17,8 +18,10 @@ export default function SearchPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [provider, setProvider] = useState<Provider | ''>('');
   const [hasSearched, setHasSearched] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -48,6 +51,7 @@ export default function SearchPage() {
     }
     return () => {
       if (timer.current) clearTimeout(timer.current);
+      if (typingTimer.current) clearTimeout(typingTimer.current);
     };
   }, [query]);
 
@@ -112,6 +116,19 @@ export default function SearchPage() {
     }
   }
 
+  async function handlePasteClick() {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text.trim()) {
+        setQuery(text.trim());
+        if (timer.current) clearTimeout(timer.current);
+        runSearch(text.trim());
+      }
+    } catch (err) {
+      console.warn('Failed to read clipboard:', err);
+    }
+  }
+
   function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
     e.preventDefault();
     const pasted = e.clipboardData.getData('text');
@@ -163,32 +180,77 @@ export default function SearchPage() {
       <label htmlFor="search-input" style={{ position: 'absolute', left: '-10000px' }}>
         {copy.search_placeholder}
       </label>
-      <input
-        id="search-input"
-        ref={inputRef}
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setError(false);
-          setErrorMessage('');
-        }}
-        onKeyDown={handleKey}
-        onPaste={handlePaste}
-        placeholder={copy.search_placeholder}
-        aria-label={copy.search_placeholder}
-        className={error ? 'search-input-error' : ''}
-        style={{ 
-          width: '100%', 
-          padding: '0.75rem',
-          fontSize: '1rem',
-          borderRadius: 'var(--radius)',
-          border: `1px solid ${error ? '#ef4444' : 'var(--border)'}`,
-          background: 'var(--bg)',
-          color: 'var(--text)',
-          outline: 'none',
-          transition: 'all 0.2s ease',
-        }}
-      />
+      
+      {/* Search input with paste button */}
+      <div className="search-input-container" style={{ position: 'relative', width: '100%' }}>
+        <input
+          id="search-input"
+          ref={inputRef}
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setError(false);
+            setErrorMessage('');
+            
+            // Show typing indicator
+            setIsTyping(true);
+            if (typingTimer.current) clearTimeout(typingTimer.current);
+            typingTimer.current = setTimeout(() => setIsTyping(false), 1000);
+          }}
+          onKeyDown={handleKey}
+          onPaste={handlePaste}
+          placeholder={copy.search_placeholder}
+          aria-label={copy.search_placeholder}
+          className={error ? 'search-input-error' : ''}
+          style={{ 
+            width: '100%', 
+            padding: '0.75rem',
+            paddingRight: !query || loading ? '3rem' : '0.75rem', // Make room for paste button
+            fontSize: '1rem',
+            borderRadius: 'var(--radius)',
+            border: `1px solid ${error ? '#ef4444' : 'var(--border)'}`,
+            background: 'var(--bg)',
+            color: 'var(--text)',
+            outline: 'none',
+            transition: 'all 0.2s ease',
+          }}
+        />
+        
+        {/* Paste button - only show when input is empty and not loading and not typing */}
+        {!query && !loading && !isTyping && (
+          <button
+            onClick={handlePasteClick}
+            className="search-paste-button"
+            title="Paste from clipboard"
+            style={{
+              position: 'absolute',
+              right: '0.75rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              padding: '0.25rem',
+              borderRadius: '4px',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--accent-telegram)';
+              e.currentTarget.style.background = 'var(--bg-elev)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-muted)';
+              e.currentTarget.style.background = 'none';
+            }}
+          >
+            <PasteIcon sx={{ fontSize: 18 }} />
+          </button>
+        )}
+      </div>
       {error && errorMessage && (
         <div className="search-error-message">
           {errorMessage}

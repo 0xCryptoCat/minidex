@@ -137,6 +137,27 @@ main.with-tabs {
   box-shadow: inset 0 0 0 2px var(--telegram-blue);
 }
 
+/* Gradient backdrop behind bottom tabs */
+.bottom-tabs-backdrop {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  z-index: 999; /* Just below the tabs */
+  background: linear-gradient(
+    to top,
+    var(--bg) 0%,
+    var(--bg) 20%,
+    hsla(0, 0%, 7%, 0.95) 40%,
+    hsla(0, 0%, 7%, 0.8) 60%,
+    hsla(0, 0%, 7%, 0.5) 80%,
+    hsla(0, 0%, 7%, 0.2) 90%,
+    transparent 100%
+  );
+  pointer-events: none; /* Allow clicks to pass through */
+}
+
 /* Modern card styles */
 .card {
   background: var(--bg-card);
@@ -403,6 +424,59 @@ input::placeholder {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Mobile keyboard handling */
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* Prevent zoom on iOS when focusing inputs */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  select,
+  textarea,
+  input[type="text"],
+  input[type="password"],
+  input[type="datetime"],
+  input[type="datetime-local"],
+  input[type="date"],
+  input[type="month"],
+  input[type="time"],
+  input[type="week"],
+  input[type="number"],
+  input[type="email"],
+  input[type="url"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="color"] {
+    font-size: 16px !important;
+  }
+}
+
+/* Mobile viewport fixes */
+.home-content {
+  /* Ensure content stays in place when keyboard opens */
+  will-change: transform;
+}
+
+@media (max-width: 768px) {
+  .home-content {
+    /* On mobile, use fixed positioning to prevent scrolling */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding-top: max(var(--space-8), 15vh);
+    justify-content: flex-start !important;
+  }
+}
+
+/* Prevent body scroll when keyboard is open */
+body.keyboard-open {
+  position: fixed;
+  width: 100%;
 }
 
 @media (max-width: 768px) {

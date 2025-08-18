@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1755517361184,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755519434356,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -8,11 +8,59 @@\n   const vh = window.innerHeight * 0.01;\n   document.documentElement.style.setProperty('--vh', `${vh}px`);\n }\n \n+// Detect keyboard open/close on mobile\n+function handleKeyboardEvents() {\n+  let initialViewportHeight = window.innerHeight;\n+  \n+  function checkKeyboard() {\n+    const currentHeight = window.innerHeight;\n+    const heightDifference = initialViewportHeight - currentHeight;\n+    \n+    // If viewport height reduced by more than 150px, likely keyboard is open\n+    if (heightDifference > 150) {\n+      document.body.classList.add('keyboard-open');\n+    } else {\n+      document.body.classList.remove('keyboard-open');\n+      initialViewportHeight = currentHeight; // Update baseline\n+    }\n+    \n+    setViewportHeight();\n+  }\n+  \n+  // Debounce resize events\n+  let resizeTimer: ReturnType<typeof setTimeout>;\n+  window.addEventListener('resize', () => {\n+    clearTimeout(resizeTimer);\n+    resizeTimer = setTimeout(checkKeyboard, 150);\n+  });\n+  \n+  window.addEventListener('orientationchange', () => {\n+    setTimeout(() => {\n+      initialViewportHeight = window.innerHeight;\n+      checkKeyboard();\n+    }, 500);\n+  });\n+  \n+  // Handle focus events on inputs\n+  document.addEventListener('focusin', (e) => {\n+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {\n+      // Small delay to let keyboard animation start\n+      setTimeout(checkKeyboard, 300);\n+    }\n+  });\n+  \n+  document.addEventListener('focusout', () => {\n+    setTimeout(() => {\n+      document.body.classList.remove('keyboard-open');\n+      checkKeyboard();\n+    }, 300);\n+  });\n+}\n+\n setViewportHeight();\n-window.addEventListener('resize', setViewportHeight);\n-window.addEventListener('orientationchange', setViewportHeight);\n+handleKeyboardEvents();\n \n ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(\n   <React.StrictMode>\n     <App />\n"
                 }
             ],
             "date": 1755517361184,

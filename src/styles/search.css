@@ -390,3 +390,18 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* Search paste button */
+.search-paste-button {
+  transition: all 0.2s ease;
+}
+
+.search-paste-button:hover {
+  color: var(--accent-telegram) !important;
+  background: var(--bg-elev) !important;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.search-paste-button:active {
+  transform: translateY(-50%) scale(0.95);
+}

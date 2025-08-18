@@ -4,27 +4,33 @@ import { ElectricBolt, MobileFriendly, Polyline } from '@mui/icons-material';
 // Home page component with mobile keyboard handling
 export default function Home() {
   return (
-    <div style={{ 
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      // Mobile viewport handling for keyboard
-      height: 'calc(var(--vh, 1vh) * 100)', // Use CSS custom property for dynamic viewport
-    }}>
+    <div 
+      style={{ 
+        
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative',
+        // Use CSS custom property for dynamic viewport
+        minHeight: 'calc(var(--vh, 1vh) * 100)',
+      }}
+    >
       <div
         style={{
-          height: '100vh',
+          flex: 1,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'flex-start',
           gap: 'var(--space-6)',
           padding: 'var(--space-4)',
+          paddingTop: 'max(var(--space-8), 10vh)', // Push content down from top
           background: 'linear-gradient(135deg, var(--bg) 0%, var(--bg-elev) 100%)',
-          overflow: 'auto',
-          // Prevent content from being hidden behind keyboard on mobile
-          maxHeight: 'calc(100vh - env(keyboard-inset-height, 0px))',
-        }}>
+          overflow: 'visible',
+          // Prevent viewport issues on mobile
+          position: 'relative',
+        }}
+        className="home-content"
+      >
       {/* Logo and Brand */}
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>

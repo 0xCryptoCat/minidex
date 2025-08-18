@@ -23,7 +23,7 @@ export default function Header() {
         }}
       >
         <img 
-          src="/logo.svg" 
+          src="/logo_w.svg" 
           alt="SmallDEX" 
           style={{ height: 32, width: 'auto' }}
         />

@@ -561,23 +561,36 @@ body.keyboard-open {
 .trade-markers-toggle {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
   font-size: 14px;
   color: var(--text);
   cursor: pointer;
   user-select: none;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-small);
+  padding: 8px 12px;
+  transition: all var(--transition-fast);
+  height: 36px;
+}
+
+.trade-markers-toggle:hover {
+  background: var(--bg-elev-3);
+  border-color: var(--brand-primary);
 }
 
 .trade-markers-toggle input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   accent-color: var(--brand-primary);
   cursor: pointer;
+  margin: 0;
 }
 
 .trade-markers-toggle span {
-  color: var(--text-secondary);
+  color: var(--text);
   font-weight: 500;
+  font-size: 14px;
 }
 
 .no-trades-notice {

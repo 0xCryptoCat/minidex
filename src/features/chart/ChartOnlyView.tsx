@@ -149,6 +149,7 @@ export default function ChartOnlyView({
             onTfChange={handleTfChange}
             disabled={tfLoading}
           />
+          {/* TODO: Uncomment when totalSupply data is available
           <div className="chart-display-mode">
             <button
               className={`chart-mode-button ${displayMode === 'price' ? 'selected' : ''}`}
@@ -166,8 +167,7 @@ export default function ChartOnlyView({
               Market Cap
             </button>
           </div>
-        </div>
-        <div className="chart-controls-right">
+          */}
           <label className="trade-markers-toggle">
             <input 
               type="checkbox" 
@@ -176,6 +176,9 @@ export default function ChartOnlyView({
             /> 
             <span>Trades</span>
           </label>
+        </div>
+        <div className="chart-controls-right">
+          {/* Space for future controls */}
         </div>
       </div>
       {showMarkers && noTrades && (
@@ -200,6 +203,30 @@ export default function ChartOnlyView({
           displayMode={displayMode}
           onDisplayModeChange={setDisplayMode}
         />
+      </div>
+      
+      {/* Chart info badges moved below */}
+      <div className="chart-badges" style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center',
+        padding: 'var(--space-2) var(--space-4)',
+        background: 'var(--bg-elev)',
+        borderTop: '1px solid var(--border)',
+        fontSize: '11px',
+        color: 'var(--text-muted)',
+      }}>
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          {tf && (
+            <span>UTC • {tf}</span>
+          )}
+          {/* Add provider info if available */}
+        </div>
+        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          {meta && formatFetchMeta(meta) && (
+            <span>{formatFetchMeta(meta)}</span>
+          )}
+        </div>
       </div>
     </div>
   );

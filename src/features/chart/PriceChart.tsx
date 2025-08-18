@@ -112,8 +112,13 @@ export default function PriceChart({
         timeVisible: true,
         secondsVisible: false,
         borderColor: 'rgba(255, 255, 255, 0.2)',
-        rightOffset: 12,
-        barSpacing: 6,
+        rightOffset: 50, // Increased to allow more empty space
+        barSpacing: 8,
+        fixLeftEdge: false,
+        fixRightEdge: false,
+        lockVisibleTimeRangeOnResize: false,
+        // Allow scrolling beyond data
+        shiftVisibleRangeOnNewBar: false,
       },
       rightPriceScale: {
         borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -121,6 +126,9 @@ export default function PriceChart({
           top: 0.1,
           bottom: 0.2,
         },
+        // Add more price levels for better granularity
+        entireTextOnly: false,
+        minimumWidth: 80,
       },
       leftPriceScale: {
         visible: false,
@@ -456,55 +464,6 @@ export default function PriceChart({
               </div>
             );
           })}
-        </div>
-      )}
-      
-      {/* Chart info badges */}
-      <div style={{ position: 'absolute', bottom: 8, left: 8, display: 'flex', gap: 'var(--space-1)' }}>
-        {effectiveTf && effectiveTf !== tf && (
-          <div
-            style={{
-              background: 'var(--bg-elev)',
-              color: 'var(--warning)',
-              padding: '2px 6px',
-              fontSize: '10px',
-              borderRadius: 'var(--radius-small)',
-              border: '1px solid var(--border)',
-            }}
-          >
-            Downgraded to {effectiveTf}
-          </div>
-        )}
-        
-        <div
-          style={{
-            background: 'var(--bg-elev)',
-            color: 'var(--text-muted)',
-            padding: '2px 6px',
-            fontSize: '10px',
-            borderRadius: 'var(--radius-small)',
-            border: '1px solid var(--border)',
-          }}
-        >
-          UTC • {effectiveTf || tf}
-        </div>
-      </div>
-      
-      {provider && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 8,
-            right: 8,
-            background: 'var(--bg-elev)',
-            color: 'var(--text-muted)',
-            padding: '2px 6px',
-            fontSize: '10px',
-            borderRadius: 'var(--radius-small)',
-            border: '1px solid var(--border)',
-          }}
-        >
-          {provider}
         </div>
       )}
     </div>

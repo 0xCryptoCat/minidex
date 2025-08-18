@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 25,
+            "activePatchIndex": 26,
             "patches": [
                 {
                     "date": 1755347648452,
@@ -108,6 +108,10 @@
                 {
                     "date": 1755543353600,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -73,8 +73,11 @@\n   border-bottom: 1px solid var(--border-subtle);\n   border-top: 1px solid var(--border-subtle);\n   padding-top: 12px;\n   padding-bottom: 12px;\n+  /* Fallback styling for visibility */\n+  color: #ffffff;\n+  background: #1c1c1e;\n }\n \n .trades-header .tr-cell {\n   cursor: pointer;\n@@ -123,8 +126,11 @@\n   display: flex;\n   align-items: center;\n   font-size: 14px;\n   color: var(--text);\n+  /* Fallback colors for better visibility */\n+  color: #ffffff;\n+  min-height: 20px;\n }\n \n /* Time Cell Styling */\n .time-cell {\n"
+                },
+                {
+                    "date": 1755543533766,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -73,11 +73,8 @@\n   border-bottom: 1px solid var(--border-subtle);\n   border-top: 1px solid var(--border-subtle);\n   padding-top: 12px;\n   padding-bottom: 12px;\n-  /* Fallback styling for visibility */\n-  color: #ffffff;\n-  background: #1c1c1e;\n }\n \n .trades-header .tr-cell {\n   cursor: pointer;\n@@ -126,11 +123,8 @@\n   display: flex;\n   align-items: center;\n   font-size: 14px;\n   color: var(--text);\n-  /* Fallback colors for better visibility */\n-  color: #ffffff;\n-  min-height: 20px;\n }\n \n /* Time Cell Styling */\n .time-cell {\n"
                 }
             ],
             "date": 1755347648452,

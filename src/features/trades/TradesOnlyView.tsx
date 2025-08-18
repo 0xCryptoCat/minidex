@@ -18,6 +18,8 @@ import {
 import { addressUrl, txUrl } from '../../lib/explorer';
 import ChartLoader from '../../components/ChartLoader';
 import '../../styles/trades.css';
+import '../../styles/theme.css';
+import '../../styles/global.css';
 
 const ROW_HEIGHT = 52;
 
@@ -506,7 +508,7 @@ export default function TradesOnlyView({
                   borderRadius: 'var(--radius-small)',
                   margin: 'var(--space-2) 0'
                 }}>
-                  🔄 Telegram webapp detected - using optimized rendering
+                  Telegram miniapp detected - using optimized rendering
                 </div>
               )}
               {sorted.map((trade, index) => {

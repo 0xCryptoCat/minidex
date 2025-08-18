@@ -217,7 +217,7 @@ export default function PriceChart({
       const formatted = markers.map((m) => ({
         time: m.ts as UTCTimestamp,
         position: m.side === 'buy' ? 'belowBar' : 'aboveBar',
-        color: m.side === 'buy' ? 'var(--accent-lime)' : 'var(--accent-magenta)',
+        color: m.side === 'buy' ? '#34c759' : '#e13232',
         shape: m.side === 'buy' ? 'arrowUp' : 'arrowDown',
         text: m.clusterSize && m.clusterSize > 1 ? String(m.clusterSize) : undefined,
       }));
@@ -255,7 +255,7 @@ export default function PriceChart({
           return {
             time: cd.time as UTCTimestamp,
             value: vol,
-            color: cd.close >= cd.open ? 'var(--accent-lime)' : 'var(--accent-magenta)',
+            color: cd.close >= cd.open ? '#34c759' : '#e13232',
           };
         });
         candleSeriesRef.current?.setData(c);
@@ -364,7 +364,7 @@ export default function PriceChart({
             return (
               // Render each marker info
               <div key={i} style={{ marginBottom: 4 }}>
-                <div style={{ color: m.side === 'buy' ? 'var(--accent-lime)' : 'var(--accent-magenta)' }}>
+                <div style={{ color: m.side === 'buy' ? '#34c759' : '#e13232' }}>
                   {m.side} {m.size?.toFixed(2)} @ {formatUsd(m.price)}
                   {m.clusterSize && m.clusterSize > 1 ? ` (${m.clusterSize})` : ''}
                 </div>

@@ -68,9 +68,25 @@ export default function TradesOnlyView({
 
   useEffect(() => {
     let cancelled = false;
+    
+    // Debug for Telegram webapp
+    if ((window as any).Telegram?.WebApp) {
+      console.log('Fetching trades for Telegram:', { pairId, chain, poolAddress, tokenAddress });
+    }
+    
     trades({ pairId, chain, poolAddress, tokenAddress })
       .then(({ data, meta }) => {
         if (cancelled) return;
+        
+        if ((window as any).Telegram?.WebApp) {
+          console.log('Trades response:', { 
+            tradesLength: data.trades?.length,
+            hasData: !!data.trades,
+            isArray: Array.isArray(data.trades),
+            metaProvider: meta?.provider
+          });
+        }
+        
         setRows(data.trades || []);
         setNoTrades(!data.trades || data.trades.length === 0);
         setMeta(meta);
@@ -88,27 +104,56 @@ export default function TradesOnlyView({
           sampleTradesLoggedRef.current = true;
         }
       })
-      .catch(() => {
-        if (!cancelled) setNoTrades(true);
+      .catch((error) => {
+        if (!cancelled) {
+          if ((window as any).Telegram?.WebApp) {
+            console.error('Trades fetch error:', error);
+          }
+          setNoTrades(true);
+        }
       });
     return () => {
       cancelled = true;
     };
   }, [pairId, chain, poolAddress, tokenAddress]);
 
-  // Measure container height
+  // Measure container height with better fallbacks
   useEffect(() => {
     const updateHeight = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        const availableHeight = window.innerHeight - rect.top - 100; // Leave margin for bottom tabs
-        setContainerHeight(Math.max(400, availableHeight));
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 600;
+        const availableHeight = viewportHeight - rect.top - 100; // Leave margin for bottom tabs
+        const calculatedHeight = Math.max(400, availableHeight);
+        setContainerHeight(calculatedHeight);
+        
+        // Debug logging for Telegram webapp
+        if ((window as any).Telegram?.WebApp) {
+          console.log('Trades height calc:', {
+            viewportHeight,
+            rectTop: rect.top,
+            availableHeight,
+            calculatedHeight,
+            containerRefExists: !!containerRef.current
+          });
+        }
+      } else {
+        // Fallback if no container ref
+        setContainerHeight(500);
       }
     };
 
+    // Multiple attempts to get height, important for Telegram
     updateHeight();
+    const timer1 = setTimeout(updateHeight, 100);
+    const timer2 = setTimeout(updateHeight, 500);
+    
     window.addEventListener('resize', updateHeight);
-    return () => window.removeEventListener('resize', updateHeight);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      window.removeEventListener('resize', updateHeight);
+    };
   }, []);
 
   const columns: ColumnConfig[] = useMemo(
@@ -380,12 +425,26 @@ export default function TradesOnlyView({
         {meta && formatFetchMeta(meta) && (
           <div className="fetch-meta">{formatFetchMeta(meta)}</div>
         )}
+        {(window as any).Telegram?.WebApp && (
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
+            Telegram WebApp detected - using fallback rendering
+          </div>
+        )}
       </div>
     );
   }
 
   if (rows.length === 0) {
-    return <div>Loading…</div>;
+    return (
+      <div className="trades-loading">
+        <div>Loading trades...</div>
+        {(window as any).Telegram?.WebApp && (
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+            Telegram WebApp - this may take a moment
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -409,25 +468,56 @@ export default function TradesOnlyView({
           ))}
         </div>
         <div className="trades-list-container">
-          <List
-            height={containerHeight - 60} // Account for header height
-            itemCount={sorted.length}
-            itemSize={(index: number) => {
-              const t = sorted[index];
-              const tradeId = `${t.ts}-${t.txHash}`;
-              if (expandedRow === tradeId) {
-                // Base expanded height + additional height for trader stats if available
-                const baseHeight = 100;
-                const stats = t.wallet ? getTraderStats(t.wallet) : null;
-                const statsHeight = stats && stats.tradeCount > 1 ? 80 : 0;
-                return ROW_HEIGHT + baseHeight + statsHeight;
-              }
-              return ROW_HEIGHT;
-            }}
-            width="100%"
-          >
-            {Row}
-          </List>
+          {/* Use fallback rendering for Telegram webapp or when height is uncertain */}
+          {(window as any).Telegram?.WebApp || containerHeight < 300 ? (
+            <div 
+              className="trades-list-fallback"
+              style={{ 
+                height: Math.max(400, containerHeight - 60),
+                overflow: 'auto',
+                maxHeight: '70vh'
+              }}
+            >
+              {sorted.map((trade, index) => {
+                const tradeId = `${trade.ts}-${trade.txHash}`;
+                const isExpanded = expandedRow === tradeId;
+                const baseHeight = ROW_HEIGHT;
+                const stats = trade.wallet ? getTraderStats(trade.wallet) : null;
+                const expandedHeight = isExpanded ? (100 + (stats && stats.tradeCount > 1 ? 80 : 0)) : 0;
+                
+                return (
+                  <div
+                    key={tradeId}
+                    style={{ 
+                      height: baseHeight + expandedHeight,
+                      width: '100%'
+                    }}
+                  >
+                    {Row({ index, style: { height: baseHeight + expandedHeight, width: '100%' } })}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <List
+              height={containerHeight - 60}
+              itemCount={sorted.length}
+              itemSize={(index: number) => {
+                const t = sorted[index];
+                const tradeId = `${t.ts}-${t.txHash}`;
+                if (expandedRow === tradeId) {
+                  const baseHeight = 100;
+                  const stats = t.wallet ? getTraderStats(t.wallet) : null;
+                  const statsHeight = stats && stats.tradeCount > 1 ? 80 : 0;
+                  return ROW_HEIGHT + baseHeight + statsHeight;
+                }
+                return ROW_HEIGHT;
+              }}
+              width="100%"
+            >
+              {Row}
+            </List>
+          )}
         </div>
       </div>
     </div>

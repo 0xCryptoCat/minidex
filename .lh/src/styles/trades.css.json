@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 17,
+            "activePatchIndex": 18,
             "patches": [
                 {
                     "date": 1755347648452,
@@ -76,6 +76,10 @@
                 {
                     "date": 1755527806788,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -313,17 +313,18 @@\n }\n \n /* Expanded Row Styles */\n .tr-expanded {\n-      position: relative;\n-    z-index: 1;\n-    background: var(--bg-elev);\n-    padding: 16px;\n-    border-bottom: 2px solid var(--brand-primary);\n-    animation: expandRow .3s ease-out;\n-    border-left: 3px solid var(--brand-primary);\n-    border-right: 3px solid var(--brand-primary);\n-    border-radius: 0 0 16px 16px;\n+  position: relative;\n+  z-index: 1;\n+  background: var(--bg-elev);\n+  padding: 16px;\n+  border-bottom: 2px solid var(--brand-primary);\n+  animation: expandRow .3s ease-out;\n+  border-left: 3px solid var(--brand-primary);\n+  border-right: 3px solid var(--brand-primary);\n+  border-radius: 0 0 16px 16px;\n+      margin-top: -0.3rem;\n }\n \n @keyframes expandRow {\n   from {\n"
+                },
+                {
+                    "date": 1755533759224,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -322,9 +322,9 @@\n   animation: expandRow .3s ease-out;\n   border-left: 3px solid var(--brand-primary);\n   border-right: 3px solid var(--brand-primary);\n   border-radius: 0 0 16px 16px;\n-      margin-top: -0.3rem;\n+  margin-top: -0.3rem;\n }\n \n @keyframes expandRow {\n   from {\n@@ -442,4 +442,27 @@\n   display: flex;\n   flex-direction: column;\n   min-height: 0; /* Allow flex shrinking */\n }\n+\n+/* Fallback trades list for Telegram webapp */\n+.trades-list-fallback {\n+  scrollbar-width: thin;\n+  scrollbar-color: var(--border) transparent;\n+}\n+\n+.trades-list-fallback::-webkit-scrollbar {\n+  width: 6px;\n+}\n+\n+.trades-list-fallback::-webkit-scrollbar-track {\n+  background: transparent;\n+}\n+\n+.trades-list-fallback::-webkit-scrollbar-thumb {\n+  background: var(--border);\n+  border-radius: 3px;\n+}\n+\n+.trades-list-fallback::-webkit-scrollbar-thumb:hover {\n+  background: var(--text-muted);\n+}\n"
                 }
             ],
             "date": 1755347648452,

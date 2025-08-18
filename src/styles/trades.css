@@ -443,3 +443,26 @@
   flex-direction: column;
   min-height: 0; /* Allow flex shrinking */
 }
+
+/* Fallback trades list for Telegram webapp */
+.trades-list-fallback {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.trades-list-fallback::-webkit-scrollbar {
+  width: 6px;
+}
+
+.trades-list-fallback::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.trades-list-fallback::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.trades-list-fallback::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

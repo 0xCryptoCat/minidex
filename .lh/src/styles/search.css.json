@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 7,
             "patches": [
                 {
                     "date": 1755352612658,
@@ -24,6 +24,18 @@
                 {
                     "date": 1755522256732,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -332,35 +332,44 @@\n \n .search-input-enhanced {\n   width: 100%;\n   padding-right: 40px; /* Make room for loading indicator */\n+  transition: all 0.2s ease;\n }\n \n+.search-input-enhanced:focus {\n+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);\n+}\n+\n+/* Search paste button improved styles */\n+.search-paste-button {\n+  transition: all 0.2s ease;\n+  opacity: 0.6;\n+}\n+\n+.search-paste-button:hover {\n+  color: var(--accent-telegram) !important;\n+  background: rgba(99, 102, 241, 0.1) !important;\n+  transform: translateY(-50%) scale(1.05);\n+  opacity: 1;\n+  border-radius: 6px !important;\n+}\n+\n+.search-paste-button:active {\n+  transform: translateY(-50%) scale(0.95);\n+}\n+\n+/* Status indicator positioning */\n .search-status-indicator {\n   position: absolute;\n-  right: 12px;\n+  right: 45px;\n+  top: 50%;\n+  transform: translateY(-50%);\n   display: flex;\n   align-items: center;\n-  justify-content: center;\n-  width: 20px;\n-  height: 20px;\n+  z-index: 1;\n }\n \n-.search-error-message {\n-  position: absolute;\n-  top: 100%;\n-  left: 0;\n-  right: 0;\n-  background: #fef2f2;\n-  color: #dc2626;\n-  padding: 8px 12px;\n-  border-radius: 0 0 var(--radius) var(--radius);\n-  border: 1px solid #fecaca;\n-  border-top: none;\n-  font-size: 0.8rem;\n-  z-index: 51;\n-}\n-\n /* Search results loading skeleton */\n .search-skeleton {\n   padding: 16px;\n   display: grid;\n@@ -389,19 +398,4 @@\n @keyframes loading {\n   0% { background-position: 200% 0; }\n   100% { background-position: -200% 0; }\n }\n-\n-/* Search paste button */\n-.search-paste-button {\n-  transition: all 0.2s ease;\n-}\n-\n-.search-paste-button:hover {\n-  color: var(--accent-telegram) !important;\n-  background: var(--bg-elev) !important;\n-  transform: translateY(-50%) scale(1.1);\n-}\n-\n-.search-paste-button:active {\n-  transform: translateY(-50%) scale(0.95);\n-}\n"
+                },
+                {
+                    "date": 1755542835083,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -77,8 +77,9 @@\n   position: relative;\n   display: flex;\n   align-items: center;\n   justify-content: center;\n+  \n }\n \n .token-icon-container {\n   position: relative;\n"
+                },
+                {
+                    "date": 1755542845058,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -77,9 +77,9 @@\n   position: relative;\n   display: flex;\n   align-items: center;\n   justify-content: center;\n-  \n+  border-radius: 10px;\n }\n \n .token-icon-container {\n   position: relative;\n"
+                },
+                {
+                    "date": 1755542853580,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -291,8 +291,9 @@\n   \n   .token-icon, .token-fallback {\n     width: 28px;\n     height: 28px;\n+    \n   }\n   \n   .token-symbol {\n     font-size: 14px;\n"
                 }
             ],
             "date": 1755352612658,

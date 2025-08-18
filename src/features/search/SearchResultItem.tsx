@@ -83,7 +83,7 @@ export default function SearchResultItem({ result }: Props) {
         {icon ? (
           <img 
             src={icon} 
-            alt={`${symbol} logo`} 
+            alt={`${symbol}`} 
             className="token-icon"
             onError={(e) => {
               e.currentTarget.style.display = 'none';

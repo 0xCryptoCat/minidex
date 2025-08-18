@@ -436,8 +436,8 @@ export default function TradesOnlyView({
         </div>
         <div className="trades-list-container">
           {containerHeight > 0 ? (
-            <List 
-              height={Math.max(300, containerHeight - 60)} // Account for header height with minimum
+            <List
+              height="100%"
               itemCount={sorted.length} 
               itemSize={(index: number) => {
                 const t = sorted[index];
@@ -457,7 +457,7 @@ export default function TradesOnlyView({
             </List>
           ) : (
             // Fallback for when height calculation fails (Telegram miniapp compatibility)
-            <div style={{ height: '400px', overflow: 'auto', maxHeight: '70vh' }}>
+            <div style={{ height: '100%', overflow: 'auto', maxHeight: '100vh' }}>
               {sorted.map((trade, index) => (
                 <div key={`${trade.ts}-${trade.txHash}`}>
                   {Row({ index, style: { height: ROW_HEIGHT, width: '100%' } })}

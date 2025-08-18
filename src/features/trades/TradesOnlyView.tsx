@@ -96,19 +96,45 @@ export default function TradesOnlyView({
     };
   }, [pairId, chain, poolAddress, tokenAddress]);
 
-  // Measure container height
+  // Measure container height - with Telegram miniapp compatibility
   useEffect(() => {
     const updateHeight = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        const availableHeight = window.innerHeight - rect.top - 100; // Leave some margin
-        setContainerHeight(Math.max(availableHeight, 300));
+        const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+        const availableHeight = windowHeight - rect.top - 100; // Leave margin for bottom tabs
+        const minHeight = 300;
+        const maxHeight = Math.max(minHeight, availableHeight);
+        setContainerHeight(maxHeight);
       }
     };
 
-    updateHeight();
-    window.addEventListener('resize', updateHeight);
-    return () => window.removeEventListener('resize', updateHeight);
+    // Initial update with delay to account for Telegram layout
+    const initialTimer = setTimeout(updateHeight, 100);
+    
+    const handleResize = () => {
+      setTimeout(updateHeight, 100); // Delay for Telegram viewport animations
+    };
+    
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    
+    // Telegram-specific events
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
+      const tg = (window as any).Telegram.WebApp;
+      tg.onEvent('viewportChanged', handleResize);
+      // Expand the miniapp viewport
+      tg.expand();
+    }
+
+    return () => {
+      clearTimeout(initialTimer);
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+      if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
+        (window as any).Telegram.WebApp.offEvent('viewportChanged', handleResize);
+      }
+    };
   }, []);
 
   const columns: ColumnConfig[] = useMemo(
@@ -409,25 +435,36 @@ export default function TradesOnlyView({
           ))}
         </div>
         <div className="trades-list-container">
-          <List 
-            height={containerHeight - 60} // Account for header height
-            itemCount={sorted.length} 
-            itemSize={(index: number) => {
-              const t = sorted[index];
-              const tradeId = `${t.ts}-${t.txHash}`;
-              if (expandedRow === tradeId) {
-                // Base expanded height + additional height for trader stats if available
-                const baseHeight = 100;
-                const stats = t.wallet ? getTraderStats(t.wallet) : null;
-                const statsHeight = stats && stats.tradeCount > 1 ? 80 : 0;
-                return ROW_HEIGHT + baseHeight + statsHeight;
-              }
-              return ROW_HEIGHT;
-            }}
-            width="100%"
-          >
-            {Row}
-          </List>
+          {containerHeight > 0 ? (
+            <List 
+              height={Math.max(300, containerHeight - 60)} // Account for header height with minimum
+              itemCount={sorted.length} 
+              itemSize={(index: number) => {
+                const t = sorted[index];
+                const tradeId = `${t.ts}-${t.txHash}`;
+                if (expandedRow === tradeId) {
+                  // Base expanded height + additional height for trader stats if available
+                  const baseHeight = 100;
+                  const stats = t.wallet ? getTraderStats(t.wallet) : null;
+                  const statsHeight = stats && stats.tradeCount > 1 ? 80 : 0;
+                  return ROW_HEIGHT + baseHeight + statsHeight;
+                }
+                return ROW_HEIGHT;
+              }}
+              width="100%"
+            >
+              {Row}
+            </List>
+          ) : (
+            // Fallback for when height calculation fails (Telegram miniapp compatibility)
+            <div style={{ height: '400px', overflow: 'auto', maxHeight: '70vh' }}>
+              {sorted.map((trade, index) => (
+                <div key={`${trade.ts}-${trade.txHash}`}>
+                  {Row({ index, style: { height: ROW_HEIGHT, width: '100%' } })}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

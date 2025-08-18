@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 25,
+            "activePatchIndex": 29,
             "patches": [
                 {
                     "date": 1755347748704,
@@ -108,6 +108,22 @@
                 {
                     "date": 1755522092655,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,6 +1,7 @@\n import { useState, useRef, useEffect } from 'react';\n import { useNavigate } from 'react-router-dom';\n+import { ContentPaste as PasteIcon } from '@mui/icons-material';\n import { search as apiSearch } from '../../lib/api';\n import type { SearchTokenSummary, PoolSummary } from '../../lib/types';\n import { getChainIcon, getDexIcon } from '../../lib/icons';\n import { formatUsd, formatCompact } from '../../lib/format';\n@@ -121,8 +122,22 @@\n     if (timer.current) clearTimeout(timer.current);\n     runSearch(newValue, true);\n   }\n \n+  async function handlePasteButton() {\n+    try {\n+      const text = await navigator.clipboard.readText();\n+      if (text) {\n+        setQuery(text);\n+        if (timer.current) clearTimeout(timer.current);\n+        runSearch(text, true);\n+        inputRef.current?.focus();\n+      }\n+    } catch (err) {\n+      console.warn('Failed to read clipboard:', err);\n+    }\n+  }\n+\n   function handleSelect(r: SearchTokenSummary) {\n     const pool =\n       r.pools?.find((p) => p.gtSupported) ||\n       [...(r.pools || [])].sort(\n@@ -192,22 +207,38 @@\n               background: 'var(--bg-elev)',\n             } : {}),\n             ...((results.length > 0 || isLoading || hasError) ? {\n               borderRadius: 'var(--radius) var(--radius) 0 0',\n-            } : {})\n+            } : {}),\n+            paddingRight: '50px'\n           }}\n         />\n+        <button\n+          type=\"button\"\n+          onClick={handlePasteButton}\n+          className=\"search-paste-button\"\n+          style={{\n+            position: 'absolute',\n+            right: '12px',\n+            top: '50%',\n+            transform: 'translateY(-50%)',\n+            background: 'none',\n+            border: 'none',\n+            cursor: 'pointer',\n+            color: 'var(--text-muted)',\n+            padding: '4px',\n+            borderRadius: '4px',\n+            display: 'flex',\n+            alignItems: 'center',\n+            justifyContent: 'center',\n+            fontSize: '14px'\n+          }}\n+          aria-label=\"Paste from clipboard\"\n+          title=\"Paste from clipboard\"\n+        >\n+          <PasteIcon fontSize=\"inherit\" />\n+        </button>\n         <div className=\"search-status-indicator\">\n-          {isLoading && (\n-            <div style={{\n-              width: 16,\n-              height: 16,\n-              border: '2px solid #ddd',\n-              borderTop: '2px solid var(--telegram-blue)',\n-              borderRadius: '50%',\n-              animation: 'spin 1s linear infinite'\n-            }} />\n-          )}\n           {hasError && !isLoading && (\n             <span style={{ color: '#ef4444', fontSize: '16px' }}>⚠️</span>\n           )}\n         </div>\n@@ -240,9 +271,21 @@\n             <div style={{ \n               padding: 'var(--space-3)', \n               color: 'var(--text-muted)',\n               textAlign: 'center',\n+              display: 'flex',\n+              alignItems: 'center',\n+              justifyContent: 'center',\n+              gap: '8px'\n             }}>\n+              <div style={{\n+                width: 16,\n+                height: 16,\n+                border: '2px solid #ddd',\n+                borderTop: '2px solid var(--telegram-blue)',\n+                borderRadius: '50%',\n+                animation: 'spin 1s linear infinite'\n+              }} />\n               Searching...\n             </div>\n           ) : (\n             results.map((r) => (\n"
+                },
+                {
+                    "date": 1755523103357,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -122,8 +122,9 @@\n     if (timer.current) clearTimeout(timer.current);\n     runSearch(newValue, true);\n   }\n \n+  \n   async function handlePasteButton() {\n     try {\n       const text = await navigator.clipboard.readText();\n       if (text) {\n"
+                },
+                {
+                    "date": 1755523110420,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -122,9 +122,9 @@\n     if (timer.current) clearTimeout(timer.current);\n     runSearch(newValue, true);\n   }\n \n-  \n+  // The current paste button does not paste the \n   async function handlePasteButton() {\n     try {\n       const text = await navigator.clipboard.readText();\n       if (text) {\n"
+                },
+                {
+                    "date": 1755523122754,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -122,9 +122,9 @@\n     if (timer.current) clearTimeout(timer.current);\n     runSearch(newValue, true);\n   }\n \n-  // The current paste button does not paste the text into the input field.\n+  // The current paste button does not paste the text into the input field, \n   async function handlePasteButton() {\n     try {\n       const text = await navigator.clipboard.readText();\n       if (text) {\n"
+                },
+                {
+                    "date": 1755523187817,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -122,9 +122,9 @@\n     if (timer.current) clearTimeout(timer.current);\n     runSearch(newValue, true);\n   }\n \n-  // The current paste button does not paste the text into the input field, to patch it so it does on click\n+  // The current paste button does not paste the text into the input field, to patch it so it pastes the clipboard contant on click\n   async function handlePasteButton() {\n     try {\n       const text = await navigator.clipboard.readText();\n       if (text) {\n"
                 }
             ],
             "date": 1755347748704,

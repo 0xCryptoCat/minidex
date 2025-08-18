@@ -123,7 +123,8 @@ main.with-tabs {
 
 .bottom-tabs a.active {
   color: var(--text);
-  background: var(--selected);
+  /* Make background gradient - same as the title text */
+  background: linear-gradient(135deg, var(--telegram-blue) 0%, var(--brand-secondary) 100%);
   font-weight: 600;
 }
 

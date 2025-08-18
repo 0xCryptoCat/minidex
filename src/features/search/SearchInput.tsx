@@ -241,19 +241,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
               padding: 'var(--space-3)', 
               color: 'var(--text-muted)',
               textAlign: 'center',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
             }}>
-              <div style={{
-                width: 16,
-                height: 16,
-                border: '2px solid #ddd',
-                borderTop: '2px solid var(--telegram-blue)',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite'
-              }} />
               Searching...
             </div>
           ) : (
@@ -294,8 +282,22 @@ export default function SearchInput({ autoFocus, large }: Props) {
                         }}
                       />
                     ) : null}
-                    <div className={`token-fallback ${r.icon ? 'hidden' : ''}`}>
-                      {r.symbol?.[0]?.toUpperCase()}
+                    <div 
+                      className={`token-fallback ${r.icon ? 'hidden' : ''}`}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        display: r.icon ? 'none' : 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <img 
+                        src={`https://placehold.co/36x36/909090/ffffff?text=${r.symbol?.[0]?.toUpperCase() || 'T'}`}
+                        alt={`${r.symbol} placeholder`}
+                        style={{ width: '36px', height: '36px', borderRadius: '50%' }}
+                      />
                     </div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -323,6 +325,29 @@ export default function SearchInput({ autoFocus, large }: Props) {
                               +{r.chainCount - 3}
                             </span>
                           )}
+                        </div>
+                      )}
+                      {r.pools && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '4px' }}>
+                          {Array.from(new Set(r.pools.map(p => p.dex).filter(Boolean))).slice(0, 3).map((dex, i) => (
+                            <img 
+                              key={dex}
+                              src={getDexIcon(dex)} 
+                              alt={dex}
+                              title={dex}
+                              style={{ 
+                                width: 14, 
+                                height: 14, 
+                                borderRadius: '50%', 
+                                border: '1px solid var(--border)',
+                                marginLeft: i > 0 ? '-4px' : '0',
+                                zIndex: 10 - i
+                              }}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ))}
                         </div>
                       )}
                     </div>

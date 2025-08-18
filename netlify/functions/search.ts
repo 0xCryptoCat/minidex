@@ -146,12 +146,14 @@ export const handler: Handler = async (event) => {
         // Extract info from the first pair (which has the most complete data)
         const firstPairInfo = pairs[0]?.info || {};
         
-        // Get the best imageUrl from multiple sources
-        const imageUrl = firstPairInfo.imageUrl || 
-                         tokenMeta.icon || 
-                         tokenMeta.imageUrl || 
-                         pairs[0]?.baseToken?.icon ||
-                         pairs[0]?.baseToken?.imageUrl;
+        // Get the best imageUrl from multiple sources, filtering out empty strings
+        const imageUrl = [
+          firstPairInfo.imageUrl,
+          tokenMeta.icon,
+          tokenMeta.imageUrl,
+          pairs[0]?.baseToken?.icon,
+          pairs[0]?.baseToken?.imageUrl
+        ].find(url => url && url.trim().length > 0) || null;
         
         const pools: PoolSummary[] = [];
         let totalLiq = 0;
@@ -184,7 +186,7 @@ export const handler: Handler = async (event) => {
           gtSupported: gt,
           labels: Array.isArray(p.labels) ? p.labels : undefined,
           info: p.info ? {
-            imageUrl: p.info.imageUrl,
+            imageUrl: p.info.imageUrl && p.info.imageUrl.trim().length > 0 ? p.info.imageUrl : null,
             header: p.info.header,
             openGraph: p.info.openGraph,
             websites: Array.isArray(p.info.websites) ? p.info.websites : undefined,

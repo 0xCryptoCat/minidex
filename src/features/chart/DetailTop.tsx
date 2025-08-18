@@ -3,6 +3,7 @@ import { ExpandMore as ExpandMoreIcon, KeyboardArrowDown as ArrowDownIcon } from
 import type { PoolSummary, TokenResponse } from '../../lib/types';
 import { formatShortAddr, formatCompact } from '../../lib/format';
 import { getChainIcon } from '../../lib/chain-icons';
+import { getDexIcon } from '../../lib/icons';
 
 interface Props {
   detail: TokenResponse;
@@ -53,38 +54,55 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
                 {active.baseToken.symbol} / {active.quoteToken.symbol}
               </strong>
               
-              {/* Pool Selector Dropdown */}
-              {pools.length > 1 && (
-                <div className="pool-selector-wrapper">
-                  <select
-                    value={pairId}
-                    onChange={(e) => {
-                      const sel = pools.find((p) => p.pairId === e.target.value);
-                      if (sel) onPoolSwitch(sel);
-                    }}
-                    className="pool-selector"
-                  >
-                    {pools.map((p) => (
-                      <option key={p.pairId} value={p.pairId}>
-                        {formatShortAddr(p.poolAddress || p.pairId)} {p.dex} {p.version || p.labels?.[0] || 'v1'} {truncateSymbol(p.baseToken?.symbol || p.base)}/{truncateSymbol(p.quoteToken?.symbol || p.quote)} ${p.liqUsd ? formatCompact(p.liqUsd) : '—'}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="pool-selector-current">
-                    {active.dex} {active.version || active.labels?.[0] || 'v1'}
-                  </span>
-                  <ArrowDownIcon className="pool-selector-arrow" />
-                </div>
-              )}
+              {/* Pool Selector Dropdown - Always show */}
+              <div className="pool-selector-wrapper">
+                <select
+                  value={pairId}
+                  onChange={(e) => {
+                    const sel = pools.find((p) => p.pairId === e.target.value);
+                    if (sel) onPoolSwitch(sel);
+                  }}
+                  className="pool-selector"
+                  style={{ minWidth: pools.length > 1 ? 'auto' : '200px' }}
+                >
+                  {pools.map((p) => (
+                    <option key={p.pairId} value={p.pairId}>
+                      {formatShortAddr(p.poolAddress || p.pairId)} {p.dex} {p.version || p.labels?.[0] || 'v1'} {truncateSymbol(p.baseToken?.symbol || p.base)}/{truncateSymbol(p.quoteToken?.symbol || p.quote)} ${p.liqUsd ? formatCompact(p.liqUsd) : '—'}
+                    </option>
+                  ))}
+                </select>
+                <span className="pool-selector-current">
+                  {active.dex} {active.version || active.labels?.[0] || 'v1'}
+                </span>
+                <ArrowDownIcon className="pool-selector-arrow" />
+              </div>
             </div>
           </div>
           
           <div className="detail-subline">
             <span style={{ color: 'var(--text-secondary)' }}>{active.baseToken?.name || `${active.baseToken?.symbol || active.base} Token`}</span>
-            {getChainIcon(chain) && (
-            <img src={getChainIcon(chain)} alt={chain} style={{ width: 20, height: 20 }} />
-            )}
-        </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {/* Chain icon */}
+              {getChainIcon(chain) && (
+                <img src={getChainIcon(chain)} alt={chain} style={{ width: 20, height: 20 }} />
+              )}
+              {/* Active DEX icon */}
+              <img 
+                src={getDexIcon(active.dex)} 
+                alt={active.dex}
+                style={{ 
+                  width: 18, 
+                  height: 18, 
+                  borderRadius: '50%',
+                  border: '1.5px solid var(--bg-card)'
+                }}
+                onError={(e) => {
+                  e.currentTarget.src = `https://placehold.co/18x18/6366f1/ffffff?text=${active.dex[0].toUpperCase()}`;
+                }}
+                title={`${active.dex} ${active.version || active.labels?.[0] || ''}`}
+              />
+            </div>
+          </div>
           
           {info.description && (
             <div className="detail-desc">

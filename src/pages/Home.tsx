@@ -1,20 +1,30 @@
 import SearchInput from '../features/search/SearchInput';
 import { ElectricBolt, MobileFriendly, Polyline } from '@mui/icons-material';
 
+// Home page component with mobile keyboard handling
 export default function Home() {
   return (
-    <div
-      style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 'var(--space-6)',
-        padding: 'var(--space-4)',
-        background: 'linear-gradient(135deg, var(--bg) 0%, var(--bg-elev) 100%)',
-      }}
-    >
+    <div style={{ 
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      // Mobile viewport handling for keyboard
+      height: 'calc(var(--vh, 1vh) * 100)', // Use CSS custom property for dynamic viewport
+    }}>
+      <div
+        style={{
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 'var(--space-6)',
+          padding: 'var(--space-4)',
+          background: 'linear-gradient(135deg, var(--bg) 0%, var(--bg-elev) 100%)',
+          overflow: 'auto',
+          // Prevent content from being hidden behind keyboard on mobile
+          maxHeight: 'calc(100vh - env(keyboard-inset-height, 0px))',
+        }}>
       {/* Logo and Brand */}
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -138,7 +148,6 @@ export default function Home() {
 
       {/* Footer info */}
       <div style={{ 
-        position: 'absolute',
         bottom: 'var(--space-6)',
         color: 'var(--text-disabled)',
         fontSize: '0.75rem',
@@ -146,6 +155,7 @@ export default function Home() {
       }}>
         Powered by: <img src="https://s.geckoterminal.com/_next/static/media/logo_symbol.d6e8a303.svg" alt="GeckoTerminal" style={{ height: '1em' }} /> & <img src="https://docs.dexscreener.com/~gitbook/image?url=https%3A%2F%2F198140802-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252F7OmRM9NOmlC1POtFwsnX%252Ficon%252F6BJXvNUMQSXAtDTzDyBK%252Ficon-512x512.png%3Falt%3Dmedia%26token%3Da7ce263e-0b40-4afb-ae25-eae378aef0ab&width=32&dpr=2&quality=100&sign=f988708e&sv=2" alt="DexScreener" style={{ height: '1em' }} />
       </div>
+    </div>
     </div>
   );
 }

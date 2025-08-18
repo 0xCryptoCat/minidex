@@ -331,18 +331,24 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
           <strong>{active.priceNative ? formatSmallPrice(Number(active.priceNative)) : '—'}</strong>
         </div>
         
-        <div className="kpi-item">
-          <span>Liquidity</span>
-          <strong>{formatUsd(active.liquidity?.usd)}</strong>
-        </div>
-        
+        {/* Three-column KPI row for Liquidity, FDV, Market Cap */}
         {active.fdv && active.marketCap && Math.abs(active.fdv - active.marketCap) < 1000 ? (
-          <div className="kpi-item">
-            <span>FDV/MKT CAP</span>
-            <strong>{formatUsd(active.fdv)}</strong>
-          </div>
-        ) : (
           <>
+            <div className="kpi-item">
+              <span>Liquidity</span>
+              <strong>{formatUsd(active.liquidity?.usd)}</strong>
+            </div>
+            <div className="kpi-item">
+              <span>FDV/MKT CAP</span>
+              <strong>{formatUsd(active.fdv)}</strong>
+            </div>
+          </>
+        ) : (
+          <div className="kpi-three-col">
+            <div className="kpi-item">
+              <span>Liquidity</span>
+              <strong>{formatUsd(active.liquidity?.usd)}</strong>
+            </div>
             <div className="kpi-item">
               <span>FDV</span>
               <strong>{formatUsd(active.fdv)}</strong>
@@ -351,7 +357,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
               <span>Market Cap</span>
               <strong>{formatUsd(active.marketCap)}</strong>
             </div>
-          </>
+          </div>
         )}
 
         {/* Price Changes */}

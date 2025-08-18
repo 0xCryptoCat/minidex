@@ -78,8 +78,47 @@ function mapChainId(id: unknown): string {
   return (key && CHAIN_ID_MAP[key]) || (key ?? 'unknown');
 }
 
-function isValidAddress(addr?: string): addr is string {
-  return !!addr && /^0x[a-fA-F0-9]{40}$/.test(addr);
+function isValidAddress(addr?: string, chain?: string): addr is string {
+  if (!addr) return false;
+  
+  // EVM chains: 0x followed by 40 hex characters
+  if (chain && ['ethereum', 'bsc', 'polygon', 'arbitrum', 'optimism', 'avalanche', 'base', 'fantom', 'linea', 'scroll', 'zksync', 'mantle', 'moonbeam', 'moonriver', 'cronos', 'harmony', 'celo', 'aurora', 'metis', 'boba', 'kava', 'gnosis'].includes(chain)) {
+    return /^0x[a-fA-F0-9]{40}$/.test(addr);
+  }
+  
+  // Solana: base58 encoded, typically 32-44 chars
+  if (chain === 'solana') {
+    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);
+  }
+  
+  // TON: EQxxxx or UQxxxx format
+  if (chain === 'ton') {
+    return /^(EQ|UQ)[A-Za-z0-9_-]{46}$/.test(addr);
+  }
+  
+  // SUI: 0x followed by 64 hex characters
+  if (chain === 'sui') {
+    return /^0x[a-fA-F0-9]{64}$/.test(addr);
+  }
+  
+  // Aptos: 0x followed by up to 64 hex characters (can be shorter)
+  if (chain === 'aptos') {
+    return /^0x[a-fA-F0-9]{1,64}$/.test(addr);
+  }
+  
+  // Near: account names ending with .near or implicit accounts (hex)
+  if (chain === 'near') {
+    return /^[a-z0-9._-]+\.near$/.test(addr) || /^[a-f0-9]{64}$/.test(addr);
+  }
+  
+  // Cosmos ecosystem: bech32 addresses starting with various prefixes
+  if (['cosmos', 'osmosis', 'sei', 'injective', 'juno', 'stargaze', 'canto', 'evmos'].includes(chain || '')) {
+    return /^[a-z]{1,10}1[a-z0-9]{38,58}$/.test(addr);
+  }
+  
+  // For other chains or unknown chains, accept various formats
+  // This is more permissive to handle new chains
+  return addr.length >= 10 && addr.length <= 100;
 }
 
 function isValidChain(chain?: string): chain is string {
@@ -134,7 +173,7 @@ export const handler: Handler = async (event) => {
 
   log('params', { chain, address, forceProvider });
 
-  if (!isValidChain(chain) || !isValidAddress(address)) {
+  if (!isValidChain(chain) || !isValidAddress(address, chain)) {
     const body: ApiError = { error: 'invalid_request', provider: 'none' };
     logError('invalid request', { chain, address });
     log('response', event.rawUrl, 400, 0, provider);

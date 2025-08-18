@@ -1,0 +1,18 @@
+{
+    "sourceFile": "test-address-validation.js",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755517405074,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755517405074,
+            "name": "Commit-0",
+            "content": "// Test script to verify address validation for non-EVM chains\nfunction isValidAddress(addr, chain) {\n  if (!addr) return false;\n  \n  // EVM chains: 0x followed by 40 hex characters\n  if (chain && ['ethereum', 'bsc', 'polygon', 'arbitrum', 'optimism', 'avalanche', 'base', 'fantom', 'linea', 'scroll', 'zksync', 'mantle', 'moonbeam', 'moonriver', 'cronos', 'harmony', 'celo', 'aurora', 'metis', 'boba', 'kava', 'gnosis'].includes(chain)) {\n    return /^0x[a-fA-F0-9]{40}$/.test(addr);\n  }\n  \n  // Solana: base58 encoded, typically 32-44 chars\n  if (chain === 'solana') {\n    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);\n  }\n  \n  // TON: EQxxxx or UQxxxx format\n  if (chain === 'ton') {\n    return /^(EQ|UQ)[A-Za-z0-9_-]{46}$/.test(addr);\n  }\n  \n  // SUI: 0x followed by 64 hex characters\n  if (chain === 'sui') {\n    return /^0x[a-fA-F0-9]{64}$/.test(addr);\n  }\n  \n  // Aptos: 0x followed by up to 64 hex characters (can be shorter)\n  if (chain === 'aptos') {\n    return /^0x[a-fA-F0-9]{1,64}$/.test(addr);\n  }\n  \n  // Near: account names ending with .near or implicit accounts (hex)\n  if (chain === 'near') {\n    return /^[a-z0-9._-]+\\.near$/.test(addr) || /^[a-f0-9]{64}$/.test(addr);\n  }\n  \n  // Cosmos ecosystem: bech32 addresses starting with various prefixes\n  if (['cosmos', 'osmosis', 'sei', 'injective', 'juno', 'stargaze', 'canto', 'evmos'].includes(chain || '')) {\n    return /^[a-z]{1,10}1[a-z0-9]{38,58}$/.test(addr);\n  }\n  \n  // For other chains or unknown chains, accept various formats\n  // This is more permissive to handle new chains\n  return addr.length >= 10 && addr.length <= 100;\n}\n\n// Test cases\nconst testCases = [\n  { chain: 'solana', address: 'PkTtsHH3rdLT8vEsXc6Ti2LbeSM1ShnPrr1muL9pump', expected: true },\n  { chain: 'ton', address: 'EQD1AOxSwDn3UX0PCBDNVGE4xNkAJPsjzOEBRILfvFdR4H2B', expected: true },\n  { chain: 'sui', address: '0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef1234', expected: true },\n  { chain: 'ethereum', address: '0x1234567890123456789012345678901234567890', expected: true },\n  { chain: 'polygon', address: '0x1234567890123456789012345678901234567890', expected: true },\n  { chain: 'invalid', address: 'invalid', expected: false },\n];\n\nconsole.log('Address validation test results:');\ntestCases.forEach((test, i) => {\n  const result = isValidAddress(test.address, test.chain);\n  const status = result === test.expected ? '✅ PASS' : '❌ FAIL';\n  console.log(`${i+1}. ${status} - ${test.chain}: ${test.address.slice(0, 20)}... -> ${result}`);\n});\n"
+        }
+    ]
+}

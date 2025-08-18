@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1755347748704,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1755517064289,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -7,23 +7,27 @@\n     \"build\": \"tsc && vite build\",\n     \"preview\": \"vite preview\"\n   },\n   \"dependencies\": {\n+    \"@emotion/react\": \"^11.14.0\",\n+    \"@emotion/styled\": \"^11.14.1\",\n+    \"@mui/icons-material\": \"^5.15.10\",\n+    \"@mui/material\": \"^5.18.0\",\n     \"lightweight-charts\": \"^4.2.3\",\n     \"react\": \"^18.2.0\",\n     \"react-dom\": \"^18.2.0\",\n+    \"react-native-web\": \"^0.21.0\",\n     \"react-router-dom\": \"^6.22.0\",\n     \"react-window\": \"^1.8.11\",\n-    \"uplot\": \"^1.6.17\",\n-    \"@mui/icons-material\": \"^5.15.10\",\n-    \"@mui/material\": \"^5.15.10\"\n+    \"uplot\": \"^1.6.17\"\n   },\n   \"devDependencies\": {\n     \"@types/react\": \"^18.2.14\",\n     \"@types/react-dom\": \"^18.2.7\",\n     \"@types/react-window\": \"^1.8.8\",\n     \"@vitejs/plugin-react\": \"^4.2.1\",\n     \"ts-node\": \"^10.9.2\",\n+    \"tsx\": \"^4.20.4\",\n     \"typescript\": \"^5.2.2\",\n     \"vite\": \"^5.0.0\"\n   }\n }\n"
                 }
             ],
             "date": 1755347748704,

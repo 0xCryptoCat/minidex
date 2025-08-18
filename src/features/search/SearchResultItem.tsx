@@ -92,9 +92,31 @@ export default function SearchResultItem({ result }: Props) {
             }}
           />
         ) : null}
-        <div className={`token-fallback ${icon ? 'hidden' : ''}`}>
-          {symbol?.[0]?.toUpperCase()}
+        <div 
+          className={`token-fallback ${icon ? 'hidden' : ''}`}
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            display: 'none', // Always start hidden, show only if needed
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <img 
+            src={`https://placehold.co/36x36/909090/ffffff?text=${symbol?.[0]?.toUpperCase() || 'T'}`}
+            alt={`${symbol} placeholder`}
+            style={{ width: '36px', height: '36px', borderRadius: '50%' }}
+          />
         </div>
+        {!icon && (
+          <img 
+            src={`https://placehold.co/36x36/909090/ffffff?text=${symbol?.[0]?.toUpperCase() || 'T'}`}
+            alt={`${symbol} placeholder`}
+            className="token-icon"
+            style={{ width: '36px', height: '36px', borderRadius: '50%' }}
+          />
+        )}
       </td>
       <td className="token-info-cell">
         <div className="token-info">
@@ -140,44 +162,22 @@ export default function SearchResultItem({ result }: Props) {
           <span className="pool-count-chip">{poolCount} pool{poolCount !== 1 ? 's' : ''}</span>
           {uniqueDexes.length > 0 && (
             <div className="dex-icons" title={`DEXes: ${uniqueDexes.join(', ')}`}>
-              {uniqueDexes.map(dex => (
+              {uniqueDexes.map((dex, index) => (
                 <img 
                   key={dex}
                   src={getDexIcon(dex)} 
                   alt={dex}
                   className="dex-icon"
                   title={dex}
+                  style={{ 
+                    zIndex: uniqueDexes.length - index,
+                    marginLeft: index > 0 ? '-4px' : '0'
+                  }}
                   onError={(e) => {
-                    // Fallback to first character if icon fails to load
-                    e.currentTarget.style.display = 'none';
-                    const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                    if (fallback && fallback.classList.contains('dex-fallback')) {
-                      fallback.style.display = 'inline-block';
-                    }
+                    // Fallback to placeholder with initial letter
+                    e.currentTarget.src = `https://placehold.co/16x16/6366f1/ffffff?text=${dex[0].toUpperCase()}`;
                   }}
                 />
-              ))}
-              {uniqueDexes.map(dex => (
-                <span 
-                  key={`${dex}-fallback`}
-                  className="dex-fallback"
-                  style={{
-                    display: 'none',
-                    width: '16px',
-                    height: '16px',
-                    borderRadius: '50%',
-                    background: 'var(--accent-telegram)',
-                    color: 'white',
-                    fontSize: '8px',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 600,
-                    textTransform: 'uppercase'
-                  }}
-                  title={dex}
-                >
-                  {dex[0]}
-                </span>
               ))}
               {(pools || []).length > uniqueDexes.length && (
                 <span className="dex-more" title={`${(pools || []).length - uniqueDexes.length} more DEXes`}>

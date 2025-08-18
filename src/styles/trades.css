@@ -315,68 +315,119 @@
 /* Expanded Row Styles */
 .tr-expanded {
   background: var(--bg-elev-2);
-  padding: 12px 16px;
+  padding: 16px;
   border-bottom: 1px solid var(--border-subtle);
-  animation: slideDown 0.2s ease;
+  animation: expandRow 0.3s ease-out;
+  border-left: 3px solid var(--border-light);
 }
 
-@keyframes slideDown {
+@keyframes expandRow {
   from {
     opacity: 0;
+    transform: translateY(-10px);
     max-height: 0;
+    padding: 0 16px;
   }
   to {
     opacity: 1;
-    max-height: 200px;
+    transform: translateY(0);
+    max-height: 300px;
+    padding: 16px;
   }
 }
 
 .tr-expanded-content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
 }
 
-.expanded-item {
+.expanded-section {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
 }
 
-.expanded-label {
+.expanded-section-title {
   font-size: 12px;
+  font-weight: 600;
   color: var(--text-muted);
-  min-width: 80px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 4px;
+}
+
+.expanded-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .expanded-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: var(--bg-elev);
+  border-radius: var(--radius-small);
+  font-size: 13px;
+}
+
+.stat-label {
+  color: var(--text-muted);
   font-weight: 500;
 }
 
-.expanded-value {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.stat-value {
+  color: var(--text);
+  font-weight: 600;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+.buy-count {
+  color: var(--accent-lime);
+}
+
+.sell-count {
+  color: var(--accent-maroon);
+}
+
+.stat-separator {
+  color: var(--text-muted);
+  margin: 0 4px;
+}
+
+/* Maker column no-wrap */
+.maker-column {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.maker-addr {
   font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
   font-size: 13px;
   color: var(--text);
+  white-space: nowrap;
 }
 
-.copy-btn,
-.external-link {
-  padding: 4px;
-  border: none;
-  background: var(--bg-elev);
-  color: var(--text-muted);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+/* Ensure trades table fills the available space properly */
+.trades-view-content {
+  height: calc(100vh - 60px - 80px - env(safe-area-inset-bottom)); /* Full height minus header, tabs, and safe area */
   display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
+  flex-direction: column;
 }
 
-.copy-btn:hover,
-.external-link:hover {
-  background: var(--bg-elev-3);
-  color: var(--accent-telegram);
-  transform: scale(1.05);
+.trades-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Allow flex shrinking */
 }

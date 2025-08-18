@@ -177,34 +177,15 @@ export default function TradesOnlyView({
         key: 'wallet',
         header: 'Maker',
         accessor: (t) => t.wallet || '',
-        render: (t) =>
-          t.wallet ? (
-            <div className="maker-cell">
-              <span className="maker-addr">{formatShortAddr(t.wallet)}</span>
-              <div className="maker-actions">
-                <ContentCopyIcon 
-                  className="action-icon copy-icon" 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigator.clipboard.writeText(t.wallet || '');
-                  }}
-                />
-                <a
-                  className="action-link"
-                  href={addressUrl(chain as any, t.wallet)!}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <LaunchIcon className="action-icon" />
-                </a>
-              </div>
-            </div>
-          ) : (
-            <span className="no-data">-</span>
-          ),
+        render: (t) => (
+          <div className="maker-cell">
+            <span className="maker-addr" style={{ whiteSpace: 'nowrap' }}>
+              {formatShortAddr(t.wallet)}
+            </span>
+          </div>
+        ),
         comparator: (a: string, b: string) => a.localeCompare(b),
-        className: 'maker',
+        className: 'maker-column',
       },
     ],
     [baseSymbol, quoteSymbol, chain]
@@ -237,6 +218,25 @@ export default function TradesOnlyView({
     }
   };
 
+  // Calculate trader stats for expanded view
+  const getTraderStats = (wallet: string) => {
+    if (!wallet) return null;
+    
+    const traderTrades = rows.filter(t => t.wallet === wallet);
+    const tradeCount = traderTrades.length;
+    const totalVolume = traderTrades.reduce((sum, t) => sum + ((t.amountQuote || 0) * (t.price || 0)), 0);
+    const buys = traderTrades.filter(t => t.side === 'buy');
+    const sells = traderTrades.filter(t => t.side === 'sell');
+    
+    return {
+      tradeCount,
+      totalVolume,
+      buyCount: buys.length,
+      sellCount: sells.length,
+      avgTradeSize: tradeCount > 0 ? totalVolume / tradeCount : 0
+    };
+  };
+
   const Row = ({ index, style }: { index: number; style: CSSProperties }) => {
     const t = sorted[index];
     const typeClass = t.side === 'buy' ? 'buy' : 'sell';
@@ -267,61 +267,101 @@ export default function TradesOnlyView({
         {isExpanded && (
           <div className="tr-expanded">
             <div className="tr-expanded-content">
-              {t.txHash && (
-                <div className="expanded-item">
-                  <span className="expanded-label">Transaction:</span>
-                  <div className="expanded-value">
-                    <span>{formatShortAddr(t.txHash)}</span>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigator.clipboard?.writeText(t.txHash!);
-                      }}
-                      className="copy-btn"
-                    >
-                      <ContentCopyIcon sx={{ fontSize: 14 }} />
-                    </button>
-                    {txUrl(chain as any, t.txHash) && (
-                      <a 
-                        href={txUrl(chain as any, t.txHash)} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="external-link"
-                      >
-                        <LaunchIcon sx={{ fontSize: 14 }} />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
               {t.wallet && (
-                <div className="expanded-item">
-                  <span className="expanded-label">Wallet:</span>
-                  <div className="expanded-value">
-                    <span>{formatShortAddr(t.wallet)}</span>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigator.clipboard?.writeText(t.wallet!);
-                      }}
-                      className="copy-btn"
-                    >
-                      <ContentCopyIcon sx={{ fontSize: 14 }} />
-                    </button>
-                    {addressUrl(chain as any, t.wallet) && (
-                      <a 
-                        href={addressUrl(chain as any, t.wallet)} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="external-link"
-                      >
-                        <LaunchIcon sx={{ fontSize: 14 }} />
-                      </a>
+                <>
+                  <div className="expanded-section">
+                    <h4 className="expanded-section-title">Transaction Details</h4>
+                    <div className="expanded-item">
+                      <span className="expanded-label">Wallet:</span>
+                      <div className="expanded-value">
+                        <span>{formatShortAddr(t.wallet)}</span>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard?.writeText(t.wallet!);
+                          }}
+                          className="copy-btn"
+                          title="Copy wallet address"
+                        >
+                          <ContentCopyIcon sx={{ fontSize: 14 }} />
+                        </button>
+                        {addressUrl(chain as any, t.wallet) && (
+                          <a 
+                            href={addressUrl(chain as any, t.wallet)} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="external-link"
+                            title="View on explorer"
+                          >
+                            <LaunchIcon sx={{ fontSize: 14 }} />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                    {t.txHash && (
+                      <div className="expanded-item">
+                        <span className="expanded-label">Transaction:</span>
+                        <div className="expanded-value">
+                          <span>{formatShortAddr(t.txHash)}</span>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard?.writeText(t.txHash!);
+                            }}
+                            className="copy-btn"
+                            title="Copy transaction hash"
+                          >
+                            <ContentCopyIcon sx={{ fontSize: 14 }} />
+                          </button>
+                          {txUrl(chain as any, t.txHash) && (
+                            <a 
+                              href={txUrl(chain as any, t.txHash)} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="external-link"
+                              title="View transaction on explorer"
+                            >
+                              <LaunchIcon sx={{ fontSize: 14 }} />
+                            </a>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
-                </div>
+                  
+                  {(() => {
+                    const stats = t.wallet ? getTraderStats(t.wallet) : null;
+                    return stats && stats.tradeCount > 1 ? (
+                      <div className="expanded-section">
+                        <h4 className="expanded-section-title">Trader Stats</h4>
+                        <div className="expanded-stats">
+                          <div className="stat-item">
+                            <span className="stat-label">Total Trades:</span>
+                            <span className="stat-value">{stats.tradeCount}</span>
+                          </div>
+                          <div className="stat-item">
+                            <span className="stat-label">Buy/Sell:</span>
+                            <span className="stat-value">
+                              <span className="buy-count">{stats.buyCount}</span>
+                              <span className="stat-separator">/</span>
+                              <span className="sell-count">{stats.sellCount}</span>
+                            </span>
+                          </div>
+                          <div className="stat-item">
+                            <span className="stat-label">Total Volume:</span>
+                            <span className="stat-value">{formatUsd(stats.totalVolume, { compact: true })}</span>
+                          </div>
+                          <div className="stat-item">
+                            <span className="stat-label">Avg Trade:</span>
+                            <span className="stat-value">{formatUsd(stats.avgTradeSize, { compact: true })}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
+                </>
               )}
             </div>
           </div>
@@ -373,7 +413,14 @@ export default function TradesOnlyView({
             itemSize={(index: number) => {
               const t = sorted[index];
               const tradeId = `${t.ts}-${t.txHash}`;
-              return expandedRow === tradeId ? ROW_HEIGHT + 80 : ROW_HEIGHT; // Extra height for expanded content
+              if (expandedRow === tradeId) {
+                // Base expanded height + additional height for trader stats if available
+                const baseHeight = 120;
+                const stats = t.wallet ? getTraderStats(t.wallet) : null;
+                const statsHeight = stats && stats.tradeCount > 1 ? 80 : 0;
+                return ROW_HEIGHT + baseHeight + statsHeight;
+              }
+              return ROW_HEIGHT;
             }}
             width="100%"
           >

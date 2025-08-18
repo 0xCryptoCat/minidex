@@ -123,20 +123,32 @@ export default function SearchInput({ autoFocus, large }: Props) {
     runSearch(newValue, true);
   }
 
-  // The current paste button does not paste the text into the input field
-  // Updated function to patch it so it pastes the clipboard content into the input field, don't run search immediately:
   async function handlePasteButton() {
     try {
       const text = await navigator.clipboard.readText();
-      if (text) {
-        setQuery(text);
+      if (text.trim()) {
+        setQuery(text.trim());
         if (inputRef.current) {
           inputRef.current.focus();
-          inputRef.current.setSelectionRange(text.length, text.length);
+          // Position cursor at end of pasted text
+          setTimeout(() => {
+            if (inputRef.current) {
+              inputRef.current.setSelectionRange(text.trim().length, text.trim().length);
+            }
+          }, 0);
         }
       }
     } catch (err) {
-      console.error('Failed to read clipboard:', err);
+      console.warn('Failed to read clipboard:', err);
+      // Fallback: try to use the legacy execCommand method
+      try {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          document.execCommand('paste');
+        }
+      } catch (fallbackErr) {
+        console.warn('Fallback paste failed:', fallbackErr);
+      }
     }
   } 
 

@@ -190,16 +190,14 @@ export default function ChartPage() {
 
           {view === 'trades' && currentPool && currentPool.poolAddress && address && (
             <div className="trades-view-content">
-              <div className="trades-container">
-                <TradesOnlyView
-                  pairId={currentPool.pairId}
-                  chain={currentPool.chain}
-                  poolAddress={currentPool.poolAddress}
-                  tokenAddress={address}
-                  baseSymbol={tradeSymbols?.baseSymbol || currentPool.base}
-                  quoteSymbol={tradeSymbols?.quoteSymbol || currentPool.quote}
-                />
-              </div>
+              <TradesOnlyView
+                pairId={currentPool.pairId}
+                chain={currentPool.chain}
+                poolAddress={currentPool.poolAddress}
+                tokenAddress={address}
+                baseSymbol={tradeSymbols?.baseSymbol || currentPool.base}
+                quoteSymbol={tradeSymbols?.quoteSymbol || currentPool.quote}
+              />
             </div>
           )}
 

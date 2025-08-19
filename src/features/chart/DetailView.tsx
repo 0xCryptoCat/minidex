@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react';
 import type { PoolSummary } from '../../lib/types';
 import { formatUsd, formatCompact, formatShortAddr, formatSmallPrice } from '../../lib/format';
 import CopyButton from '../../components/CopyButton';
+import TwitterFeedPanel from '../../components/TwitterFeedPanel';
 import { addressUrl } from '../../lib/explorer';
 import { getChainIcon, getSocialIcon } from '../../lib/chain-icons';
 import { 
@@ -272,6 +273,15 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
             );
           })}
         </div>
+      )}
+
+      {/* X/Twitter Feed */}
+      {active.baseToken && (
+        <TwitterFeedPanel 
+          chain={chain} 
+          address={active.baseToken.address} 
+          twitterUrl={linkItems.find(li => li.key === 'twitter' || li.key === 'x')?.url}
+        />
       )}
 
       {/* Addresses */}

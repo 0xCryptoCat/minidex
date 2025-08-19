@@ -277,10 +277,9 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
 
       {/* X/Twitter Feed */}
       {active.baseToken && (
-        <TwitterFeedPanel 
-          chain={chain} 
-          address={active.baseToken.address} 
-          twitterUrl={linkItems.find(li => li.key === 'twitter' || li.key === 'x')?.url}
+        <TwitterFeedPanel
+          tokenAddress={active.baseToken.address}
+          chainId={chain}
         />
       )}
 

@@ -11,23 +11,25 @@ import type {
 
 // Security metric labels and descriptions
 const SECURITY_METRICS_CONFIG: Record<string, { label: string; critical: boolean; invert?: boolean }> = {
-  is_honeypot: { label: 'Honeypot Check', critical: true },
-  is_blacklisted: { label: 'Blacklist Check', critical: true },
+  is_honeypot: { label: 'Honeypot Check', critical: true, invert: true },
+  is_blacklisted: { label: 'Blacklist Check', critical: true, invert: true },
   cannot_buy: { label: 'Can Buy', critical: true, invert: true },
   cannot_sell_all: { label: 'Can Sell', critical: true, invert: true },
   is_open_source: { label: 'Open Source', critical: false },
   is_proxy: { label: 'Proxy Contract', critical: false },
   is_mintable: { label: 'Mintable', critical: false },
-  external_call: { label: 'External Calls', critical: true },
-  selfdestruct: { label: 'Self Destruct', critical: true },
+  external_call: { label: 'External Calls', critical: true, invert: true },
+  selfdestruct: { label: 'Self Destruct', critical: true, invert: true },
   is_anti_whale: { label: 'Anti-Whale', critical: false },
-  anti_whale_modifiable: { label: 'Modifiable Anti-Whale', critical: true },
-  slippage_modifiable: { label: 'Modifiable Slippage', critical: true },
-  personal_slippage_modifiable: { label: 'Personal Slippage Mod', critical: true },
-  can_take_back_ownership: { label: 'Can Take Back Ownership', critical: true },
-  hidden_owner: { label: 'Hidden Owner', critical: true },
+  anti_whale_modifiable: { label: 'Modifiable Anti-Whale', critical: true, invert: true },
+  slippage_modifiable: { label: 'Modifiable Slippage', critical: true, invert: true },
+  personal_slippage_modifiable: { label: 'Personal Slippage Mod', critical: true, invert: true },
+  can_take_back_ownership: { label: 'Can Take Back Ownership', critical: true, invert: true },
+  hidden_owner: { label: 'Hidden Owner', critical: true, invert: true },
   is_whitelisted: { label: 'Whitelisted', critical: false },
   is_in_dex: { label: 'In DEX', critical: false },
+  trading_cooldown: { label: 'Trading Cooldown', critical: false, invert: true },
+  transfer_pausable: { label: 'Transfer Pausable', critical: true, invert: true },
 };
 
 export function useGoSecurity(chain: string, address: string) {
@@ -152,11 +154,24 @@ function processLPHolder(lpHolder: LPHolder) {
   let lockerService: string | undefined;
   if (lpHolder.tag) {
     const tag = lpHolder.tag.toLowerCase();
+    // Map common locker services
     if (tag.includes('goplus')) lockerService = 'GoPlus SafeToken Locker';
     else if (tag.includes('pinklock')) lockerService = 'PinkLock';
     else if (tag.includes('uncx')) lockerService = 'UNCX';
     else if (tag.includes('mudra')) lockerService = 'Mudra';
-    // Add more locker detection logic
+    else if (tag.includes('deeplock')) lockerService = 'DeepLock';
+    else if (tag.includes('dxlock')) lockerService = 'DxLock';
+    else if (tag.includes('team')) lockerService = 'TeamFinace';
+    else if (tag.includes('floki')) lockerService = 'Floki';
+    else if (tag.includes('dao')) lockerService = 'DaoLock';
+    else if (tag.includes('maple')) lockerService = 'MapleLocker';
+    else if (tag.includes('onlymoons')) lockerService = 'OnlyMoons';
+    else if (tag.includes('tokentool')) lockerService = 'TokenToolLock';
+    else if (tag.includes('gempad')) lockerService = 'gempad';
+    else if (tag.includes('party')) lockerService = 'partyDao';
+    else if (tag.includes('mofo')) lockerService = 'MOFO';
+    // If no specific match, use the tag as is
+    else lockerService = lpHolder.tag;
   }
   
   return {
@@ -176,7 +191,7 @@ function processEVMSecurityData(evmData: GoPlusTokenSecurity): ProcessedSecurity
     const value = evmData[key as keyof GoPlusTokenSecurity] as '0' | '1' | undefined;
     let boolValue = booleanFromString(value);
     
-    // Invert logic for metrics where "1" means bad
+    // Invert logic for metrics where "1" means bad (like honeypot, blacklist, etc.)
     if (config.invert) {
       boolValue = !boolValue;
     }
@@ -190,10 +205,11 @@ function processEVMSecurityData(evmData: GoPlusTokenSecurity): ProcessedSecurity
   });
 
   // Process holder metrics
+  const holders = (evmData.holders || []).map(processHolder);
   const holderMetrics = {
     holderCount: parseInt(evmData.holder_count || '0'),
     totalSupply: formatBalance(evmData.total_supply || '0'),
-    topHolders: (evmData.holders || []).map(processHolder),
+    topHolders: holders.slice(0, 10), // Ensure we show all available holders up to 10
   };
 
   // Process liquidity metrics
@@ -204,6 +220,7 @@ function processEVMSecurityData(evmData: GoPlusTokenSecurity): ProcessedSecurity
       name: dex.name,
       liquidity: formatBalance(dex.liquidity || '0'),
       pair: dex.pair,
+      liquidityType: dex.liquidity_type,
     })),
     lpHolders: (evmData.lp_holders || []).map(processLPHolder),
   };
@@ -214,6 +231,7 @@ function processEVMSecurityData(evmData: GoPlusTokenSecurity): ProcessedSecurity
     isRenounced: isRenounced(evmData.owner_address),
     ownerBalance: evmData.owner_balance ? formatBalance(evmData.owner_balance) : undefined,
     ownerPercent: evmData.owner_percent,
+    ownerChangeBalance: booleanFromString(evmData.owner_change_balance),
   };
 
   // Process token metrics
@@ -222,6 +240,8 @@ function processEVMSecurityData(evmData: GoPlusTokenSecurity): ProcessedSecurity
     buyTax: evmData.buy_tax ? parseFloat(evmData.buy_tax) : undefined,
     sellTax: evmData.sell_tax ? parseFloat(evmData.sell_tax) : undefined,
     transferTax: evmData.transfer_tax ? parseFloat(evmData.transfer_tax) : undefined,
+    tokenName: evmData.token_name,
+    tokenSymbol: evmData.token_symbol,
   };
 
   return {
@@ -234,9 +254,9 @@ function processEVMSecurityData(evmData: GoPlusTokenSecurity): ProcessedSecurity
       isAirdropScam: evmData.is_airdrop_scam && booleanFromString(evmData.is_airdrop_scam),
       trustList: evmData.trust_list && booleanFromString(evmData.trust_list),
       fakeToken: evmData.fake_token && booleanFromString(evmData.fake_token.value),
-      inCEX: false, // Not available in current API
-      launchpadToken: false, // Not available in current API
-      gasAbuse: false, // Not available in current API
+      inCEX: evmData.is_in_cex && booleanFromString(evmData.is_in_cex.listed),
+      launchpadToken: evmData.launchpad_token && booleanFromString(evmData.launchpad_token.is_launchpad_token),
+      gasAbuse: evmData.gas_abuse && booleanFromString(evmData.gas_abuse),
     },
   };
 }
@@ -259,30 +279,66 @@ function processSolanaSecurityData(solanaData: SolanaTokenSecurity): ProcessedSe
     {
       key: 'freezeable',
       label: 'Freezeable',
-      value: booleanFromString(solanaData.freezeable),
+      value: !booleanFromString(solanaData.freezeable), // Invert because freezeable is bad
+      critical: true,
+    },
+    {
+      key: 'non_transferable',
+      label: 'Transferable',
+      value: !booleanFromString(solanaData.non_transferable), // Invert because non-transferable is bad
       critical: true,
     },
   ];
 
-  // Process holder metrics (limited in Solana)
+  // Process holder metrics
+  const holders = (solanaData.holders || []).map(holder => ({
+    address: holder.account,
+    tag: holder.tag || '',
+    isContract: false, // Solana doesn't distinguish this way
+    balance: formatBalance(holder.balance),
+    percent: (parseFloat(holder.percent) * 100).toFixed(2), // Convert to percentage
+    isLocked: booleanFromString(holder.is_locked),
+  }));
+
   const holderMetrics = {
     holderCount: parseInt(solanaData.holder_count || '0'),
     totalSupply: formatBalance(solanaData.total_supply || '0'),
-    topHolders: [], // Not available in current Solana API
+    topHolders: holders.slice(0, 10), // Top 10 holders
   };
 
-  // Limited liquidity metrics for Solana
+  // Process LP holders
+  const lpHolders = (solanaData.lp_holders || []).map(lpHolder => {
+    let lockerService: string | undefined;
+    if (lpHolder.tag) {
+      const tag = lpHolder.tag.toLowerCase();
+      if (tag.includes('raydium')) lockerService = 'Raydium Lock';
+      else if (tag.includes('orca')) lockerService = 'Orca Lock';
+      // Add more Solana-specific locker detection
+    }
+    
+    return {
+      address: lpHolder.account,
+      tag: lpHolder.tag || '',
+      isContract: false,
+      balance: formatBalance(lpHolder.balance || '0'),
+      percent: (parseFloat(lpHolder.percent) * 100).toFixed(2), // Convert to percentage
+      isLocked: booleanFromString(lpHolder.is_locked),
+      lockerService,
+    };
+  });
+
   const liquidityMetrics = {
-    dexes: [],
-    lpHolders: [],
+    lpHolderCount: lpHolders.length,
+    dexes: [], // Not available in Solana API response
+    lpHolders,
   };
 
-  // Process creator/authority as owner metrics
+  // Process creator/authority as owner metrics  
   const ownerMetrics = {
     ownerAddress: solanaData.mint_authority,
     isRenounced: !solanaData.mint_authority || solanaData.mint_authority === '11111111111111111111111111111111',
     ownerBalance: solanaData.creator_balance ? formatBalance(solanaData.creator_balance) : undefined,
-    ownerPercent: solanaData.creator_percent,
+    ownerPercent: solanaData.creator_percent ? (parseFloat(solanaData.creator_percent) * 100).toFixed(2) : undefined,
   };
 
   // Process token metrics
@@ -291,6 +347,8 @@ function processSolanaSecurityData(solanaData: SolanaTokenSecurity): ProcessedSe
     buyTax: undefined, // Not applicable to Solana
     sellTax: undefined,
     transferTax: undefined,
+    tokenName: solanaData.metadata?.name,
+    tokenSymbol: solanaData.metadata?.symbol,
   };
 
   return {
@@ -301,7 +359,7 @@ function processSolanaSecurityData(solanaData: SolanaTokenSecurity): ProcessedSe
     tokenMetrics,
     securityFlags: {
       isAirdropScam: false, // Not available in Solana API
-      trustList: false, // Not available in Solana API
+      trustList: solanaData.trusted_token === 1,
       fakeToken: false, // Not available in Solana API
       inCEX: false, // Not available in Solana API
       launchpadToken: false, // Not available in Solana API

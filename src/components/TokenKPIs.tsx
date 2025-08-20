@@ -4,48 +4,20 @@ import type { ProcessedSecurityData } from '../lib/goplus-types';
 
 interface TokenKPIsProps {
   data: ProcessedSecurityData | null;
-  fdv?: number;
-  marketCap?: number;
 }
 
-export function TokenKPIs({ data, fdv, marketCap }: TokenKPIsProps) {
+export function TokenKPIs({ data }: TokenKPIsProps) {
   if (!data) return null;
 
   const { tokenMetrics } = data;
   
-  // Check if we should show combined FDV/MC or separate
-  const shouldCombine = fdv && marketCap && Math.abs(fdv - marketCap) < 1000;
-  
   return (
     <>
-      {/* Supply Section */}
+      {/* Supply Section - Only show if we have security data */}
       <div className="kpi-item">
         <span>Total Supply</span>
         <strong>{tokenMetrics.totalSupply}</strong>
       </div>
-
-      {/* FDV/Market Cap - updated logic */}
-      {shouldCombine ? (
-        <div className="kpi-item">
-          <span>FDV / Market Cap</span>
-          <strong>{formatUsd(fdv)}</strong>
-        </div>
-      ) : (
-        <>
-          {fdv && (
-            <div className="kpi-item">
-              <span>FDV</span>
-              <strong>{formatUsd(fdv)}</strong>
-            </div>
-          )}
-          {marketCap && (
-            <div className="kpi-item">
-              <span>Market Cap</span>
-              <strong>{formatUsd(marketCap)}</strong>
-            </div>
-          )}
-        </>
-      )}
 
       {/* Transaction Fees Section */}
       {(tokenMetrics.buyTax !== undefined || 

@@ -378,8 +378,6 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
         {/* Security-based Token KPIs */}
         <TokenKPIs 
           data={securityData}
-          fdv={active.fdv}
-          marketCap={active.marketCap}
         />
 
         {/* Owner/Creator Metrics */}

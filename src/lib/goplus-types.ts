@@ -171,6 +171,21 @@ export interface SolanaTokenSecurity {
     locked_detail?: any[];
   }>;
   
+  // LP Holder information (for Solana DEX)
+  lp_holders?: Array<{
+    account: string;
+    balance: string;
+    percent: string;
+    tag?: string;
+    token_account: string;
+    is_locked?: '0' | '1';
+    locked_detail?: Array<{
+      amount: string;
+      end_time: string;
+      opt_time: string;
+    }>;
+  }>;
+  
   // Security checks
   is_open_source?: '0' | '1';
   is_honeypot?: '0' | '1';

@@ -295,18 +295,21 @@ const TwitterFeedPanel: React.FC<Props> = ({
                     // Display URLs as an image - if not possible, show as text
                     <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
                       {t.entities.urls.map((url, i) => (
-                        <img
+                        <a
                           key={i}
-                          src={url.expanded_url || url.url}
-                          alt={url.display_url || url.expanded_url || url.url}
-                          style={{ borderRadius: 8, objectFit: "cover", width: "100%", height: "auto" }}
-                        />
+                          href={url.expanded_url || url.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 15 }}
+                        >
+                          {url.display_url || url.expanded_url || url.url}
+                        </a>
                       ))}
                     </div>
                   )}
 
                   {/* Metrics */}
-                  <div className={classNames.metricsRow ?? "tweet-metrics"} style={{ marginTop: 8, fontSize: 12, display: "flex", gap: 12, opacity: 0.85 }}>
+                  <div className={classNames.metricsRow ?? "tweet-metrics"} style={{ marginTop: 8, fontSize: 12, display: "flex", justifyContent: "space-between" }}>
                     <span><FavoriteBorder style={{ fontSize: "12px" }} /> {t.public_metrics?.like_count ?? 0}</span>
                     <span><KeyboardReturn style={{ fontSize: "12px" }} /> {t.public_metrics?.reply_count ?? 0}</span>
                     <span><Repeat style={{ fontSize: "12px" }} /> {t.public_metrics?.retweet_count ?? 0}</span>

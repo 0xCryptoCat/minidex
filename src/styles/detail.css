@@ -260,7 +260,7 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  padding: 0 16px 24px;
+  padding: 0 16px 10px;
 }
 
 @media (min-width: 768px) {
@@ -730,7 +730,7 @@
   }
   
   .detail-kpis {
-    padding: 0 12px 20px;
+    padding: 0 12px 10px;
     gap: 10px;
   }
   

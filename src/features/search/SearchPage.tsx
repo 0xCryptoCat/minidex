@@ -116,16 +116,33 @@ export default function SearchPage() {
     }
   }
 
+  // Handle paste click - try to read clipboard text
   async function handlePasteClick() {
     try {
       const text = await navigator.clipboard.readText();
       if (text.trim()) {
         setQuery(text.trim());
-        if (timer.current) clearTimeout(timer.current);
-        runSearch(text.trim());
+        if (inputRef.current) {
+          inputRef.current.focus();
+          // Position cursor at end of pasted text
+          setTimeout(() => {
+            if (inputRef.current) {
+              inputRef.current.setSelectionRange(text.trim().length, text.trim().length);
+            }
+          }, 0);
+        }
       }
     } catch (err) {
       console.warn('Failed to read clipboard:', err);
+      // Fallback: try to use the legacy execCommand method
+      try {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          document.execCommand('paste');
+        }
+      } catch (fallbackErr) {
+        console.warn('Fallback paste failed:', fallbackErr);
+      }
     }
   }
 
@@ -301,7 +318,7 @@ export default function SearchPage() {
             Token not found
           </div>
           <div style={{ fontSize: '0.875rem', lineHeight: 1.5 }}>
-            Try a different search term or make sure addresses are full 42-character checksummed format.
+            Make sure addresses are full 42-character checksummed format.
           </div>
         </div>
       )}

@@ -202,7 +202,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
   return (
     <div style={containerStyle}>
       <label htmlFor="global-search" style={{ position: 'absolute', left: -10000 }}>
-        {'Search tokens or paste address'}
+        {'Search tokens with address'}
       </label>
       <div className="search-input-container">
         <input
@@ -212,8 +212,8 @@ export default function SearchInput({ autoFocus, large }: Props) {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKey}
           onPaste={handlePaste}
-          placeholder="Search tokens or paste address"
-          aria-label="Search tokens or paste address"
+          placeholder="Search tokens with address"
+          aria-label="Search tokens with address"
           className={`search-input-enhanced ${hasError ? 'search-input-error' : ''} ${isLoading ? 'search-loading' : ''}`}
           style={{
             ...inputStyle,

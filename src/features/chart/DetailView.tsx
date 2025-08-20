@@ -3,6 +3,9 @@ import type { PoolSummary } from '../../lib/types';
 import { formatUsd, formatCompact, formatShortAddr, formatSmallPrice } from '../../lib/format';
 import CopyButton from '../../components/CopyButton';
 import TwitterFeedPanel from '../../components/TwitterFeedPanel';
+import { SecurityPanel } from '../../components/SecurityPanel';
+import { TokenKPIs, OwnerMetrics } from '../../components/TokenKPIs';
+import { useGoSecurity } from '../../lib/useGoSecurity';
 import { addressUrl } from '../../lib/explorer';
 import { getChainIcon, getSocialIcon } from '../../lib/chain-icons';
 import { 
@@ -45,6 +48,9 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
 
   // Find the active pool from the provided pools data
   const active = pools.find((p) => p.pairId === pairId) || pools[0];
+  
+  // Fetch security data for the token
+  const { loading: securityLoading, error: securityError, data: securityData } = useGoSecurity(chain, address);
   
   // Helper function to truncate long ticker symbols
   const truncateSymbol = (symbol: string, maxLength: number = 10) => {
@@ -369,6 +375,19 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
           </div>
         )}
 
+        {/* Security-based Token KPIs */}
+        <TokenKPIs 
+          data={securityData}
+          fdv={active.fdv}
+          marketCap={active.marketCap}
+        />
+
+        {/* Owner/Creator Metrics */}
+        <OwnerMetrics 
+          data={securityData}
+          chain={chain}
+        />
+
         {/* Price Changes */}
         <div className="kpi-item kpi-wide">
           <span>Price Changes</span>
@@ -467,36 +486,14 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
         </div>
       </div>
 
-      {/* Security Section */}
-      <div className="security-section">
-        <h3 style={{ margin: '0 0 var(--space-3) 0', fontSize: '1rem', fontWeight: 600 }}>Security Analysis</h3>
-        
-        {/* HoneyPot.is Row */}
-        <div className="security-row">
-          <div className="security-name">
-            <span>HoneyPot.is</span>
-          </div>
-          <div className="security-result">
-            <span className="security-status pending">Checking...</span>
-            <button className="security-expand" onClick={() => {/* TODO: Toggle expanded */}}>
-              <ExpandMoreIcon sx={{ fontSize: 16 }} />
-            </button>
-          </div>
-        </div>
-        
-        {/* Go+ Security Row */}
-        <div className="security-row">
-          <div className="security-name">
-            <span>Go+ Security</span>
-          </div>
-          <div className="security-result">
-            <span className="security-status pending">Checking...</span>
-            <button className="security-expand" onClick={() => {/* TODO: Toggle expanded */}}>
-              <ExpandMoreIcon sx={{ fontSize: 16 }} />
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Security Analysis */}
+      <SecurityPanel 
+        data={securityData}
+        loading={securityLoading}
+        error={securityError}
+        chain={chain}
+        address={address}
+      />
     </div>
   );
 }

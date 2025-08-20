@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import type { PoolSummary, TokenMeta, TokenResponse, Provider } from '../../lib/types';
 import { pairs, token as fetchToken } from '../../lib/api';
 import { poolDataManager } from '../../lib/pool-manager';
+import { useGoSecurity } from '../../lib/useGoSecurity';
 import PoolSwitcher from './PoolSwitcher';
 import ChartOnlyView from './ChartOnlyView';
 import DetailView from './DetailView';
@@ -32,6 +33,12 @@ export default function ChartPage() {
   const [noData, setNoData] = useState(false);
   const [unsupported, setUnsupported] = useState(false);
   const { setProvider: setGlobalProvider } = useProvider();
+
+  // Fetch security data for market cap calculations and general security info
+  const { loading: securityLoading, error: securityError, data: securityData } = useGoSecurity(
+    chain || '', 
+    address || ''
+  );
 
   useEffect(() => {
     if (!searchParams.get('view')) {
@@ -184,6 +191,7 @@ export default function ChartPage() {
                   onXDomainChange={setXDomain}
                   tokenAddress={address}
                   tokenDetail={tokenDetail}
+                  securityData={securityData}
                 />
               </div>
             </div>

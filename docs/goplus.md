@@ -180,7 +180,7 @@ Get supported blockchains.
 
 ### Get token's security and risk data
 
-**GET** <https://api.gopluslabs.io/api/v1/token_security/{chain_id}>  
+**GET** <https://api.gopluslabs.io/api/v1/token_security/{chain_id}?contract_addresses={contract_address}>  
 Get token security information.
 
 #### Response Details – Contract Security
@@ -243,6 +243,163 @@ Get token security information.
 | Fake Token | fake_token | Indicates whether the token is a counterfeit of a mainstream asset. If it is, "value": 1 and "true_token_address" provides the authentic asset's address(es). | Example: "fake_token": { "true_token_address": "0xff970a61...bbdB5CC8, 0xaf88d065...268E5831", "value": 1 }. If no evidence indicates a counterfeit asset, this field will not be returned. |
 | In Major CEX | is_in_cex | Indicates whether this token has been listed on major centralized exchanges (widely trusted, relatively low risk). Returned as an object, e.g. "is_in_cex": { "listed": "1", "cex_list": \[ "Binance" \] }. | (1) If the token is not found on known CEXs, this field will not be returned (this does **not** necessarily mean the token is risky).&lt;br&gt;(2) When 'listed' is "1", other risk alerts can generally be ignored, and the token can be considered safe. |
 | Launchpad Token | launchpad_token | Indicates whether the token was deployed through a well-known and trustworthy launchpad. Provided as an object, e.g. "launchpad_token": { "is_launchpad_token": "1", "launchpad_name": "four.meme" }. | (1) If the token is not found in our supported launchpad list, this field will not be returned (this does not necessarily mean it is risky). |
+
+#### Example response
+
+```json
+{
+  "code": 1,
+  "message": "OK",
+  "result": {
+    "0x8a37094f86d3a4218cf0eb614c2fd00d65158fe8": {
+      "anti_whale_modifiable": "0",
+      "buy_tax": "0",
+      "can_take_back_ownership": "0",
+      "cannot_buy": "0",
+      "cannot_sell_all": "0",
+      "dex": [
+        {
+          "liquidity_type": "UniV2",
+          "name": "UniswapV2",
+          "liquidity": "104568.46389794",
+          "pair": "0x1675c27dfb6d72d2ffe06c2f3ef7a6ca064de0db"
+        }
+      ],
+      "external_call": "0",
+      "hidden_owner": "0",
+      "holder_count": "386",
+      "holders": [
+        {
+          "address": "0x8a37094f86d3a4218cf0eb614c2fd00d65158fe8",
+          "tag": "",
+          "is_contract": 1,
+          "balance": "980000000",
+          "percent": "0.980000000000000000",
+          "is_locked": 0
+        },
+        {
+          "address": "0x1675c27dfb6d72d2ffe06c2f3ef7a6ca064de0db",
+          "tag": "UniswapV2",
+          "is_contract": 1,
+          "balance": "43768474.482449999",
+          "percent": "0.043768474482449999",
+          "is_locked": 0
+        },
+        {
+          "address": "0xae018eac48e08aeccdc3ce7dccfce7ee186fce62",
+          "tag": "",
+          "is_contract": 0,
+          "balance": "35184607.684222118",
+          "percent": "0.035184607684222118",
+          "is_locked": 0
+        },
+        {
+          "address": "0xd63b2cc41f17502ed70b30aa275f6dcd97826613",
+          "tag": "",
+          "is_contract": 0,
+          "balance": "31269397.592721432",
+          "percent": "0.031269397592721432",
+          "is_locked": 0
+        },
+        {
+          "address": "0x8a57cfaf64cc67dc918c5a31340cf7b53e692614",
+          "tag": "",
+          "is_contract": 0,
+          "balance": "30670761.344107769",
+          "percent": "0.030670761344107769",
+          "is_locked": 0
+        },
+        {
+          "address": "0x01e75c15b1308d3898326b38419041f6238950ec",
+          "tag": "",
+          "is_contract": 0,
+          "balance": "26362922.075744039",
+          "percent": "0.026362922075744039",
+          "is_locked": 0
+        },
+        {
+          "address": "0x5b733f687349433e129e843f1464c4bdeda51539",
+          "tag": "",
+          "is_contract": 0,
+          "balance": "25200961.814137137",
+          "percent": "0.025200961814137137",
+          "is_locked": 0
+        },
+        {
+          "address": "0x895ed69aaee1720eeec9c5b66bd87682c22c2aec",
+          "tag": "",
+          "is_contract": 0,
+          "balance": "22750242.048353291",
+          "percent": "0.022750242048353291",
+          "is_locked": 0
+        },
+        {
+          "address": "0xe29092e4567b5111a2bfc8ac762116508ee96f4b",
+          "tag": "",
+          "is_contract": 0,
+          "balance": "21897210.943769801",
+          "percent": "0.021897210943769801",
+          "is_locked": 0
+        },
+        {
+          "address": "0x8b5cd7a8b08e2968e8ed7f4b7c6876a160267f18",
+          "tag": "",
+          "is_contract": 0,
+          "balance": "20131690.514652642",
+          "percent": "0.020131690514652642",
+          "is_locked": 0
+        }
+      ],
+      "is_anti_whale": "1",
+      "is_blacklisted": "0",
+      "is_honeypot": "0",
+      "is_in_dex": "1",
+      "is_mintable": "0",
+      "is_open_source": "1",
+      "is_proxy": "0",
+      "is_whitelisted": "1",
+      "lp_holder_count": "2",
+      "lp_holders": [
+        {
+          "address": "0x000000000000000000000000000000000000dead",
+          "tag": "",
+          "value": null,
+          "is_contract": 0,
+          "balance": "0.989949493661165534",
+          "percent": "0.999999999999998989",
+          "NFT_list": null,
+          "is_locked": 1
+        },
+        {
+          "address": "0x0000000000000000000000000000000000000000",
+          "tag": "Null Address",
+          "value": null,
+          "is_contract": 0,
+          "balance": "0.000000000000001",
+          "percent": "0.000000000000001010",
+          "NFT_list": null,
+          "is_locked": 1
+        }
+      ],
+      "lp_total_supply": "0.989949493661166534",
+      "owner_address": "0x0000000000000000000000000000000000000000",
+      "owner_balance": "0",
+      "owner_change_balance": "0",
+      "owner_percent": "0.000000",
+      "personal_slippage_modifiable": "0",
+      "selfdestruct": "0",
+      "sell_tax": "0",
+      "slippage_modifiable": "0",
+      "token_name": "DarkAni Grok Companion",
+      "token_symbol": "DarkAni",
+      "total_supply": "1000000000",
+      "trading_cooldown": "0",
+      "transfer_pausable": "0",
+      "transfer_tax": "0"
+    }
+  }
+}
+```
 
 # Malicious Address API
 
@@ -516,16 +673,589 @@ Check if a contract has potential rug-pull risks.
 
 ### Get token's security and risk data (Solana)
 
-**GET** <https://api.gopluslabs.io/api/v1/solana/token_security>  
+**GET** <https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses={contract_address}>  
 Get security analysis for a Solana token (SPL or SPL-2022 standard).
 
 #### Response Detail
 
 Provides security analysis fields similar to the [Token Security API](#token-security-api) above, adapted for Solana tokens.
 
+#### Response example
+
+```json
+{
+  "code": 1,
+  "message": "ok",
+  "result": {
+    "4daoTLufDmV3ods48Zh8rymaZKBLtgEvuH9qALYLbonk": {
+      "balance_mutable_authority": {
+        "authority": [],
+        "status": "0"
+      },
+      "closable": {
+        "authority": [],
+        "status": "0"
+      },
+      "creators": [
+        {
+          "address": "WLHv2UAZm6z4KyaaELi5pjdbJh6RESMva1Rnn8pJVVh",
+          "malicious_address": 0
+        }
+      ],
+      "default_account_state": "1",
+      "default_account_state_upgradable": {
+        "authority": [],
+        "status": "0"
+      },
+      "dex": [
+        {
+          "burn_percent": 99.95,
+          "day": {
+            "price_max": "39761.79363144027",
+            "price_min": "32039.163603567944",
+            "volume": "493342.3542970801"
+          },
+          "dex_name": "raydium",
+          "fee_rate": "0.0025",
+          "id": "2kv6hkaAiJ9vC7XHL8PfZxELcFeKJW9o8zx3XL155gM3",
+          "lp_amount": "3325.372324749",
+          "month": {
+            "price_max": "47477.01264629148",
+            "price_min": "3151.7886783735507",
+            "volume": "133081283.8431704"
+          },
+          "open_time": "1751664253",
+          "price": "34673.07144258256",
+          "tvl": "247071.94117321134",
+          "type": "Standard",
+          "week": {
+            "price_max": "47477.01264629148",
+            "price_min": "19353.582450020127",
+            "volume": "9697081.230215674"
+          }
+        },
+        {
+          "burn_percent": 0,
+          "day": {
+            "price_max": "-1",
+            "price_min": "-1",
+            "volume": "0"
+          },
+          "dex_name": "raydium",
+          "fee_rate": "0.01",
+          "id": "48PbPBguFqAxqWXfgaroDCAGHbbmMd539hWULpLSEPDa",
+          "lp_amount": null,
+          "month": {
+            "price_max": "31803.980442677163",
+            "price_min": "3217.736803726708",
+            "volume": "1144944.893702906"
+          },
+          "open_time": "0",
+          "price": "31753.9823771362",
+          "tvl": "5.321145576",
+          "type": "Concentrated",
+          "week": {
+            "price_max": "31803.980442677163",
+            "price_min": "5310.813396519984",
+            "volume": "6.654697058737185"
+          }
+        },
+        {
+          "burn_percent": 0,
+          "day": {
+            "price_max": "-1",
+            "price_min": "-1",
+            "volume": "0"
+          },
+          "dex_name": "raydium",
+          "fee_rate": "0.006",
+          "id": "e4DGHBu6QCZbUV6jxoiP85tmjFpk6ogXtXsEbzqCQVm",
+          "lp_amount": null,
+          "month": {
+            "price_max": "24877.97332600028",
+            "price_min": "4071.084152258052",
+            "volume": "597368.7868910203"
+          },
+          "open_time": "0",
+          "price": "24809.84355673816",
+          "tvl": "4.60323107187",
+          "type": "Concentrated",
+          "week": {
+            "price_max": "24877.97332600028",
+            "price_min": "8597.343420882948",
+            "volume": "5.247377558732581"
+          }
+        },
+        {
+          "burn_percent": 0,
+          "day": {
+            "price_max": "-1",
+            "price_min": "-1",
+            "volume": "0"
+          },
+          "dex_name": "raydium",
+          "fee_rate": "0.03",
+          "id": "DcrJ7qRuBX4efAPAmkC5dJbkgHNw9thJJkgSDg1yGQg5",
+          "lp_amount": null,
+          "month": {
+            "price_max": "10799.83326302256",
+            "price_min": "3214.9810922033143",
+            "volume": "365750.7489627885"
+          },
+          "open_time": "0",
+          "price": "10505.326382505647",
+          "tvl": "2.98454196765",
+          "type": "Concentrated",
+          "week": {
+            "price_max": "-1",
+            "price_min": "-1",
+            "volume": "0"
+          }
+        },
+        {
+          "burn_percent": 0,
+          "day": {
+            "price_max": "-1",
+            "price_min": "-1",
+            "volume": "0"
+          },
+          "dex_name": "raydium",
+          "fee_rate": "0.04",
+          "id": "DToEoq7CSL5Kc2cgJPzzuLpGyiZ1BhcqQz4adZftNBXV",
+          "lp_amount": null,
+          "month": {
+            "price_max": "5090.909090909091",
+            "price_min": "3519.0094957536817",
+            "volume": "166009.51843009522"
+          },
+          "open_time": "0",
+          "price": "4758.449362520802",
+          "tvl": "2.96202058374",
+          "type": "Concentrated",
+          "week": {
+            "price_max": "-1",
+            "price_min": "-1",
+            "volume": "0"
+          }
+        },
+        {
+          "burn_percent": 0,
+          "day": {
+            "price_max": "-1",
+            "price_min": "-1",
+            "volume": "0"
+          },
+          "dex_name": "raydium",
+          "fee_rate": "0.004",
+          "id": "9kMacDraaKKzWVQcUYXRHKhPafvNpPUMTaP6E88rb3w9",
+          "lp_amount": null,
+          "month": {
+            "price_max": "4400",
+            "price_min": "3930.999583459405",
+            "volume": "95878.68125483644"
+          },
+          "open_time": "0",
+          "price": "4271.339186304438",
+          "tvl": "2.36976575029",
+          "type": "Concentrated",
+          "week": {
+            "price_max": "-1",
+            "price_min": "-1",
+            "volume": "0"
+          }
+        },
+        {
+          "burn_percent": 0,
+          "day": {
+            "price_max": "-1",
+            "price_min": "-1",
+            "volume": "0"
+          },
+          "dex_name": "raydium",
+          "fee_rate": "0.02",
+          "id": "CHy75AxY2ZpQj5v6jxAHrDMgwCZiyMayFqUyC6UZctdU",
+          "lp_amount": null,
+          "month": {
+            "price_max": "9666.666666666666",
+            "price_min": "3257.486034532792",
+            "volume": "13826.079093792692"
+          },
+          "open_time": "0",
+          "price": "9096.496625876822",
+          "tvl": "1.35531051044",
+          "type": "Concentrated",
+          "week": {
+            "price_max": "-1",
+            "price_min": "-1",
+            "volume": "0"
+          }
+        },
+        {
+          "burn_percent": 0,
+          "day": {
+            "price_max": "0.005632554554554555",
+            "price_min": "0.005228647698647186",
+            "volume": "104.31353595061094"
+          },
+          "dex_name": "raydium",
+          "fee_rate": "0.02",
+          "id": "G76keS6FbmBThHB7owXF61xDg4ZwPDBeE9bRakJfz9Jo",
+          "lp_amount": null,
+          "month": {
+            "price_max": "0.04951995931381048",
+            "price_min": "0.005228647698647186",
+            "volume": "71295.38733619524"
+          },
+          "open_time": "0",
+          "price": "0.005314528579198302",
+          "tvl": "0.331532",
+          "type": "Concentrated",
+          "week": {
+            "price_max": "0.0066066739133841005",
+            "price_min": "0.005228647698647186",
+            "volume": "337.18700145424793"
+          }
+        },
+        {
+          "burn_percent": 0,
+          "day": {
+            "price_max": "-1",
+            "price_min": "-1",
+            "volume": "0"
+          },
+          "dex_name": "raydium",
+          "fee_rate": "0.0025",
+          "id": "C7d7qjShMzY35xCAttWNmDzaow73SEmo8bYwxA1oaEGL",
+          "lp_amount": null,
+          "month": {
+            "price_max": "6283.465594886879",
+            "price_min": "6202.372857681468",
+            "volume": "10.004503496032902"
+          },
+          "open_time": "0",
+          "price": "6202.368683163106",
+          "tvl": "0.0031518136",
+          "type": "Concentrated",
+          "week": {
+            "price_max": "-1",
+            "price_min": "-1",
+            "volume": "0"
+          }
+        },
+        {
+          "burn_percent": 0,
+          "day": {
+            "price_max": "-1",
+            "price_min": "-1",
+            "volume": "0"
+          },
+          "dex_name": "raydium",
+          "fee_rate": "0.008",
+          "id": "B85Hn81Kg1mvaM2XRRcVhLaxew7PvH3SCrZsAaTdn5Fc",
+          "lp_amount": null,
+          "month": {
+            "price_max": "4428.571428571428",
+            "price_min": "4111.938181818182",
+            "volume": "1284.8454761494122"
+          },
+          "open_time": "0",
+          "price": "4145.108252852063",
+          "tvl": "0.00225975052",
+          "type": "Concentrated",
+          "week": {
+            "price_max": "-1",
+            "price_min": "-1",
+            "volume": "0"
+          }
+        }
+      ],
+      "freezable": {
+        "authority": [],
+        "status": "0"
+      },
+      "holder_count": "9353",
+      "holders": [
+        {
+          "account": "GpMZbSM2GgvTKHJirzeGfMFoaZ8UR2X7F4v8vHTvxFbL",
+          "balance": "47917419.345109",
+          "is_locked": 0,
+          "locked_detail": [],
+          "percent": "0.0479",
+          "tag": "",
+          "token_account": "A2Fa7Jf7EebKovHPpXtdiTtk6Lk8SWw1UM5zzPpMrng3"
+        },
+        {
+          "account": "3btmjrS8jqQyysmf7w8hwrKvsEcqHc1HSDHiPJm9Zmap",
+          "balance": "34323638.756002",
+          "is_locked": 0,
+          "locked_detail": [],
+          "percent": "0.0343",
+          "tag": "",
+          "token_account": "F9yNKFsSzePW5qQrgPQwMXn2PhS3KuYNK7w85852a4c6"
+        },
+        {
+          "account": "5skKDVJ77jhEa1YELXuARCdMLTupVSt83c6VxAYbYqpg",
+          "balance": "27920249.732173",
+          "is_locked": 0,
+          "locked_detail": [],
+          "percent": "0.0279",
+          "tag": "",
+          "token_account": "6URb6iRxChbWMgSvgqBZRf5nJXT2M1WN5dWomhunxMgz"
+        },
+        {
+          "account": "5M8ACGKEXG1ojKDTMH3sMqhTihTgHYMSsZc6W8i7QW3Y",
+          "balance": "20000888.0",
+          "is_locked": 0,
+          "locked_detail": [],
+          "percent": "0.0200",
+          "tag": "",
+          "token_account": "FberXFb7ijEN6tUywUq4EmG1sfHXD1uegiZ4Hmea1sdo"
+        },
+        {
+          "account": "6DiCAFFHqNtzMMaPfU4n9CR1rGpCuAd8nj4P8y7kFRkw",
+          "balance": "16433507.535649",
+          "is_locked": 0,
+          "locked_detail": [],
+          "percent": "0.0164",
+          "tag": "",
+          "token_account": "97CZn2oxbyDvZ1y2Etm9Su1t6Jp9SHoSBQDHVBe3Rv46"
+        },
+        {
+          "account": "E4mU6K97JGvvim81fG8Xfkg7WMSzJbQwwXZBkVMntu6n",
+          "balance": "15413132.852694",
+          "is_locked": 0,
+          "locked_detail": [],
+          "percent": "0.0154",
+          "tag": "",
+          "token_account": "9K11UfvqLBhvkoPXBiFMqnQmQbsXhaw6uheBeKFM7dUK"
+        },
+        {
+          "account": "45q1VuzQGA4MBS9XNM8sc9S5PVsdjRto6KrkeJPw34x9",
+          "balance": "12948976.457184",
+          "is_locked": 0,
+          "locked_detail": [],
+          "percent": "0.0130",
+          "tag": "",
+          "token_account": "Fb81oP9AmLAFW5PQasgz6JCyFymi287aud52qwEa2zuL"
+        },
+        {
+          "account": "ASTyfSima4LLAdDgoFGkgqoKowG1LZFDr9fAQrg7iaJZ",
+          "balance": "12586477.90733",
+          "is_locked": 0,
+          "locked_detail": [],
+          "percent": "0.0126",
+          "tag": "",
+          "token_account": "QJSJvK1MCEWxP8weV6a2Bk1NxyjkUE74ZDT7WJNTE6E"
+        },
+        {
+          "account": "9Jjw2VJKtmT4Ntmdz17kPxGvTVVwbCSFr4vHsXkn9fnN",
+          "balance": "12236666.0",
+          "is_locked": 0,
+          "locked_detail": [],
+          "percent": "0.0122",
+          "tag": "",
+          "token_account": "Ek1YtBrRC2FBpshbPr4t1HaRtT9EU2KzTKweCnPjnUx"
+        },
+        {
+          "account": "CCkF5WditHiRUPx5HRRfCKJDcnFR4YVst9f6mANsSmys",
+          "balance": "11805717.222518",
+          "is_locked": 0,
+          "locked_detail": [],
+          "percent": "0.0118",
+          "tag": "",
+          "token_account": "8ZYpStqx9iai1NGgfqH5E9iiCsUF53EWxAphZU94mbrk"
+        }
+      ],
+      "lp_holders": [
+        {
+          "account": "3f7GcQFG397GAaEnv51zR6tsTVihYRydnydDD1cXekxH",
+          "balance": "598.098164852",
+          "is_locked": 1,
+          "locked_detail": [
+            {
+              "amount": "598.098164852",
+              "end_time": "",
+              "opt_time": ""
+            }
+          ],
+          "percent": "0.9976",
+          "tag": "Raydium Lock",
+          "token_account": "GN35EGoAq9VAWaovYvGZRccnS7pu6b72MowgV7DDMkXc"
+        },
+        {
+          "account": "4QqnPpMKBujPv97p99mUXCy6rQegAz8twxFxqZzrGgpb",
+          "balance": "1.031562771",
+          "is_locked": 0,
+          "locked_detail": [],
+          "percent": "0.0017",
+          "tag": "",
+          "token_account": "44kqpCoTTPqGb2vGK4QHZK5hW4y8A9pLGqjmqzWiV6bZ"
+        },
+        {
+          "account": "6jJzTv6Chb94fjXLCty9mSUpWNVWYQ1re7u3YY77VshX",
+          "balance": "0.314156009",
+          "is_locked": 0,
+          "locked_detail": [],
+          "percent": "0.0005",
+          "tag": "",
+          "token_account": "GKNHA2QLxiQ9Z5JNQUkBXZ8eiN2ccYwGSxVHsYH8jroZ"
+        },
+        {
+          "account": "9atYtUY2rsNzaHkKfqvQsNaiBGzrdPBGgxdffHxYM5s3",
+          "balance": "0.071464445",
+          "is_locked": 0,
+          "locked_detail": [],
+          "percent": "0.0001",
+          "tag": "",
+          "token_account": "XGYTXBRUdU1X2mKeibwWuT2bNpsQ1UZJkjD7yEja6XA"
+        }
+      ],
+      "metadata": {
+        "description": "10 ml mc",
+        "name": "just memecoin",
+        "symbol": "memecoin",
+        "uri": "https://ipfs.io/ipfs/bafkreicbfdjdesrd3wrqwu6gfxrpyw7i4ftyvj2texor2imtllzyy7a2qi"
+      },
+      "metadata_mutable": {
+        "metadata_upgrade_authority": [],
+        "status": "0"
+      },
+      "mintable": {
+        "authority": [],
+        "status": "0"
+      },
+      "non_transferable": "0",
+      "total_supply": "999884993.852156",
+      "transfer_fee": {
+
+      },
+      "transfer_fee_upgradable": {
+        "authority": [],
+        "status": "0"
+      },
+      "transfer_hook": [],
+      "transfer_hook_upgradable": {
+        "authority": [],
+        "status": "0"
+      },
+      "trusted_token": 0
+    }
+  }
+}
+```
+
 #### Supported Locker
 
-List of token and liquidity locker platforms supported for Solana tokens (if applicable).
+List of token and liquidity locker platforms supported for Solana tokens (TBD).
+
+# Token Security API for SUI
+
+### Get token's security and risk data (SUI)
+
+**GET** <https://api.gopluslabs.io/api/v1/sui/token_security?contract_addresses={contract_address}>  
+Get security analysis for a Sui token.
+
+#### Response Detail
+
+Provides security analysis fields similar to the [Token Security API](#token-security-api) above, adapted for Sui tokens.
+
+#### Response example
+
+```json
+{
+  "code": 1,
+  "message": "ok",
+  "result": {
+    "0x20b290ffc8c689918bad44c749ae8ffd0a08cfd771cc54b6e01bae53e26bc353::SUIMON::SUIMON": {
+      "blacklist": {
+        "cap_owner": "",
+        "value": "0"
+      },
+      "contract_upgradeable": {
+        "cap_owner": "0x95463db0ca7dfe2db1c5bb911be6c5a67e49f27b842ec2f0c0ca2b2a36ce0ba7",
+        "value": "1"
+      },
+      "creator": "0x95463db0ca7dfe2db1c5bb911be6c5a67e49f27b842ec2f0c0ca2b2a36ce0ba7",
+      "decimals": 9,
+      "holder_count": 738,
+      "holders": [
+        {
+          "address": "0x59f4c7034396d44f5841ee49e5846fb9050e04d6da00017fac1723962a9ec0f9",
+          "balance": "330152785.2713702750",
+          "percent": "0.33015278527137027500",
+          "tag": null
+        },
+        {
+          "address": "0x416e49053d42a3674587d558123b359ae1821163802e0abb4d740b7b2f59433e",
+          "balance": "50875256.7428133670",
+          "percent": "0.05087525674281336700",
+          "tag": null
+        },
+        {
+          "address": "0x787b5b91a75dd739f5cd6725645e5215dd04027691edd5e53233577d294e17be",
+          "balance": "18027369.8988484410",
+          "percent": "0.01802736989884844100",
+          "tag": null
+        },
+        {
+          "address": "0x5f242af9c64a52f09ebe96d38605b56e0fb6cd2a466692633910cdc5418d2711",
+          "balance": "13249696.8982535090",
+          "percent": "0.01324969689825350900",
+          "tag": null
+        },
+        {
+          "address": "0x2450bc89abddfd93ebedd42394838216b65eeae948c3328c200095444a0a5ad9",
+          "balance": "11126526.8447460080",
+          "percent": "0.01112652684474600800",
+          "tag": "@obvious"
+        },
+        {
+          "address": "0xc5360ce87f5c1eabe90cb978dabe141133663a7f54077f1b86ef94916304717e",
+          "balance": "11080823.9840122900",
+          "percent": "0.01108082398401229000",
+          "tag": null
+        },
+        {
+          "address": "0x7eb07696198ec93ce5992b9632e46e13c7fcf1aa5864406d620388b261de30fe",
+          "balance": "8596907.9581823800",
+          "percent": "0.00859690795818238000",
+          "tag": null
+        },
+        {
+          "address": "0x372d1158b572c3255fd54dc868350d764166267338afc0aa0250cae1df510dcb",
+          "balance": "7500000.0000000000",
+          "percent": "0.00750000000000000000",
+          "tag": null
+        },
+        {
+          "address": "0x06de125330b46f10b7be8e9e84179b790a5c52cc9e69045d806a4bf207be196f",
+          "balance": "7253354.2414078020",
+          "percent": "0.00725335424140780200",
+          "tag": null
+        },
+        {
+          "address": "0x1889bc58d094b0340b84f3e68831cd9c30dfe54832239b14a9531678673409c8",
+          "balance": "6507923.9772202850",
+          "percent": "0.00650792397722028500",
+          "tag": null
+        }
+      ],
+      "metadata_modifiable": {
+        "cap_owner": "0x95463db0ca7dfe2db1c5bb911be6c5a67e49f27b842ec2f0c0ca2b2a36ce0ba7",
+        "value": "1"
+      },
+      "mintable": {
+        "cap_owner": "Immutable",
+        "value": "0"
+      },
+      "name": "SUIMON",
+      "symbol": "SUIMON",
+      "total_supply": "1000000000",
+      "trusted_token": "0"
+    }
+  }
+}
+```
 
 # Access Token API
 
@@ -680,7 +1410,7 @@ This API License Agreement (this "Agreement") is a binding contract between you 
 
 #### Rate Limits
 
-GoPlus Security API usage is free, and the rate limit is **30 calls per minute**. If you require a higher limit than the default, please contact us to apply for an access token (see the Access Token API above).
+GoPlus Security API usage is free, and the rate limit is **30 calls per minute** and **30k CU/Day** and **150K API CU Per Month**. If you require a higher limit than the default, please contact us to apply for an access token (see the Access Token API above).
 
 #### Contact us for help
 

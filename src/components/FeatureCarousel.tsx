@@ -4,10 +4,10 @@ import './FeatureCarousel.css';
 import iconsData from '../lib/icons-data.json';
 
 const features = [
-	{
+	/* {
 		title: 'Multi-chain',
 		description: 'Access tokens on multiple chains.',
-	},
+	}, */
 	{
 		icon: <ElectricBolt style={{ fontSize: '2em' }} />,
 		title: 'Real-Time Data',
@@ -15,19 +15,19 @@ const features = [
 	},
 	{
 		icon: <Polyline style={{ fontSize: '2em' }} />,
-		title: 'Advanced Charting',
-		description: 'Comprehensive tools for technical analysis.',
+		title: 'Multi-chain',
+		description: 'Support for all major networks.',
 	},
 	{
 		icon: <MobileFriendly style={{ fontSize: '2em' }} />,
 		title: 'Mobile First',
 		description: 'Seamless experience on any device.',
 	},
-	{
+	/* {
 		icon: <AutoAwesome style={{ fontSize: '2em' }} />,
 		title: 'AI-Powered Insights',
 		description: 'Get alpha with our predictive analytics.',
-	},
+	}, */
 	{
 		icon: <Verified style={{ fontSize: '2em' }} />,
 		title: 'Trusted Sources',

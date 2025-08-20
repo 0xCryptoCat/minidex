@@ -777,11 +777,12 @@
 
 /* Security Section */
 .security-section {
-  padding: 16px;
-  margin: 16px;
   background: var(--bg-elev);
-  border-radius: var(--radius);
-  margin-bottom: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 10px;
+  margin: 0 16px 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .security-row {
@@ -849,4 +850,65 @@
 .security-expand:hover {
   background: var(--hover);
   color: var(--text);
+}
+
+/* Tweets Section */
+.tweets-section {
+  background: var(--bg-elev);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 10px;
+  margin: 0 16px 10px;
+}
+
+.tweets-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  background: var(--bg-elev);
+  border-radius: var(--radius-small);
+  margin-bottom: var(--space-2);
+  transition: all var(--transition-fast);
+}
+
+.tweets-row:hover {
+  background: var(--bg-elev-2);
+}
+
+.tweets-row:last-child {
+  margin-bottom: 0;
+}
+
+.tweets-name {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 13px;
+  color: var(--text);
+  flex: 1;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.tweets-expand {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-small);
+  transition: all var(--transition-fast);
+}
+
+.tweets-expand:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.tweets-text {
+  font-family: TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--text-muted);
+  margin-top: 8px;
 }

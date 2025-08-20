@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ChartLoader from "./ChartLoader";
+import { FavoriteBorder, KeyboardReturn, Repeat, BarChart } from '@mui/icons-material';
 
 /**
  * Minimal types for the API payload we observed.
@@ -167,14 +168,28 @@ const TwitterFeedPanel: React.FC<Props> = ({
   const openTweet = (t: Tweet) =>
     window.open(`https://x.com/${t.author?.username}/status/${t.id}`, "_blank", "noopener,noreferrer");
 
+  // --- Date to time-ago formatter
+  const formatTimeAgo = (date: string) => {
+    const d = new Date(date);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays > 0) return `${diffDays}d`;
+    if (diffHours > 0) return `${diffHours}h`;
+    if (diffMinutes > 0) return `${diffMinutes}m`;
+    return "just now";
+  };
+
   return (
-    <div className={classNames.root ?? "detail-panel"}>
+    <div className={classNames.root ?? "security-section"}>
       {/* Header row (need to match security section style) */}
       <div
         className={classNames.headerRow ?? "detail-panel__row"}
         style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}
       >
-        <div className={classNames.headerLeft ?? "detail-panel__title"} style={{ fontWeight: 600 }}>
+        <div className={classNames.headerLeft ?? "tweets-name"}>
           {title}
         </div>
         <div className={classNames.headerRight ?? "detail-panel__controls"}>
@@ -231,8 +246,7 @@ const TwitterFeedPanel: React.FC<Props> = ({
             <div
               style={{
                 maxHeight: heightPx,
-                overflow: "auto",
-                paddingRight: 4, // room for scrollbar
+                overflow: "scroll",
                 display: "grid",
                 gap: 8,
               }}
@@ -242,10 +256,9 @@ const TwitterFeedPanel: React.FC<Props> = ({
                   key={t.id}
                   className={classNames.card ?? "card"}
                   style={{
-                    border: "1px solid var(--border, rgba(255,255,255,0.08))",
                     borderRadius: 12,
                     padding: 12,
-                    background: "var(--surface, rgba(255,255,255,0.02))",
+                    background: "var(--bg-elev-2)",
                   }}
                 >
                   {/* Author */}
@@ -254,60 +267,56 @@ const TwitterFeedPanel: React.FC<Props> = ({
                       <img
                         src={t.author.profile_image_url}
                         alt={t.author?.name || t.author?.username}
-                        width={26}
-                        height={26}
+                        width={30}
+                        height={30}
                         style={{ borderRadius: "50%", objectFit: "cover" }}
                         loading="lazy"
                       />
                     ) : (
-                      <div style={{ width: 26, height: 26, borderRadius: "50%", background: "var(--muted, #333)" }} />
+                      <div style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--muted, #333)" }}><img src={`https://placehold.co/36x36/909090/ffffff?text=${(t.author?.name || t.author?.username)?.[0]?.toUpperCase() || ' '}`} alt="Placeholder" style={{ borderRadius: "50%", objectFit: "cover" }} /></div>
                     )}
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 6, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", minWidth: 0, flexDirection: "column" }}>
                       <div className={classNames.authorName ?? "tweet__name"} style={{ fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {t.author?.name || "Unknown"}
                       </div>
-                      <div className={classNames.authorHandle ?? "tweet__handle"} style={{ fontSize: 12, opacity: 0.75 }}>
+                      <div className={classNames.authorHandle ?? "tweets-text"} style={{ fontSize: 15, color: "var(--text-disabled)" }}>
                         @{t.author?.username}
                       </div>
+                    </div>
+                    {/* Meta: time ago */}
+                    <div className={classNames.metaRow ?? "tweet-text"} style={{ marginTop: 8, fontSize: 12, color: "var(--text-disabled)", display: "flex", gap: 8, justifyContent: "space-between" }}>
+                      <span> · {formatTimeAgo(t.created_at)}</span>
                     </div>
                   </div>
 
                   {/* Text */}
-                  <div className={classNames.text ?? "tweet__text"} style={{ marginTop: 8, fontSize: 13, whiteSpace: "pre-wrap", lineHeight: 1.35 }}>
+                  <div className={classNames.text ?? "tweets-text"} style={{ marginTop: 8, fontSize: 15, whiteSpace: "pre-wrap", lineHeight: "20px", fontFamily: "TwitterChirp, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" }}>
                     {t.text}
                   </div>
 
                   {/* URLs (simple list) */}
                   {!!t.entities?.urls?.length && (
-                    <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 16 }}>
-                      {t.entities.urls.map((u, i) => {
-                        const href = u.expanded_url || u.url;
-                        if (!href) return null;
-                        return (
-                          <li key={i} style={{ fontSize: 12 }}>
-                            <a href={href} target="_blank" rel="noreferrer noopener" style={{ textDecoration: "underline" }}>
-                              {u.display_url || href}
-                            </a>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                    // Display URLs as an image - if not possible, show as text
+                    <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+                      {t.entities.urls.map((url, i) => (
+                        <img
+                          key={i}
+                          src={url.expanded_url || url.url}
+                          alt={url.display_url || url.expanded_url || url.url}
+                          style={{ borderRadius: 8, objectFit: "cover", width: "100%", height: "auto" }}
+                        />
+                      ))}
+                    </div>
                   )}
-
-                  {/* Meta: time + impressions */}
-                  <div className={classNames.metaRow ?? "tweet__meta"} style={{ marginTop: 8, fontSize: 11, opacity: 0.7, display: "flex", gap: 8 }}>
-                    <span>{new Date(t.created_at).toLocaleString()}</span>
-                    {typeof t.public_metrics?.impression_count === "number" && (
-                      <span>· {t.public_metrics.impression_count.toLocaleString()} views</span>
-                    )}
-                  </div>
 
                   {/* Metrics */}
                   <div className={classNames.metricsRow ?? "tweet__metrics"} style={{ marginTop: 8, fontSize: 12, display: "flex", gap: 12, opacity: 0.85 }}>
-                    <span>❤ {t.public_metrics?.like_count ?? 0}</span>
-                    <span>↩︎ {t.public_metrics?.reply_count ?? 0}</span>
-                    <span>🔁 {t.public_metrics?.retweet_count ?? 0}</span>
-                    <span>🔖 {t.public_metrics?.bookmark_count ?? 0}</span>
+                    <span><FavoriteBorder fontSize="small" /> {t.public_metrics?.like_count ?? 0}</span>
+                    <span><KeyboardReturn fontSize="small" /> {t.public_metrics?.reply_count ?? 0}</span>
+                    <span><Repeat fontSize="small" /> {t.public_metrics?.retweet_count ?? 0}</span>
+                    {typeof t.public_metrics?.impression_count === "number" && (
+                      <span><BarChart fontSize="small" /> {t.public_metrics?.impression_count.toLocaleString() ?? 0}</span>
+                    )}
                   </div>
 
                   {/* CTA */}

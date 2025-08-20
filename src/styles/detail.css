@@ -781,7 +781,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: 10px;
-  margin: 0 16px 10px;
+  margin: 0 12px 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
@@ -858,7 +858,8 @@
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   padding: 10px;
-  margin: 0 16px 10px;
+  margin: 0 12px 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .tweets-row {
@@ -881,12 +882,11 @@
 }
 
 .tweets-name {
-  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
   font-size: 13px;
-  color: var(--text);
-  flex: 1;
-  white-space: nowrap;
-  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-weight: 600;
 }
 
 .tweets-expand {

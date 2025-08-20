@@ -169,7 +169,7 @@ const TwitterFeedPanel: React.FC<Props> = ({
 
   return (
     <div className={classNames.root ?? "detail-panel"}>
-      {/* Header row (match your security section style) */}
+      {/* Header row (need to match security section style) */}
       <div
         className={classNames.headerRow ?? "detail-panel__row"}
         style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "netlify/functions/tweets.ts",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1755665661792,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1755665661792,
+            "name": "Commit-0",
+            "content": "// netlify/functions/tweets.ts\nimport type { Handler } from \"@netlify/functions\";\n\nconst ASSETDASH = \"https://screener-api.assetdash.com/moby_screener/tokens/tweets\";\n\nexport const handler: Handler = async (event) => {\n  try {\n    const token_address = event.queryStringParameters?.token_address || \"\";\n    const compact = event.queryStringParameters?.compact ?? \"false\";\n\n    if (!token_address) {\n      return {\n        statusCode: 400,\n        headers: cors(),\n        body: JSON.stringify({ error: \"token_address is required\" }),\n      };\n    }\n\n    const url = new URL(ASSETDASH);\n    url.searchParams.set(\"token_address\", token_address);\n    url.searchParams.set(\"compact\", String(compact));\n\n    const upstream = await fetch(url.toString(), { method: \"GET\" });\n    const text = await upstream.text(); // pass-through body as-is\n\n    return {\n      statusCode: upstream.status,\n      headers: {\n        ...cors(),\n        \"Content-Type\": upstream.headers.get(\"content-type\") || \"application/json\",\n        // friendly cache (tune as desired)\n        \"Cache-Control\": \"public, max-age=60, s-maxage=60\",\n      },\n      body: text,\n    };\n  } catch (err: any) {\n    return {\n      statusCode: 500,\n      headers: cors(),\n      body: JSON.stringify({ error: \"Upstream fetch failed\", detail: String(err?.message || err) }),\n    };\n  }\n};\n\nfunction cors() {\n  // lock to your site in production if you prefer\n  return {\n    \"Access-Control-Allow-Origin\": \"*\",\n    \"Access-Control-Allow-Methods\": \"GET, OPTIONS\",\n  };\n}\n"
+        }
+    ]
+}

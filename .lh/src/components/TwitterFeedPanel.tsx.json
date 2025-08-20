@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 14,
+            "activePatchIndex": 15,
             "patches": [
                 {
                     "date": 1755635375696,
@@ -64,6 +64,10 @@
                 {
                     "date": 1755638185797,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,5 @@\n-import React, { useCallback, useEffect, useMemo, useRef, useState } from \"react\";\n+import React, { useCallback, useEffect, useMemo, useState } from \"react\";\n import ChartLoader from \"./ChartLoader\";\n \n /**\n  * Minimal types for the API payload we observed.\n"
+                },
+                {
+                    "date": 1755665704073,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -109,11 +109,11 @@\n \n   const canShowFeed = useMemo(() => isSolana(chainId), [chainId]);\n \n   const url = useMemo(() => {\n-    const u = new URL(\"https://screener-api.assetdash.com/moby_screener/tokens/tweets\");\n-    u.searchParams.set(\"token_address\", tokenAddress || \"\");\n-    u.searchParams.set(\"compact\", \"false\");\n+    const u = new URL(\"/.netlify/functions/tweets\", window.location.origin);\n+u.searchParams.set(\"token_address\", tokenAddress);\n+u.searchParams.set(\"compact\", \"false\");\n     return u.toString();\n   }, [tokenAddress]);\n \n   const fetchTweets = useCallback(async (signal?: AbortSignal) => {\n"
                 }
             ],
             "date": 1755635375696,

@@ -110,8 +110,8 @@ const TwitterFeedPanel: React.FC<Props> = ({
   const canShowFeed = useMemo(() => isSolana(chainId), [chainId]);
 
   const url = useMemo(() => {
-    const u = new URL("https://screener-api.assetdash.com/moby_screener/tokens/tweets");
-    u.searchParams.set("token_address", tokenAddress || "");
+    const u = new URL("/.netlify/functions/tweets", window.location.origin);
+    u.searchParams.set("token_address", tokenAddress);
     u.searchParams.set("compact", "false");
     return u.toString();
   }, [tokenAddress]);

@@ -27,7 +27,24 @@ export function getChainIcon(chainId: string): string {
 }
 
 export function getDexIcon(dexId: string): string {
-  return DEX_ICONS[dexId.toLowerCase()] || DEX_ICONS.unknown;
+  // Try exact match first (for both names and numeric IDs)
+  const exactMatch = DEX_ICONS[dexId.toLowerCase()];
+  if (exactMatch) return exactMatch;
+  
+  // Try to handle common variations
+  const cleanDexId = dexId.toLowerCase()
+    .replace(/[-_]/g, '') // Remove hyphens and underscores
+    .replace(/\s+/g, ''); // Remove spaces
+    
+  const variationMatch = DEX_ICONS[cleanDexId];
+  if (variationMatch) return variationMatch;
+  
+  // Try with common prefixes/suffixes removed
+  const withoutVersion = dexId.toLowerCase().replace(/[-_]?v[0-9]+$/i, '');
+  const versionMatch = DEX_ICONS[withoutVersion];
+  if (versionMatch) return versionMatch;
+  
+  return DEX_ICONS.unknown;
 }
 
 export function getProviderIcon(provider: string): string {

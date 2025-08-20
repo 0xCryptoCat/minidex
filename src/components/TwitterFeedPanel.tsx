@@ -280,9 +280,8 @@ const TwitterFeedPanel: React.FC<Props> = ({
                         {t.author?.name || "Unknown"}
                       </div>
                       <div className={classNames.authorHandle ?? "tweets-text"} style={{ fontSize: 15, color: "var(--text-disabled)" }}>
-                        @{t.author?.username}
+                        @{t.author?.username} · {formatTimeAgo(t.created_at)}
                       </div>
-                      <span> · {formatTimeAgo(t.created_at)}</span>
                     </div>
                   </div>
 
@@ -308,11 +307,11 @@ const TwitterFeedPanel: React.FC<Props> = ({
 
                   {/* Metrics */}
                   <div className={classNames.metricsRow ?? "tweet-metrics"} style={{ marginTop: 8, fontSize: 12, display: "flex", gap: 12, opacity: 0.85 }}>
-                    <span><FavoriteBorder /> {t.public_metrics?.like_count ?? 0}</span>
-                    <span><KeyboardReturn /> {t.public_metrics?.reply_count ?? 0}</span>
-                    <span><Repeat /> {t.public_metrics?.retweet_count ?? 0}</span>
+                    <span><FavoriteBorder style={{ fontSize: "12px" }} /> {t.public_metrics?.like_count ?? 0}</span>
+                    <span><KeyboardReturn style={{ fontSize: "12px" }} /> {t.public_metrics?.reply_count ?? 0}</span>
+                    <span><Repeat style={{ fontSize: "12px" }} /> {t.public_metrics?.retweet_count ?? 0}</span>
                     {typeof t.public_metrics?.impression_count === "number" && (
-                      <span><BarChart /> {t.public_metrics?.impression_count.toLocaleString() ?? 0}</span>
+                      <span><BarChart style={{ fontSize: "12px" }} /> {t.public_metrics?.impression_count.toLocaleString() ?? 0}</span>
                     )}
                     <span>
                       <Launch

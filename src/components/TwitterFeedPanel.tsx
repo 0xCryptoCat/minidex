@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import ChartLoader from "./ChartLoader";
-import { FavoriteBorder, KeyboardReturn, Repeat, BarChart } from '@mui/icons-material';
+import { FavoriteBorder, KeyboardReturn, Repeat, BarChart, Launch } from '@mui/icons-material';
 
 /**
  * Minimal types for the API payload we observed.
@@ -282,9 +282,6 @@ const TwitterFeedPanel: React.FC<Props> = ({
                       <div className={classNames.authorHandle ?? "tweets-text"} style={{ fontSize: 15, color: "var(--text-disabled)" }}>
                         @{t.author?.username}
                       </div>
-                    </div>
-                    {/* Meta: time ago */}
-                    <div className={classNames.metaRow ?? "tweet-text"} style={{ marginTop: 8, fontSize: 12, color: "var(--text-disabled)", display: "flex", gap: 8, justifyContent: "space-between" }}>
                       <span> · {formatTimeAgo(t.created_at)}</span>
                     </div>
                   </div>
@@ -310,32 +307,24 @@ const TwitterFeedPanel: React.FC<Props> = ({
                   )}
 
                   {/* Metrics */}
-                  <div className={classNames.metricsRow ?? "tweet__metrics"} style={{ marginTop: 8, fontSize: 12, display: "flex", gap: 12, opacity: 0.85 }}>
-                    <span><FavoriteBorder fontSize="small" /> {t.public_metrics?.like_count ?? 0}</span>
-                    <span><KeyboardReturn fontSize="small" /> {t.public_metrics?.reply_count ?? 0}</span>
-                    <span><Repeat fontSize="small" /> {t.public_metrics?.retweet_count ?? 0}</span>
+                  <div className={classNames.metricsRow ?? "tweet-metrics"} style={{ marginTop: 8, fontSize: 12, display: "flex", gap: 12, opacity: 0.85 }}>
+                    <span><FavoriteBorder /> {t.public_metrics?.like_count ?? 0}</span>
+                    <span><KeyboardReturn /> {t.public_metrics?.reply_count ?? 0}</span>
+                    <span><Repeat /> {t.public_metrics?.retweet_count ?? 0}</span>
                     {typeof t.public_metrics?.impression_count === "number" && (
-                      <span><BarChart fontSize="small" /> {t.public_metrics?.impression_count.toLocaleString() ?? 0}</span>
+                      <span><BarChart /> {t.public_metrics?.impression_count.toLocaleString() ?? 0}</span>
                     )}
-                  </div>
-
-                  {/* CTA */}
-                  <div style={{ marginTop: 10 }}>
-                    <button
-                      type="button"
-                      onClick={() => openTweet(t)}
-                      style={{
-                        border: "1px solid var(--border, rgba(255,255,255,0.12))",
-                        background: "transparent",
-                        color: "inherit",
-                        borderRadius: 8,
-                        padding: "6px 10px",
-                        fontSize: 12,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Read on X
-                    </button>
+                    <span>
+                      <Launch
+                        type="button"
+                        onClick={() => openTweet(t)}
+                        style={{
+                          color: "inherit",
+                          fontSize: 12,
+                          cursor: "pointer",
+                        }}
+                      />
+                    </span>
                   </div>
                 </article>
               ))}

@@ -198,7 +198,7 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
       )}
 
       {/* Holder Insights Section */}
-      {data && data.holderMetrics.topHolders.length > 0 && (
+      {data && data.holderMetrics.holderCount > 0 && (
         <>
           <div className="security-row">
             <div className="security-name">
@@ -222,7 +222,7 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
           </div>
 
           {/* Expanded Holder Details */}
-          {expandedSections.holders && data.holderMetrics.topHolders.length > 0 && (
+          {expandedSections.holders && data.holderMetrics.holderCount > 0 && (
             <div style={{ 
               background: 'var(--bg-elev)', 
               margin: '8px 0', 
@@ -234,47 +234,53 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
                 Top 10
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {data.holderMetrics.topHolders.slice(0, 10).map((holder, i) => (
-                  <div key={i} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '8px',
-                    padding: '6px 0',
-                    borderBottom: i < 9 ? '1px solid var(--border-subtle)' : 'none'
-                  }}>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '12px', minWidth: '32px' }}>
-                      {formatShortAddr(holder.address)}
-                    </span>
-                    <CopyButton text={holder.address} label="holder address" />
-                    <a href={addressUrl(chain as any, holder.address as any)} target="_blank" rel="noopener noreferrer">
-                      <ExternalIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
-                    </a>
-                    {holder.tag && (
-                      <span style={{ 
-                        fontSize: '10px', 
-                        padding: '2px 6px', 
-                        border: '1px solid var(--bg-elev-2)', 
-                        borderRadius: '15px',
-                        color: 'var(--text-muted)'
-                      }}>
-                        {holder.tag}
-                      </span>
-                    )}
-                    {holder.isContract ? (
-                      <ContractIcon sx={{ fontSize: 14, color: 'var(--warning)' }} />
-                    ) : (
-                      <WalletIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
-                    )}
-                    <span style={{ fontWeight: 600, marginLeft: 'auto' }}>{holder.balance}</span>
-                    <span style={{ color: 'var(--text-muted)', minWidth: '40px', textAlign: 'right' }}>
-                      {(parseFloat(holder.percent) < 1 ? (parseFloat(holder.percent) * 100).toFixed(2) : parseFloat(holder.percent).toFixed(2))}%
-                    </span>
-                    {holder.isLocked && (
-                      <LockIcon sx={{ fontSize: 14, color: 'var(--accent-lime)' }} />
-                    )}
-                  </div>
-                ))}
-              </div>
+                {data.holderMetrics.topHolders && data.holderMetrics.topHolders.length > 0 ? (
+                  data.holderMetrics.topHolders.slice(0, 10).map((holder, i) => (
+                    <div key={i} style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px',
+                        padding: '6px 0',
+                        borderBottom: i < 9 ? '1px solid var(--border-subtle)' : 'none'
+                    }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '12px', minWidth: '32px' }}>
+                        {formatShortAddr(holder.address)}
+                        </span>
+                        <CopyButton text={holder.address} label="holder address" />
+                        <a href={addressUrl(chain as any, holder.address as any)} target="_blank" rel="noopener noreferrer">
+                        <ExternalIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
+                        </a>
+                        {holder.tag && (
+                        <span style={{ 
+                            fontSize: '10px', 
+                            padding: '2px 6px', 
+                            border: '1px solid var(--bg-elev-2)', 
+                            borderRadius: '15px',
+                            color: 'var(--text-muted)'
+                        }}>
+                            {holder.tag}
+                        </span>
+                        )}
+                        {holder.isContract ? (
+                        <ContractIcon sx={{ fontSize: 14, color: 'var(--warning)' }} />
+                        ) : (
+                        <WalletIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
+                        )}
+                        <span style={{ fontWeight: 600, marginLeft: 'auto' }}>{holder.balance}</span>
+                        <span style={{ color: 'var(--text-muted)', minWidth: '40px', textAlign: 'right' }}>
+                        {(parseFloat(holder.percent) < 1 ? (parseFloat(holder.percent) * 100).toFixed(2) : parseFloat(holder.percent).toFixed(2))}%
+                        </span>
+                        {holder.isLocked && (
+                        <LockIcon sx={{ fontSize: 14, color: 'var(--accent-lime)' }} />
+                        )}
+                    </div>
+                    )
+                  )) : (
+                <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  No holder data available
+                </div>
+              )}
+            </div>
             </div>
           )}
         </>

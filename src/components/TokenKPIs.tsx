@@ -13,11 +13,13 @@ export function TokenKPIs({ data }: TokenKPIsProps) {
   
   return (
     <>
-      {/* Supply Section - Only show if we have security data */}
-      <div className="kpi-item">
-        <span>Total Supply</span>
-        <strong>{tokenMetrics.totalSupply}</strong>
-      </div>
+      {/* Supply Section - Only show if we have security data and total supply */}
+      {tokenMetrics.totalSupply && tokenMetrics.totalSupply !== '0' && tokenMetrics.totalSupply !== '0.00' && (
+        <div className="kpi-item">
+          <span>Total Supply</span>
+          <strong>{tokenMetrics.totalSupply}</strong>
+        </div>
+      )}
 
       {/* Transaction Fees Section */}
       {(tokenMetrics.buyTax !== undefined || 

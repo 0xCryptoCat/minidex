@@ -387,11 +387,15 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
               <span>FDV/MKT CAP</span>
               <strong>{formatUsd(active.fdv)}</strong>
             </div>
-            {/* Always show Total Supply as third column when FDV/MKT CAP is merged */}
-            <div className="kpi-item">
-              <span>Total Supply</span>
-              <strong>{securityData?.tokenMetrics.totalSupply || '—'}</strong>
-            </div>
+            {/* Always show Total Supply as third column when FDV/MKT CAP is merged and we have total supply */}
+            {securityData?.tokenMetrics.totalSupply && 
+             securityData.tokenMetrics.totalSupply !== '0' && 
+             securityData.tokenMetrics.totalSupply !== '0.00' && (
+              <div className="kpi-item">
+                <span>Total Supply</span>
+                <strong>{securityData.tokenMetrics.totalSupply}</strong>
+              </div>
+            )}
           </>
         ) : (
           <div className="kpi-three-col">

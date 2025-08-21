@@ -129,9 +129,9 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
 
                 {/* Pair created at tag */}
                 {active.pairCreatedAt && (
-                  <span className="pair-created-at" style={{ color: 'var(--text-muted)' }}>
+                  <div className="pair-created-at" style={{ color: 'var(--text-muted)' }}>
                     <RocketLaunch style={{ fontSize: 16 }} />{timeAgo(active.pairCreatedAt)} {isRecentPool(active.pairCreatedAt) && <span role="img" aria-label="new">🌱</span>} 
-                  </span>
+                  </div>
                 )}
               </div>
             </div>

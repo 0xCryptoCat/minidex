@@ -410,8 +410,8 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
           </div>
         )}
 
-        {/* Security-based Token KPIs - Only show if FDV/MKT CAP are NOT merged or no Total Supply shown above */}
-        {(!active.fdv || !active.marketCap || Math.abs(active.fdv - active.marketCap) >= 1000 || !securityData) && (
+        {/* Security-based Token KPIs - Only show if FDV/MKT CAP are NOT merged */}
+        {(!active.fdv || !active.marketCap || Math.abs(active.fdv - active.marketCap) >= 1000) && (
           <TokenKPIs 
             data={securityData}
           />
@@ -490,7 +490,8 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <div style={{ flex: 1, textAlign: 'center' }}>
               <strong>
-                {active.txns?.h24 ? (active.txns.h24.buys + active.txns.h24.sells) : '—'}
+                {active.txns?.h24 ? 
+                  formatCompact(active.txns.h24.buys + active.txns.h24.sells) : '—'}
               </strong>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>TXNS</div>
             </div>
@@ -499,8 +500,8 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
               {active.txns?.h24 ? (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                    <span style={{ color: 'var(--accent-lime)', fontWeight: 600 }}>{active.txns.h24.buys}</span>
-                    <span style={{ color: 'var(--accent-maroon)', fontWeight: 600 }}>{active.txns.h24.sells}</span>
+                    <span style={{ color: 'var(--accent-lime)', fontWeight: 600 }}>{formatCompact(active.txns.h24.buys)}</span>
+                    <span style={{ color: 'var(--accent-maroon)', fontWeight: 600 }}>{formatCompact(active.txns.h24.sells)}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1px' }}>
                     <div style={{ 
@@ -532,15 +533,22 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
             {['m5', 'h1', 'h6', 'h24'].map((period, i) => {
               const volume = active.volume?.[period as keyof typeof active.volume];
 
-              // since Argument of type 'string' is not assignable to parameter of type 'number' we must ensure volume is a number 
-              const isLargeFormat = volume !== undefined && volume >= 1000000;
-              const formattedVolume = isLargeFormat ? formatCompact(volume) : formatSmallPrice(volume);
-              const usdFormattedVolume = formatUsd(volume)
+              // Format volume with proper rules
+              const formatVolume = (vol?: number) => {
+                if (vol === undefined || vol === null) return '—';
+                if (vol === 0 || vol < 0.1) return '—';
+                
+                // Use formatUsd which already handles proper decimal places
+                const formatted = formatUsd(vol);
+                
+                // Remove unnecessary .00 endings
+                return formatted.replace(/\.00$/, '');
+              };
               
               return (
                 <div key={period} style={{ textAlign: 'center', flex: 1 }}>
                   <div style={{ color: 'var(--text)', fontWeight: 600 }}>
-                    {volume !== undefined ? usdFormattedVolume : '—'}
+                    {formatVolume(volume)}
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                     {period === 'm5' ? '5m' : period === 'h1' ? '1h' : period === 'h6' ? '6h' : '24h'}

@@ -262,108 +262,156 @@ function processEVMSecurityData(evmData: GoPlusTokenSecurity): ProcessedSecurity
 }
 
 function processSolanaSecurityData(solanaData: SolanaTokenSecurity): ProcessedSecurityData {
-  // Process Solana-specific security metrics
+  // Process security metrics - adapt for Solana-specific fields
   const securityMetrics = [
     {
-      key: 'is_open_source',
-      label: 'Open Source',
-      value: booleanFromString(solanaData.is_open_source),
-      critical: false,
-    },
-    {
-      key: 'is_honeypot',
-      label: 'Honeypot Check',
-      value: !booleanFromString(solanaData.is_honeypot), // Invert because honeypot is bad
-      critical: true,
-    },
-    {
-      key: 'freezeable',
-      label: 'Freezeable',
-      value: !booleanFromString(solanaData.freezeable), // Invert because freezeable is bad
-      critical: true,
+      key: 'mintable',
+      label: 'Mintable',
+      value: solanaData.mintable?.status !== '1', // Inverted: status "0" means not mintable (good)
+      critical: false
     },
     {
       key: 'non_transferable',
       label: 'Transferable',
-      value: !booleanFromString(solanaData.non_transferable), // Invert because non-transferable is bad
-      critical: true,
+      value: solanaData.non_transferable !== '1', // Inverted: "0" means transferable (good)
+      critical: true
     },
+    {
+      key: 'freezable',
+      label: 'Freezable',
+      value: solanaData.freezable?.status !== '1', // Inverted: status "0" means not freezable (good)
+      critical: true
+    },
+    {
+      key: 'closable',
+      label: 'Closable',
+      value: solanaData.closable?.status !== '1', // Inverted: status "0" means not closable (good)
+      critical: true
+    },
+    {
+      key: 'transfer_fee_upgradable',
+      label: 'Transfer Fee Upgradable',
+      value: solanaData.transfer_fee_upgradable?.status !== '1', // Inverted: status "0" means not upgradable (good)
+      critical: false
+    },
+    {
+      key: 'transfer_hook_upgradable',
+      label: 'Transfer Hook Upgradable', 
+      value: solanaData.transfer_hook_upgradable?.status !== '1', // Inverted: status "0" means not upgradable (good)
+      critical: false
+    },
+    {
+      key: 'metadata_mutable',
+      label: 'Metadata Mutable',
+      value: solanaData.metadata_mutable?.status !== '1', // Inverted: status "0" means not mutable (good)
+      critical: false
+    },
+    {
+      key: 'balance_mutable_authority',
+      label: 'Balance Mutable Authority',
+      value: solanaData.balance_mutable_authority?.status !== '1', // Inverted: status "0" means no authority (good)
+      critical: true
+    },
+    {
+      key: 'default_account_state_upgradable',
+      label: 'Default Account State Upgradable',
+      value: solanaData.default_account_state_upgradable?.status !== '1', // Inverted: status "0" means not upgradable (good)
+      critical: false
+    },
+    {
+      key: 'trusted_token',
+      label: 'Trusted Token',
+      value: solanaData.trusted_token === 1, // Direct: 1 means trusted (good)
+      critical: false
+    }
   ];
 
-  // Process holder metrics
-  const holders = (solanaData.holders || []).map(holder => ({
-    address: holder.account,
-    tag: holder.tag || '',
-    isContract: false, // Solana doesn't distinguish this way
-    balance: formatBalance(holder.balance),
-    percent: (parseFloat(holder.percent) * 100).toFixed(2), // Convert to percentage
-    isLocked: booleanFromString(holder.is_locked),
-  }));
-
-  const holderMetrics = {
-    holderCount: parseInt(solanaData.holder_count || '0'),
-    totalSupply: formatBalance(solanaData.total_supply || '0'),
-    topHolders: holders.slice(0, 10), // Top 10 holders
-  };
-
-  // Process LP holders
-  const lpHolders = (solanaData.lp_holders || []).map(lpHolder => {
-    let lockerService: string | undefined;
-    if (lpHolder.tag) {
-      const tag = lpHolder.tag.toLowerCase();
-      if (tag.includes('raydium')) lockerService = 'Raydium Lock';
-      else if (tag.includes('orca')) lockerService = 'Orca Lock';
-      // Add more Solana-specific locker detection
-    }
-    
-    return {
-      address: lpHolder.account,
-      tag: lpHolder.tag || '',
-      isContract: false,
-      balance: formatBalance(lpHolder.balance || '0'),
-      percent: (parseFloat(lpHolder.percent) * 100).toFixed(2), // Convert to percentage
-      isLocked: booleanFromString(lpHolder.is_locked),
-      lockerService,
-    };
-  });
-
-  const liquidityMetrics = {
-    lpHolderCount: lpHolders.length,
-    dexes: [], // Not available in Solana API response
-    lpHolders,
-  };
-
-  // Process creator/authority as owner metrics  
+  // Process creators/owners
+  const creators = solanaData.creators || [];
+  const primaryCreator = creators[0];
   const ownerMetrics = {
-    ownerAddress: solanaData.mint_authority,
-    isRenounced: !solanaData.mint_authority || solanaData.mint_authority === '11111111111111111111111111111111',
-    ownerBalance: solanaData.creator_balance ? formatBalance(solanaData.creator_balance) : undefined,
-    ownerPercent: solanaData.creator_percent ? (parseFloat(solanaData.creator_percent) * 100).toFixed(2) : undefined,
+    ownerAddress: primaryCreator?.address || '',
+    isRenounced: !primaryCreator?.address,
+    ownerBalance: '', // Not available in Solana data
+    ownerPercent: '', // Not available in Solana data
   };
 
   // Process token metrics
   const tokenMetrics = {
     totalSupply: formatBalance(solanaData.total_supply || '0'),
-    buyTax: undefined, // Not applicable to Solana
-    sellTax: undefined,
-    transferTax: undefined,
-    tokenName: solanaData.metadata?.name,
-    tokenSymbol: solanaData.metadata?.symbol,
+    buyTax: solanaData.transfer_fee?.buy_fee_bps ? (parseFloat(solanaData.transfer_fee.buy_fee_bps) / 100) : undefined,
+    sellTax: solanaData.transfer_fee?.sell_fee_bps ? (parseFloat(solanaData.transfer_fee.sell_fee_bps) / 100) : undefined,
+    transferTax: solanaData.transfer_fee?.transfer_fee_bps ? (parseFloat(solanaData.transfer_fee.transfer_fee_bps) / 100) : undefined,
+  };
+
+  // Process holders
+  const holders = (solanaData.holders || []).map(holder => ({
+    address: holder.account,
+    tag: holder.tag || '',
+    isContract: false, // Not available in Solana data
+    balance: formatBalance(holder.balance),
+    percent: holder.percent, // Use as-is from API
+    isLocked: booleanFromString(holder.is_locked),
+  }));
+
+  // Process LP holders
+  const lpHolders = (solanaData.lp_holders || []).map(lpHolder => {
+    // Detect locker service from tag
+    let lockerService: string | undefined;
+    if (lpHolder.tag) {
+      const tag = lpHolder.tag.toLowerCase();
+      if (tag.includes('raydium')) lockerService = 'raydium_lock';
+      else if (tag.includes('orca')) lockerService = 'orca_lock';
+      else if (tag.includes('meteora')) lockerService = 'meteora_lock';
+      else lockerService = lpHolder.tag;
+    }
+    
+    return {
+      address: lpHolder.account,
+      tag: lpHolder.tag || '',
+      isContract: false, // Not available in Solana data
+      balance: formatBalance(lpHolder.balance || '0'),
+      percent: lpHolder.percent, // Use as-is from API
+      isLocked: booleanFromString(lpHolder.is_locked),
+      lockerService,
+    };
+  });
+
+  // Process holder metrics
+  const holderMetrics = {
+    holderCount: parseInt(solanaData.holder_count || '0'),
+    totalSupply: formatBalance(solanaData.total_supply || '0'),
+    topHolders: holders,
+  };
+
+  // Process liquidity metrics
+  const dexes = (solanaData.dex || []).map(dex => ({
+    name: dex.dex_name || 'Unknown',
+    liquidity: formatBalance(dex.tvl || '0'),
+    pair: dex.id || '',
+    liquidityType: dex.type,
+  }));
+
+  const liquidityMetrics = {
+    dexes,
+    lpHolders,
+    lpHolderCount: lpHolders.length,
+    lpTotalSupply: formatBalance(solanaData.total_supply || '0'),
   };
 
   return {
     securityMetrics,
-    holderMetrics,
-    liquidityMetrics,
     ownerMetrics,
     tokenMetrics,
+    holderMetrics,
+    liquidityMetrics,
     securityFlags: {
-      isAirdropScam: false, // Not available in Solana API
+      isAirdropScam: false,
       trustList: solanaData.trusted_token === 1,
-      fakeToken: false, // Not available in Solana API
-      inCEX: false, // Not available in Solana API
-      launchpadToken: false, // Not available in Solana API
-      gasAbuse: false, // Not available in Solana API
+      fakeToken: false,
+      inCEX: false,
+      launchpadToken: false,
+      gasAbuse: false,
     },
   };
 }

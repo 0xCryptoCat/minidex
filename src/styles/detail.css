@@ -77,7 +77,6 @@
 /* Detail Top Section */
 .detail-top { 
   display: flex;
-  align-items: center;
   gap: 16px;
   padding: 16px;
   background: var(--bg);
@@ -90,10 +89,9 @@
 }
 
 .detail-avatar img { 
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
   border-radius: 16px;
-  border: 2px solid var(--border-subtle);
   object-fit: cover;
   background: var(--bg-elev);
 }
@@ -136,7 +134,7 @@
 .detail-pair-id {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   gap: 1.25rem;
   flex-wrap: nowrap;
 }
@@ -149,7 +147,7 @@
   background: var(--bg-elev);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
-  padding: 6px 32px 6px 12px;
+  padding: 1px 30px 1px 5px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -208,10 +206,10 @@
   color: var(--text-muted);
   display: flex;
   align-items: center;
+  gap: 4px;
 }
-.pair-created-at .sprout-emoji {
-  font-size: 16px;
-  line-height: 1;
+.pair-created-at span {
+  font-size: 12px;
 }
 
 .token-name {
@@ -752,13 +750,7 @@
 }
 
 /* Mobile Optimizations */
-@media (max-width: 768px) {
-  .detail-top {
-    gap: 12px;
-    padding: 12px;
-  }
-  
-  .detail-avatar img,
+@media (max-width: 768px) {  
   .detail-letter {
     width: 56px;
     height: 56px;

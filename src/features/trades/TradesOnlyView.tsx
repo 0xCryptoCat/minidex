@@ -481,7 +481,7 @@ export default function TradesOnlyView({
         className="trades-table"
         style={{
           // Force table visibility
-          backgroundColor: 'var(--bg-elev)',
+          backgroundColor: 'var(--bg)',
           width: '100%',
           flex: 1,
           display: 'flex',
@@ -492,9 +492,9 @@ export default function TradesOnlyView({
           className="trades-header"
           style={{
             // Force header visibility
-            backgroundColor: 'var(--bg)',
+            border: '3px solid var(--bg-elev)',
             color: 'var(--text)',
-            padding: '12px 16px',
+            padding: '12px 10px',
             fontWeight: 'bold',
             fontSize: '16px',
             display: 'grid',
@@ -510,9 +510,6 @@ export default function TradesOnlyView({
               style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: '4px',
-                // Force header cell visibility
-                padding: '4px',
                 fontWeight: 'bold',
               }}
             >
@@ -525,7 +522,7 @@ export default function TradesOnlyView({
             </div>
           ))}
         </div>
-        <div className="trades-list-container">
+        <div className="trades-list-container" style={{ backgroundColor: 'var(--bg-elev)' }}>
           {/* Enhanced Telegram webapp compatibility - always use fallback in Telegram */}
           {(window as any).Telegram?.WebApp ? (
             <div 

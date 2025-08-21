@@ -142,25 +142,72 @@ export interface GoPlusTokenSecurity {
 
 // Solana Token Security Response (Beta API)
 export interface SolanaTokenSecurity {
-  // Security metrics specific to Solana
-  freezeable?: '0' | '1';
-  mint_authority?: string;
-  freeze_authority?: string;
-  non_transferable?: '0' | '1';
+  // Authority structures
+  balance_mutable_authority?: {
+    authority: string[];
+    status: '0' | '1';
+  };
+  closable?: {
+    authority: string[];
+    status: '0' | '1';
+  };
+  default_account_state_upgradable?: {
+    authority: string[];
+    status: '0' | '1';
+  };
+  freezable?: {
+    authority: string[];
+    status: '0' | '1';
+  };
+  metadata_mutable?: {
+    metadata_upgrade_authority: string[];
+    status: '0' | '1';
+  };
+  mintable?: {
+    authority: string[];
+    status: '0' | '1';
+  };
+  transfer_fee_upgradable?: {
+    authority: string[];
+    status: '0' | '1';
+  };
+  transfer_hook_upgradable?: {
+    authority: string[];
+    status: '0' | '1';
+  };
   
-  // Creator and authority info
-  creator?: string;
-  creator_balance?: string;
-  creator_percent?: string;
+  // Creator information
+  creators?: Array<{
+    address: string;
+    malicious_address: number;
+  }>;
   
   // Token metrics
-  token_name?: string;
-  token_symbol?: string;
   total_supply?: string;
+  holder_count?: string;
   decimals?: number;
+  default_account_state?: '0' | '1';
+  non_transferable?: '0' | '1';
+  trusted_token?: number;
+  
+  // Transfer features
+  transfer_fee?: {
+    buy_fee_bps?: string;
+    sell_fee_bps?: string;
+    transfer_fee_bps?: string;
+    [key: string]: any;
+  };
+  transfer_hook?: string[];
+  
+  // Metadata
+  metadata?: {
+    name?: string;
+    symbol?: string;
+    description?: string;
+    uri?: string;
+  };
   
   // Holder information
-  holder_count?: string;
   holders?: Array<{
     account: string;
     balance: string;
@@ -168,10 +215,14 @@ export interface SolanaTokenSecurity {
     tag?: string;
     token_account: string;
     is_locked?: '0' | '1';
-    locked_detail?: any[];
+    locked_detail?: Array<{
+      amount: string;
+      end_time: string;
+      opt_time: string;
+    }>;
   }>;
   
-  // LP Holder information (for Solana DEX)
+  // LP Holder information
   lp_holders?: Array<{
     account: string;
     balance: string;
@@ -186,36 +237,45 @@ export interface SolanaTokenSecurity {
     }>;
   }>;
   
-  // Security checks
+  // DEX information for Solana
+  dex?: Array<{
+    dex_name: string;
+    id: string;
+    tvl: string;
+    lp_amount?: string | null;
+    price: string;
+    fee_rate: string;
+    burn_percent: number;
+    type: string;
+    open_time: string;
+    day?: {
+      price_max: string;
+      price_min: string;
+      volume: string;
+    };
+    week?: {
+      price_max: string;
+      price_min: string;
+      volume: string;
+    };
+    month?: {
+      price_max: string;
+      price_min: string;
+      volume: string;
+    };
+  }>;
+  
+  // Legacy fields for backward compatibility
+  freezeable?: '0' | '1';
+  mint_authority?: string;
+  freeze_authority?: string;
+  creator?: string;
+  creator_balance?: string;
+  creator_percent?: string;
+  token_name?: string;
+  token_symbol?: string;
   is_open_source?: '0' | '1';
   is_honeypot?: '0' | '1';
-  trusted_token?: number;
-  
-  // Metadata and upgradability
-  metadata?: {
-    name?: string;
-    symbol?: string;
-    description?: string;
-    uri?: string;
-  };
-  metadata_mutable?: {
-    status: '0' | '1';
-    metadata_upgrade_authority: string[];
-  };
-  mintable?: {
-    status: '0' | '1';
-    authority: string[];
-  };
-  transfer_fee?: any;
-  transfer_fee_upgradable?: {
-    status: '0' | '1';
-    authority: string[];
-  };
-  transfer_hook?: string[];
-  transfer_hook_upgradable?: {
-    status: '0' | '1';
-    authority: string[];
-  };
 }
 
 // Sui Token Security Response

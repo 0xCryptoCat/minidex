@@ -21,7 +21,7 @@
 
 .trades-list-container {
   flex: 1;
-  
+  border-radius: 0 0 25px 25px;
 }
 
 .trades-header,
@@ -55,6 +55,11 @@
 
   .tr-cell {
     font-size: 13px;
+    /* max width - then ... */
+    max-width: 1fr;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .maker-addr {
@@ -91,6 +96,12 @@
   border-bottom: 1px solid var(--border-subtle);
   transition: all 0.2s ease;
   cursor: pointer;
+}
+
+/* if it's the last tr-row add border radius */
+.tr-row:last-child {
+  border-bottom: none;
+  border-radius: 0 0 0 15px;
 }
 
 .tr-row:hover,
@@ -433,6 +444,7 @@
   height: calc(100vh - 60px - 80px - env(safe-area-inset-bottom)); /* Full height minus header, tabs, and safe area */
   display: flex;
   flex-direction: column;
+  padding: 0 10px 16px 10px;
 }
 
 .trades-container {

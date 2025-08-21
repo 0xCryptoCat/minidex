@@ -374,7 +374,6 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
                             {lpHolder.tag}
                           </span>
                         )}
-                        // if the address is in nullAddresses and owns LP, show a warning icon
                         {nullAddresses.includes(lpHolder.address) && lpHolder.balance > '0' && (
                           <WhatshotIcon sx={{ fontSize: 14, color: 'var(--warning)' }} />
                         )}

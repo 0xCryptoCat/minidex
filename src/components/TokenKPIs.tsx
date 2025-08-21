@@ -39,7 +39,7 @@ export function TokenKPIs({ data }: TokenKPIsProps) {
                 <span style={{ color: 'var(--text-muted)', opacity: 0.5 }}>|</span>
                 <span style={{ color: tokenMetrics.sellTax && tokenMetrics.sellTax > 0 ? 'var(--accent-maroon)' : 'var(--text)'}}>{tokenMetrics.sellTax?.toFixed(1) || '0'}%</span>
                 <span style={{ color: 'var(--text-muted)', opacity: 0.5 }}>|</span>
-                <span style={{ color: 'var(--text)' }}>{tokenMetrics.transferTax?.toFixed(1) || '0'}%</span>
+                <strong style={{ color: 'var(--text)' }}>{tokenMetrics.transferTax?.toFixed(1) || '0'}%</strong>
               </>
             )}
           </div>

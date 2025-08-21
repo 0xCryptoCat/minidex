@@ -4,7 +4,7 @@ const tech = [
   { name: 'TradingView', src: '../icons/tradingview.svg', url: 'https://www.tradingview.com/' },
   { name: 'GeckoTerminal', src: '../icons/gecko.svg', url: 'https://www.geckoterminal.com/' },
   { name: 'DEX Screener', src: '../icons/dexscreener.svg', url: 'https://dexscreener.com/' },
-  { name: 'GoPlus Security', src: '../icons/goplus.svg', url: 'https://gopluslabs.io/', style: { opacity: 0.5 } },
+  { name: 'GoPlus Security', src: '../icons/goplus.svg', url: 'https://gopluslabs.io/' },
   { name: 'HoneyPot.is', src: '../icons/honeypotis.svg', url: 'https://honeypot.is/' },
 ];
 

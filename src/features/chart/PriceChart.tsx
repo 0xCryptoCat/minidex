@@ -77,6 +77,7 @@ export default function PriceChart({
   const volumeSeriesRef = useRef<any>(null);
   const baselineGuideCandlesRef = useRef<any>(null);
   const baselineGuideLineRef = useRef<any>(null);
+  const currentPriceLineRef = useRef<any>(null);
   const candlesDataRef = useRef<{ time: number; open: number; high: number; low: number; close: number }[]>([]);
   const volumeDataRef = useRef<{ time: number; value: number; color: string }[]>([]);
   const markersMapRef = useRef<Map<number, TradeMarkerCluster[]>>(new Map());
@@ -98,24 +99,31 @@ export default function PriceChart({
   const formatPrice = (v: number): string => {
     if (v == null || !isFinite(v)) return '';
     const a = Math.abs(v);
+    
+    // Large numbers (>= 1000)
     if (a >= 1e3) {
       if (a < 1e6) return (v / 1e3).toFixed(1) + 'K';
       if (a < 1e9) return (v / 1e6).toFixed(1) + 'M';
       if (a < 1e12) return (v / 1e9).toFixed(1) + 'B';
       return (v / 1e12).toFixed(1) + 'T';
     }
+    
+    // Tiny numbers (< 0.0001) with subscript notation
     if (a > 0 && a < 1e-4) {
-      const exp = Math.floor(Math.log10(a));         // negative
+      const exp = Math.floor(Math.log10(a));         // negative exponent
       const zeros = Math.abs(exp) - 1;               // zeros after '0.'
       if (zeros >= 3) {
-        const sub = zeros - 1;                       // we render 0.0ₓ…
-        const sci = v.toExponential(3);              // "1.23e-5"
-        const mantissa = sci.split('e')[0].replace('.', ''); // "123"
-        const subscript = String(sub).split('').map(d => String.fromCharCode(0x2080 + +d)).join('');
-        return `0.0${subscript}${mantissa}`;
+        const coefficient = a * Math.pow(10, Math.abs(exp));
+        const digits = coefficient.toFixed(3).replace(/\.?0+$/, '');
+        const subscript = String(zeros).split('').map(d => String.fromCharCode(0x2080 + +d)).join('');
+        return `0.0${subscript}${digits}`;
       }
     }
-    return String(v.toFixed(4)).replace(/\.?0+$/, '');
+    
+    // Regular numbers - use appropriate precision
+    if (a >= 1) return v.toFixed(2);
+    if (a >= 0.01) return v.toFixed(4);
+    return v.toFixed(6).replace(/\.?0+$/, '');
   };
 
   // Helper function for USD formatting in OHLCV display
@@ -146,20 +154,30 @@ export default function PriceChart({
     baselineRafRef.current = requestAnimationFrame(() => {
       baselineRafRef.current = null;
       if (!chartRef.current || chartType !== 'line') return;
+      
       const range = chartRef.current.timeScale().getVisibleRange();
       if (!range || range.from === undefined) return;
+      
       const data = candlesDataRef.current;
       if (!data || data.length === 0) return;
-      let idx = lowerBoundByTime(data, range.from as number);
-      if (idx > data.length - 1) idx = data.length - 1;
-      const first = data[idx];
-      if (!first) return;
-      const basePrice = first.open;
+      
+      // Use binary search to find first visible candle (by open price exactly like JS prototype)
+      let idx = lowerBoundByTime(data, Math.floor(range.from as number));
+      if (idx >= data.length) idx = data.length - 1;
+      if (idx < 0) idx = 0;
+      
+      const firstVisible = data[idx];
+      if (!firstVisible) return;
+      
+      // Use the open price of the first visible bar as baseline (exact match to JS prototype)
+      const basePrice = firstVisible.open;
       
       // Update baseline series base value
-      baselineSeriesRef.current?.applyOptions({
-        baseValue: { type: 'price', price: basePrice }
-      });
+      if (baselineSeriesRef.current) {
+        baselineSeriesRef.current.applyOptions({
+          baseValue: { type: 'price', price: basePrice }
+        });
+      }
       
       // Recreate guide line on active series
       recreateGuideLines(basePrice);
@@ -194,6 +212,41 @@ export default function PriceChart({
       baselineGuideCandlesRef.current = createGuideLineOn(candleSeriesRef.current, basePrice);
     } else if (chartType === 'line' && baselineSeriesRef.current) {
       baselineGuideLineRef.current = createGuideLineOn(baselineSeriesRef.current, basePrice);
+    }
+  };
+
+  // Function to create/update current price line
+  const updateCurrentPriceLine = () => {
+    const data = candlesDataRef.current;
+    if (!data || data.length === 0) return;
+    
+    const lastCandle = data[data.length - 1];
+    if (!lastCandle) return;
+    
+    const currentPrice = lastCandle.close;
+    const color = lastCandle.close >= lastCandle.open ? '#34c759' : '#e13232';
+    
+    // Remove existing current price line
+    if (currentPriceLineRef.current) {
+      if (chartType === 'candlestick' && candleSeriesRef.current) {
+        candleSeriesRef.current.removePriceLine(currentPriceLineRef.current);
+      } else if (chartType === 'line' && baselineSeriesRef.current) {
+        baselineSeriesRef.current.removePriceLine(currentPriceLineRef.current);
+      }
+      currentPriceLineRef.current = null;
+    }
+    
+    // Create new current price line (always visible as per requirements)
+    const activeSeries = chartType === 'candlestick' ? candleSeriesRef.current : baselineSeriesRef.current;
+    if (activeSeries) {
+      currentPriceLineRef.current = activeSeries.createPriceLine({
+        price: currentPrice,
+        color: color,
+        lineWidth: 1,
+        lineStyle: 3, // Dotted line
+        axisLabelVisible: true,
+        title: 'Current',
+      });
     }
   };
 
@@ -242,15 +295,16 @@ export default function PriceChart({
         timeVisible: true,
         secondsVisible: false,
         borderColor: 'rgba(255, 255, 255, 0.2)',
-        rightOffset: 12, // Better mobile spacing
-        barSpacing: 6, // Tighter spacing for mobile
+        rightOffset: 12,
+        barSpacing: 6,
         fixLeftEdge: false,
         fixRightEdge: false,
         lockVisibleTimeRangeOnResize: false,
-        // Better mobile scroll behavior - allow scrolling beyond data
         shiftVisibleRangeOnNewBar: false,
-        // Allow infinite scroll
         allowShiftVisibleRangeOnWhitespaceReplacement: true,
+        // Enable whitespace scrolling beyond first/last bars
+        allowBoldLabels: false,
+        uniformDistribution: false,
       },
       rightPriceScale: {
         borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -352,19 +406,31 @@ export default function PriceChart({
       const ohlcvElement = document.getElementById('ohlcv-display');
       if (ohlcvElement) {
         if (t == null) {
-          // No crosshair: show last bar (candles preferred, fallback to line)
+          // No crosshair: show last bar OHLCV data
           const candleData = candlesDataRef.current;
           const volumeData = volumeDataRef.current;
           const lastCandle = candleData[candleData.length - 1];
           const lastVolume = volumeData[volumeData.length - 1];
           if (lastCandle) {
             const color = lastCandle.close >= lastCandle.open ? '#34c759' : '#e13232';
-            ohlcvElement.innerHTML = `
-              <div style="color:${color};">
-                <strong style="color:white;">Current</strong> ${formatPrice(lastCandle.close)} 
-                ${lastVolume ? `• <strong style="color:white;">Vol</strong> $${formatUSD(lastVolume.value)}` : ''}
-              </div>
-            `;
+            if (chartType === 'candlestick') {
+              ohlcvElement.innerHTML = `
+                <div style="color:${color};">
+                  <strong style="color:white;">O</strong> ${formatPrice(lastCandle.open)}, 
+                  <strong style="color:white;">H</strong> ${formatPrice(lastCandle.high)}, 
+                  <strong style="color:white;">L</strong> ${formatPrice(lastCandle.low)}, 
+                  <strong style="color:white;">C</strong> ${formatPrice(lastCandle.close)}
+                  ${lastVolume ? `, <strong style="color:white;">Vol</strong> $${formatUSD(lastVolume.value)}` : ''}
+                </div>
+              `;
+            } else {
+              ohlcvElement.innerHTML = `
+                <div style="color:${color};">
+                  <strong style="color:white;">Price</strong> ${formatPrice(lastCandle.close)}
+                  ${lastVolume ? `, <strong style="color:white;">Vol</strong> $${formatUSD(lastVolume.value)}` : ''}
+                </div>
+              `;
+            }
             setHoverBarData({
               time: lastCandle.time,
               open: lastCandle.open,
@@ -571,12 +637,24 @@ export default function PriceChart({
             const ohlcvElement = document.getElementById('ohlcv-display');
             if (ohlcvElement) {
               const color = lastCandle.close >= lastCandle.open ? '#34c759' : '#e13232';
-              ohlcvElement.innerHTML = `
-                <div style="color:${color};">
-                  <strong style="color:white;">Current</strong> ${formatPrice(lastCandle.close)} 
-                  ${lastVolume ? `• <strong style="color:white;">Vol</strong> $${formatUSD(lastVolume.value)}` : ''}
-                </div>
-              `;
+              if (chartType === 'candlestick') {
+                ohlcvElement.innerHTML = `
+                  <div style="color:${color};">
+                    <strong style="color:white;">O</strong> ${formatPrice(lastCandle.open)}, 
+                    <strong style="color:white;">H</strong> ${formatPrice(lastCandle.high)}, 
+                    <strong style="color:white;">L</strong> ${formatPrice(lastCandle.low)}, 
+                    <strong style="color:white;">C</strong> ${formatPrice(lastCandle.close)}
+                    ${lastVolume ? `, <strong style="color:white;">Vol</strong> $${formatUSD(lastVolume.value)}` : ''}
+                  </div>
+                `;
+              } else {
+                ohlcvElement.innerHTML = `
+                  <div style="color:${color};">
+                    <strong style="color:white;">Price</strong> ${formatPrice(lastCandle.close)}
+                    ${lastVolume ? `, <strong style="color:white;">Vol</strong> $${formatUSD(lastVolume.value)}` : ''}
+                  </div>
+                `;
+              }
             }
             setHoverBarData({
               time: lastCandle.time as number,
@@ -587,6 +665,11 @@ export default function PriceChart({
               volume: lastVolume?.value
             });
           }
+          
+          // Add current price line
+          setTimeout(() => {
+            updateCurrentPriceLine();
+          }, 100);
           
           setHasData(true);
           setIsLoading(false);

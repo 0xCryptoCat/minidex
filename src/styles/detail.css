@@ -717,6 +717,16 @@
   flex-direction: column;
 }
 
+/* Modern chart container with no background/border - full width */
+.modern-chart-container {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+
 /* Make chart fill available height */
 .chart-container > div > div:first-child {
   flex: 1;

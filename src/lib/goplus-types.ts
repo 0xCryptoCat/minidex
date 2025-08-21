@@ -340,6 +340,7 @@ export interface ProcessedSecurityData {
       tag?: string;
       isContract: boolean;
       balance: string;
+      rawBalance: string;
       percent: string;
       isLocked: boolean;
     }>;

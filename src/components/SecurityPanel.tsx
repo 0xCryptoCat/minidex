@@ -17,26 +17,13 @@ import type { ProcessedSecurityData } from '../lib/goplus-types';
 import type { ProcessedHoneypotData } from '../lib/honeypot-types';
 import { LP_LOCKER_MAPPING } from '../lib/goplus-types';
 
-// Helper function to calculate USD value from token balance
-function calculateUsdValue(balance: string, priceUsd?: number): string | null {
-  if (!priceUsd || !balance || balance === '0') return null;
+// Helper function to calculate USD value from raw token balance
+function calculateUsdValue(rawBalance: string, priceUsd?: number): string | null {
+  if (!priceUsd || !rawBalance || rawBalance === '0') return null;
   
   try {
-    // Remove formatting suffixes (K, M, B) and convert to number
-    let numericBalance = 0;
-    const cleanBalance = balance.replace(/[^\d.-]/g, '');
-    
-    if (balance.includes('B')) {
-      numericBalance = parseFloat(cleanBalance) * 1e9;
-    } else if (balance.includes('M')) {
-      numericBalance = parseFloat(cleanBalance) * 1e6;
-    } else if (balance.includes('K')) {
-      numericBalance = parseFloat(cleanBalance) * 1e3;
-    } else {
-      numericBalance = parseFloat(cleanBalance);
-    }
-    
-    if (isNaN(numericBalance)) return null;
+    const numericBalance = parseFloat(rawBalance);
+    if (isNaN(numericBalance) || numericBalance <= 0) return null;
     
     const usdValue = numericBalance * priceUsd;
     
@@ -481,9 +468,9 @@ export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, er
                         )}
                         <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
                           <span style={{ fontWeight: 600 }}>{holder.balance}</span>
-                          {tokenPriceUsd && calculateUsdValue(holder.balance, tokenPriceUsd) && (
+                          {tokenPriceUsd && holder.rawBalance && calculateUsdValue(holder.rawBalance, tokenPriceUsd) && (
                             <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                              {calculateUsdValue(holder.balance, tokenPriceUsd)}
+                              ({calculateUsdValue(holder.rawBalance, tokenPriceUsd)})
                             </div>
                           )}
                         </div>

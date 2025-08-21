@@ -144,6 +144,7 @@ function processHolder(holder: Holder) {
     tag: holder.tag,
     isContract: booleanFromString(holder.is_contract),
     balance: formatBalance(holder.balance),
+    rawBalance: holder.balance, // Keep raw balance for USD calculations
     percent: holder.percent,
     isLocked: booleanFromString(holder.is_locked),
   };
@@ -350,6 +351,7 @@ function processSolanaSecurityData(solanaData: SolanaTokenSecurity): ProcessedSe
     tag: holder.tag || '',
     isContract: false, // Not available in Solana data
     balance: formatBalance(holder.balance),
+    rawBalance: holder.balance, // Keep raw balance for USD calculations
     percent: holder.percent, // Use as-is from API
     isLocked: booleanFromString(holder.is_locked),
   }));

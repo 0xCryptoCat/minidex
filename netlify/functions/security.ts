@@ -89,7 +89,7 @@ async function fetchGoPlusTokenSecurity(chainId: string, address: string): Promi
   
   if (isSolana(chainId)) {
     // Use Solana beta API
-    url = `${GOPLUS_SOLANA_URL}/token_security?token_address=${address}`;
+    url = `${GOPLUS_SOLANA_URL}/token_security?contract_addresses=${address}`;
   } else if (isSui(chainId)) {
     // Use Sui API
     url = `${GOPLUS_SUI_URL}/token_security?contract_addresses=${address}`;
@@ -118,12 +118,14 @@ async function fetchGoPlusTokenSecurity(chainId: string, address: string): Promi
 function processGoPlusResponse(data: any, chain: string, address: string): SecurityResponse {
   try {
     if (isSolana(chain)) {
-      // Process Solana response
+      // Process Solana response - extract token data from result[token_address]
       const result = data?.result || {};
+      // For Solana, the result is structured as { "token_address": { ...tokenData } }
+      const tokenData = result[address] || {};
       return {
         success: true,
         data: {
-          solana: result,
+          solana: tokenData,
         },
         chain,
         address,

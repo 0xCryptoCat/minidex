@@ -8,6 +8,19 @@ import { ohlc } from '../../lib/api';
 import { getCachedTf, setCachedTf } from '../../lib/tf-cache';
 import { getTradesCache } from '../../lib/cache';
 import { formatFetchMeta, type FetchMeta } from '../../lib/format';
+import { 
+  Flag as FlagIcon,
+  OutlinedFlag as OutlinedFlagIcon,
+  CandlestickChart as CandlestickChartIcon,
+  AutoGraph as AutoGraphIcon,
+  Equalizer as EqualizerIcon,
+  GridOn as GridOnIcon,
+  CropSquare as CropSquareIcon,
+  Label as LabelIcon,
+  LabelOff as LabelOffIcon,
+  BorderInner as BorderInnerIcon,
+  AutoFixHigh as AutoFixHighIcon,
+} from '@mui/icons-material';
 
 type DisplayMode = 'price' | 'marketcap';
 
@@ -150,130 +163,147 @@ export default function ChartOnlyView({
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div className="chart-controls">
-        <div className="chart-controls-left" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-          <TimeframeSelector 
-            selectedTf={tf}
-            availableTfs={availableTfs}
-            onTfChange={handleTfChange}
-            disabled={tfLoading}
-          />
-          {/* TODO: Uncomment when totalSupply data is available
-          <div className="chart-display-mode">
+      {/* Chart Settings Section */}
+      <div className="section chart-settings-section" style={{ 
+        margin: 'var(--space-2) var(--space-4) 0',
+        padding: 'var(--space-2)',
+        background: 'var(--bg-elev)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          gap: 'var(--space-2)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+            {/* Trades Toggle */}
             <button
-              className={`chart-mode-button ${displayMode === 'price' ? 'selected' : ''}`}
-              onClick={() => setDisplayMode('price')}
-              type="button"
-            >
-              Price
-            </button>
-            <button
-              className={`chart-mode-button ${displayMode === 'marketcap' ? 'selected' : ''}`}
-              onClick={() => setDisplayMode('marketcap')}
-              disabled={!tokenDetail?.info}
-              type="button"
-            >
-              Market Cap
-            </button>
-          </div>
-          */}
-          <label className="trade-markers-toggle">
-            <input 
-              type="checkbox" 
-              checked={showMarkers} 
-              onChange={handleToggle}
-            /> 
-            <span>Trades</span>
-          </label>
-          
-          {/* Chart Type Toggle */}
-          <div className="chart-type-toggle" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <button
-              className={`chart-type-button ${chartType === 'candlestick' ? 'selected' : ''}`}
-              onClick={() => setChartType('candlestick')}
-              type="button"
+              onClick={handleToggle}
               style={{
-                padding: '4px 8px',
-                fontSize: '11px',
-                border: '1px solid var(--border)',
-                borderRadius: '4px',
-                background: chartType === 'candlestick' ? 'var(--accent-lime)' : 'transparent',
-                color: chartType === 'candlestick' ? 'var(--bg)' : 'var(--text)',
-                cursor: 'pointer'
+                background: 'none',
+                border: 'none',
+                color: 'var(--text)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '4px'
               }}
+              title="Toggle trade markers"
             >
-              Candles
+              {showMarkers ? <FlagIcon sx={{ fontSize: 16 }} /> : <OutlinedFlagIcon sx={{ fontSize: 16 }} />}
             </button>
+
+            {/* Chart Type Toggle */}
             <button
-              className={`chart-type-button ${chartType === 'line' ? 'selected' : ''}`}
-              onClick={() => setChartType('line')}
-              type="button"
+              onClick={() => setChartType(prev => prev === 'candlestick' ? 'line' : 'candlestick')}
               style={{
-                padding: '4px 8px',
-                fontSize: '11px',
-                border: '1px solid var(--border)',
-                borderRadius: '4px',
-                background: chartType === 'line' ? 'var(--accent-lime)' : 'transparent',
-                color: chartType === 'line' ? 'var(--bg)' : 'var(--text)',
-                cursor: 'pointer'
+                background: 'none',
+                border: 'none',
+                color: 'var(--text)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '4px'
               }}
+              title={`Chart type: ${chartType}`}
             >
-              Line
+              {chartType === 'candlestick' ? <CandlestickChartIcon sx={{ fontSize: 16 }} /> : <AutoGraphIcon sx={{ fontSize: 16 }} />}
             </button>
-          </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+
             {/* Volume Toggle */}
-            <label className="volume-toggle" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
-              <input 
-                type="checkbox" 
-                checked={showVolume} 
-                onChange={(e) => setShowVolume(e.target.checked)}
-              /> 
-              <span>Volume</span>
-            </label>
-            
+            <button
+              onClick={() => setShowVolume(prev => !prev)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: showVolume ? 'var(--text)' : 'var(--text-muted)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '4px'
+              }}
+              title="Toggle volume"
+            >
+              <EqualizerIcon sx={{ fontSize: 16 }} />
+            </button>
+
             {/* Grid Toggle */}
-            <label className="grid-toggle" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
-              <input 
-                type="checkbox" 
-                checked={showGrid} 
-                onChange={(e) => setShowGrid(e.target.checked)}
-              /> 
-              <span>Grid</span>
-            </label>
-            
-            {/* Crosshair Labels Toggle */}
-            <label className="crosshair-labels-toggle" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
-              <input 
-                type="checkbox" 
-                checked={showCrosshairLabels} 
-                onChange={(e) => setShowCrosshairLabels(e.target.checked)}
-              /> 
-              <span>Labels</span>
-            </label>
+            <button
+              onClick={() => setShowGrid(prev => !prev)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '4px'
+              }}
+              title="Toggle grid"
+            >
+              {showGrid ? <GridOnIcon sx={{ fontSize: 16 }} /> : <CropSquareIcon sx={{ fontSize: 16 }} />}
+            </button>
+
+            {/* Labels Toggle */}
+            <button
+              onClick={() => setShowCrosshairLabels(prev => !prev)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '4px'
+              }}
+              title="Toggle labels"
+            >
+              {showCrosshairLabels ? <LabelIcon sx={{ fontSize: 16 }} /> : <LabelOffIcon sx={{ fontSize: 16 }} />}
+            </button>
+
+            {/* Crosshair Mode Toggle */}
+            <button
+              onClick={() => setCrosshairMode(prev => prev === 'normal' ? 'magnet' : 'normal')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '4px'
+              }}
+              title={`Crosshair: ${crosshairMode}`}
+            >
+              {crosshairMode === 'normal' ? <BorderInnerIcon sx={{ fontSize: 16 }} /> : <AutoFixHighIcon sx={{ fontSize: 16 }} />}
+            </button>
           </div>
-        </div>
-        <div className="chart-controls-right">
-          {/* Crosshair Mode Toggle */}
-          <button
-            onClick={() => setCrosshairMode(prev => prev === 'normal' ? 'magnet' : 'normal')}
-            type="button"
-            style={{
-              padding: '4px 8px',
-              fontSize: '10px',
-              border: '1px solid var(--border)',
-              borderRadius: '4px',
-              background: crosshairMode === 'magnet' ? 'var(--accent-telegram)' : 'transparent',
-              color: crosshairMode === 'magnet' ? 'var(--bg)' : 'var(--text-muted)',
-              cursor: 'pointer'
-            }}
-            title={`Crosshair: ${crosshairMode}`}
-          >
-            {crosshairMode === 'magnet' ? '🧲' : '+'}
-          </button>
         </div>
       </div>
+
+      {/* OHLCV Data Section */}
+      <div className="section ohlcv-section" style={{ 
+        margin: 'var(--space-2) var(--space-4) 0',
+        padding: 'var(--space-2)',
+        background: 'var(--bg-elev)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
+      }}>
+        <div id="ohlcv-display" style={{ 
+          fontSize: '12px',
+          fontFamily: 'monospace',
+          color: 'var(--text)',
+          minHeight: '20px',
+          display: 'flex',
+          alignItems: 'center'
+        }}>
+          {/* This will be populated by the chart component */}
+          Loading...
+        </div>
+      </div>
+
       {showMarkers && noTrades && (
         <div className="no-trades-notice">
           <div>No trades available</div>
@@ -282,50 +312,44 @@ export default function ChartOnlyView({
           )}
         </div>
       )}
-      <div style={{ flex: 1, position: 'relative' }}>          <PriceChart
-            pairId={pairId}
-            tf={tf}
-            xDomain={xDomain}
-            onXDomainChange={onXDomainChange}
-            markers={showMarkers ? markers : []}
-            chain={chain}
-            poolAddress={poolAddress}
-            tokenAddress={tokenAddress}
-            tokenDetail={tokenDetail}
-            displayMode={displayMode}
-            onDisplayModeChange={setDisplayMode}
-            chartType={chartType}
-            showVolume={showVolume}
-            crosshairMode={crosshairMode}
-            showGrid={showGrid}
-            showCrosshairLabels={showCrosshairLabels}
-          />
+
+      {/* Chart Container - no section wrapper, transparent background */}
+      <div style={{ 
+        flex: 1, 
+        position: 'relative',
+        margin: 'var(--space-2) 0 0',  // No left/right margin
+      }}>
+        <PriceChart
+          pairId={pairId}
+          tf={tf}
+          xDomain={xDomain}
+          onXDomainChange={onXDomainChange}
+          markers={showMarkers ? markers : []}
+          chain={chain}
+          poolAddress={poolAddress}
+          tokenAddress={tokenAddress}
+          tokenDetail={tokenDetail}
+          displayMode={displayMode}
+          onDisplayModeChange={setDisplayMode}
+          chartType={chartType}
+          showVolume={showVolume}
+          crosshairMode={crosshairMode}
+          showGrid={showGrid}
+          showCrosshairLabels={showCrosshairLabels}
+          availableTfs={availableTfs}
+          onTfChange={handleTfChange}
+        />
       </div>
       
-      {/* Chart info badges moved below */}
-      <div className="chart-badges" style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        padding: 'var(--space-2) var(--space-4)',
-        background: 'var(--bg-elev)',
-        borderTop: '1px solid var(--border)',
-        fontSize: '11px',
+      {/* Simple powered by text */}
+      <div style={{ 
+        textAlign: 'center',
+        padding: 'var(--space-1)',
+        fontSize: '10px',
         color: 'var(--text-muted)',
       }}>
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          {tf && (
-            <span>UTC • {tf}</span>
-          )}
-          {/* Add provider info if available */}
-        </div>
-        <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-          {meta && formatFetchMeta(meta) && (
-            <span>{formatFetchMeta(meta)}</span>
-          )}
-        </div>
+        Powered by TradingView
       </div>
     </div>
   );
 }
-

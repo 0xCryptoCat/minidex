@@ -46,6 +46,8 @@ interface Props {
   crosshairMode?: 'normal' | 'magnet';
   showGrid?: boolean;
   showCrosshairLabels?: boolean;
+  availableTfs?: Timeframe[];
+  onTfChange?: (tf: Timeframe) => void;
 }
 
 export default function PriceChart({
@@ -65,6 +67,8 @@ export default function PriceChart({
   crosshairMode = 'normal',
   showGrid = true,
   showCrosshairLabels = true,
+  availableTfs = [],
+  onTfChange,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -89,6 +93,30 @@ export default function PriceChart({
   const rangeRafRef = useRef<number | null>(null);
   const baselineRafRef = useRef<number | null>(null);
   const DEBUG = (import.meta as any).env?.DEBUG === 'true';
+
+  // Enhanced price formatter with K/M/B/T abbreviations and subscript notation for tiny values
+  const formatPrice = (v: number): string => {
+    if (v == null || !isFinite(v)) return '';
+    const a = Math.abs(v);
+    if (a >= 1e3) {
+      if (a < 1e6) return (v / 1e3).toFixed(1) + 'K';
+      if (a < 1e9) return (v / 1e6).toFixed(1) + 'M';
+      if (a < 1e12) return (v / 1e9).toFixed(1) + 'B';
+      return (v / 1e12).toFixed(1) + 'T';
+    }
+    if (a > 0 && a < 1e-4) {
+      const exp = Math.floor(Math.log10(a));         // negative
+      const zeros = Math.abs(exp) - 1;               // zeros after '0.'
+      if (zeros >= 3) {
+        const sub = zeros - 1;                       // we render 0.0ₓ…
+        const sci = v.toExponential(3);              // "1.23e-5"
+        const mantissa = sci.split('e')[0].replace('.', ''); // "123"
+        const subscript = String(sub).split('').map(d => String.fromCharCode(0x2080 + +d)).join('');
+        return `0.0${subscript}${mantissa}`;
+      }
+    }
+    return String(v.toFixed(4)).replace(/\.?0+$/, '');
+  };
 
   // Helper function for USD formatting in OHLCV display
   const formatUSD = (n: number | null): string => {
@@ -175,30 +203,6 @@ export default function PriceChart({
     return entry?.explorerTx as string | undefined;
   }, [chain]);
 
-  // Enhanced price formatter with K/M/B/T abbreviations and subscript notation for tiny values
-  const formatPrice = (v: number): string => {
-    if (v == null || !isFinite(v)) return '';
-    const a = Math.abs(v);
-    if (a >= 1e3) {
-      if (a < 1e6) return (v / 1e3).toFixed(1) + 'K';
-      if (a < 1e9) return (v / 1e6).toFixed(1) + 'M';
-      if (a < 1e12) return (v / 1e9).toFixed(1) + 'B';
-      return (v / 1e12).toFixed(1) + 'T';
-    }
-    if (a > 0 && a < 1e-4) {
-      const exp = Math.floor(Math.log10(a));         // negative
-      const zeros = Math.abs(exp) - 1;               // zeros after '0.'
-      if (zeros >= 3) {
-        const sub = zeros - 1;                       // we render 0.0ₓ…
-        const sci = v.toExponential(3);              // "1.23e-5"
-        const mantissa = sci.split('e')[0].replace('.', ''); // "123"
-        const subscript = String(sub).split('').map(d => String.fromCharCode(0x2080 + +d)).join('');
-        return `0.0${subscript}${mantissa}`;
-      }
-    }
-    return String(v.toFixed(4)).replace(/\.?0+$/, '');
-  };
-
   useEffect(() => {
     if (!containerRef.current) return;
     
@@ -245,6 +249,8 @@ export default function PriceChart({
         lockVisibleTimeRangeOnResize: false,
         // Better mobile scroll behavior - allow scrolling beyond data
         shiftVisibleRangeOnNewBar: false,
+        // Allow infinite scroll
+        allowShiftVisibleRangeOnWhitespaceReplacement: true,
       },
       rightPriceScale: {
         borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -342,53 +348,88 @@ export default function PriceChart({
         setHoveredMarkers(arr || null);
       }
 
-      // Update OHLCV display
-      if (t == null) {
-        // No crosshair: show last bar (candles preferred, fallback to line)
+      // Update OHLCV display in external element
+      const ohlcvElement = document.getElementById('ohlcv-display');
+      if (ohlcvElement) {
+        if (t == null) {
+          // No crosshair: show last bar (candles preferred, fallback to line)
+          const candleData = candlesDataRef.current;
+          const volumeData = volumeDataRef.current;
+          const lastCandle = candleData[candleData.length - 1];
+          const lastVolume = volumeData[volumeData.length - 1];
+          if (lastCandle) {
+            const color = lastCandle.close >= lastCandle.open ? '#34c759' : '#e13232';
+            ohlcvElement.innerHTML = `
+              <div style="color:${color};">
+                <strong style="color:white;">Current</strong> ${formatPrice(lastCandle.close)} 
+                ${lastVolume ? `• <strong style="color:white;">Vol</strong> $${formatUSD(lastVolume.value)}` : ''}
+              </div>
+            `;
+            setHoverBarData({
+              time: lastCandle.time,
+              open: lastCandle.open,
+              high: lastCandle.high,
+              low: lastCandle.low,
+              close: lastCandle.close,
+              volume: lastVolume?.value
+            });
+          }
+          return;
+        }
+        
+        // Find bar at time t
         const candleData = candlesDataRef.current;
         const volumeData = volumeDataRef.current;
-        const lastCandle = candleData[candleData.length - 1];
-        const lastVolume = volumeData[volumeData.length - 1];
-        if (lastCandle) {
+        const bar = candleData.find(b => b.time === t);
+        const volBar = volumeData.find(v => v.time === t);
+        
+        if (bar) {
+          const color = bar.close >= bar.open ? '#34c759' : '#e13232';
+          if (chartType === 'candlestick') {
+            ohlcvElement.innerHTML = `
+              <div style="color:${color};">
+                <strong style="color:white;">O</strong> ${formatPrice(bar.open)}, 
+                <strong style="color:white;">H</strong> ${formatPrice(bar.high)}, 
+                <strong style="color:white;">L</strong> ${formatPrice(bar.low)}, 
+                <strong style="color:white;">C</strong> ${formatPrice(bar.close)}
+                ${volBar ? `, <strong style="color:white;">Vol</strong> $${formatUSD(volBar.value)}` : ''}
+              </div>
+            `;
+          } else {
+            ohlcvElement.innerHTML = `
+              <div style="color:${color};">
+                <strong style="color:white;">Price</strong> ${formatPrice(bar.close)}
+                ${volBar ? `, <strong style="color:white;">Vol</strong> $${formatUSD(volBar.value)}` : ''}
+              </div>
+            `;
+          }
           setHoverBarData({
-            time: lastCandle.time,
-            open: lastCandle.open,
-            high: lastCandle.high,
-            low: lastCandle.low,
-            close: lastCandle.close,
-            volume: lastVolume?.value
-          });
-        }
-        return;
-      }
-      
-      // Find bar at time t
-      const candleData = candlesDataRef.current;
-      const volumeData = volumeDataRef.current;
-      const bar = candleData.find(b => b.time === t);
-      const volBar = volumeData.find(v => v.time === t);
-      
-      if (bar) {
-        setHoverBarData({
-          time: bar.time,
-          open: bar.open,
-          high: bar.high,
-          low: bar.low,
-          close: bar.close,
-          volume: volBar?.value
-        });
-      } else {
-        // Fallback for line mode - create synthetic bar data
-        const lineData = candleData.find(c => c.time === t);
-        if (lineData) {
-          setHoverBarData({
-            time: t,
-            open: null,
-            high: null,
-            low: null,
-            close: lineData.close,
+            time: bar.time,
+            open: bar.open,
+            high: bar.high,
+            low: bar.low,
+            close: bar.close,
             volume: volBar?.value
           });
+        } else {
+          // Fallback for line mode - create synthetic bar data
+          const lineData = candleData.find(c => c.time === t);
+          if (lineData) {
+            ohlcvElement.innerHTML = `
+              <div style="color:#34c759;">
+                <strong style="color:white;">Price</strong> ${formatPrice(lineData.close)}
+                ${volBar ? `, <strong style="color:white;">Vol</strong> $${formatUSD(volBar.value)}` : ''}
+              </div>
+            `;
+            setHoverBarData({
+              time: t,
+              open: null,
+              high: null,
+              low: null,
+              close: lineData.close,
+              volume: volBar?.value
+            });
+          }
         }
       }
     };
@@ -527,6 +568,16 @@ export default function PriceChart({
           const lastCandle = transformedData[transformedData.length - 1];
           const lastVolume = v[v.length - 1];
           if (lastCandle) {
+            const ohlcvElement = document.getElementById('ohlcv-display');
+            if (ohlcvElement) {
+              const color = lastCandle.close >= lastCandle.open ? '#34c759' : '#e13232';
+              ohlcvElement.innerHTML = `
+                <div style="color:${color};">
+                  <strong style="color:white;">Current</strong> ${formatPrice(lastCandle.close)} 
+                  ${lastVolume ? `• <strong style="color:white;">Vol</strong> $${formatUSD(lastVolume.value)}` : ''}
+                </div>
+              `;
+            }
             setHoverBarData({
               time: lastCandle.time as number,
               open: lastCandle.open,
@@ -663,48 +714,37 @@ export default function PriceChart({
         </div>
       )}
       
-      <div ref={containerRef} style={{ height: '100%', minHeight: '400px' }} />
-      
-      {/* OHLCV Info Panel */}
-      {hasData && hoverBarData && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            background: 'rgba(0, 0, 0, 0.8)',
-            color: 'var(--text)',
-            padding: '6px 12px',
-            fontSize: '12px',
-            fontFamily: 'monospace',
-            borderRadius: '6px',
-            backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            zIndex: 5,
-          }}
-        >
-          {hoverBarData.open !== null ? (
-            // Candlestick mode - show OHLC
-            <div style={{ 
-              color: hoverBarData.close !== null && hoverBarData.open !== null && hoverBarData.close >= hoverBarData.open ? '#34c759' : '#e13232' 
-            }}>
-              <strong style={{ color: 'white' }}>O</strong> {formatPrice(hoverBarData.open)}, {' '}
-              <strong style={{ color: 'white' }}>H</strong> {formatPrice(hoverBarData.high!)}, {' '}
-              <strong style={{ color: 'white' }}>L</strong> {formatPrice(hoverBarData.low!)}, {' '}
-              <strong style={{ color: 'white' }}>C</strong> {formatPrice(hoverBarData.close!)}, {' '}
-              <strong style={{ color: 'white' }}>Vol</strong> ${hoverBarData.volume ? formatUSD(hoverBarData.volume) : '-'}
-            </div>
-          ) : (
-            // Line mode - show close price only
-            <div style={{ 
-              color: '#34c759' // Default line color
-            }}>
-              <strong style={{ color: 'white' }}>Price</strong> {formatPrice(hoverBarData.close!)}, {' '}
-              <strong style={{ color: 'white' }}>Vol</strong> ${hoverBarData.volume ? formatUSD(hoverBarData.volume) : '-'}
-            </div>
-          )}
+      {/* Timeframe Selector - top left overlay */}
+      {availableTfs.length > 0 && onTfChange && (
+        <div style={{
+          position: 'absolute',
+          top: 8,
+          left: 8,
+          zIndex: 5,
+        }}>
+          <select
+            value={tf}
+            onChange={(e) => onTfChange(e.target.value as Timeframe)}
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              color: 'var(--text-muted)',
+              fontSize: '12px',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              outline: 'none',
+            }}
+          >
+            {availableTfs.map(timeframe => (
+              <option key={timeframe} value={timeframe} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+                {timeframe}
+              </option>
+            ))}
+          </select>
         </div>
       )}
+      
+      <div ref={containerRef} style={{ height: '100%', minHeight: '400px' }} />
       
       {/* Loading state */}
       {isLoading && (
@@ -748,7 +788,7 @@ export default function PriceChart({
         <div
           style={{
             position: 'absolute',
-            left: 8,
+            right: 8,
             top: 8,
             background: 'rgba(0,0,0,0.8)',
             color: 'var(--text)',

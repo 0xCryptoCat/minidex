@@ -26,11 +26,20 @@ export function TokenKPIs({ data }: TokenKPIsProps) {
         <div className="kpi-item">
           <span>TXn Fees</span>
           <div style={{ display: 'flex', flexDirection: 'row' , alignItems: 'center', gap: '1px' }}>
-            <span style={{ color: tokenMetrics.buyTax && tokenMetrics.buyTax > 0 ? 'var(--accent-lime)' : 'var(--text)'}}>{tokenMetrics.buyTax?.toFixed(1) || '0'}%</span>
-            <span style={{ color: 'var(--text-muted)' }}>|</span>
-            <span style={{ color: tokenMetrics.sellTax && tokenMetrics.sellTax > 0 ? 'var(--accent-maroon)' : 'var(--text)'}}>{tokenMetrics.sellTax?.toFixed(1) || '0'}%</span>
-            <span style={{ color: 'var(--text-muted)' }}>|</span>
-            <span style={{ color: 'var(--text)' }}>{tokenMetrics.transferTax?.toFixed(1) || '0'}%</span>
+            {/* Check if all fees are 0%, if so show single 0% */}
+            {(tokenMetrics.buyTax || 0) === 0 && 
+             (tokenMetrics.sellTax || 0) === 0 && 
+             (tokenMetrics.transferTax || 0) === 0 ? (
+              <span style={{ color: 'var(--text)' }}>0%</span>
+            ) : (
+              <>
+                <span style={{ color: tokenMetrics.buyTax && tokenMetrics.buyTax > 0 ? 'var(--accent-lime)' : 'var(--text)'}}>{tokenMetrics.buyTax?.toFixed(1) || '0'}%</span>
+                <span style={{ color: 'var(--text-muted)' }}>|</span>
+                <span style={{ color: tokenMetrics.sellTax && tokenMetrics.sellTax > 0 ? 'var(--accent-maroon)' : 'var(--text)'}}>{tokenMetrics.sellTax?.toFixed(1) || '0'}%</span>
+                <span style={{ color: 'var(--text-muted)' }}>|</span>
+                <span style={{ color: 'var(--text)' }}>{tokenMetrics.transferTax?.toFixed(1) || '0'}%</span>
+              </>
+            )}
           </div>
         </div>
       )}

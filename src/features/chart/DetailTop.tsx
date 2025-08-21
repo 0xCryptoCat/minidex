@@ -27,9 +27,16 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
 
   // take the active pool's createdAt timestamp and turn it into a Date object, then calculate what time ago that was
   const timeAgo = (timestamp: number) => {
-    const date = new Date(timestamp * 1000);
+    if (!timestamp || timestamp <= 0) return 'Unknown';
+    
+    // Handle both seconds and milliseconds timestamps
+    const date = timestamp > 10000000000 ? new Date(timestamp) : new Date(timestamp * 1000);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
+    
+    // If diff is negative, the timestamp is in the future (invalid)
+    if (diff < 0) return 'Unknown';
+    
     const seconds = Math.floor(diff / 1000);
     
     if (seconds < 60) return `${seconds}s ago`;
@@ -47,10 +54,13 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
 
   // boolean check if the pool is recent (less than 1 day old) using the timeAgo value
   const isRecentPool = (timestamp: number) => {
-    const date = new Date(timestamp * 1000);
+    if (!timestamp || timestamp <= 0) return false;
+    
+    // Handle both seconds and milliseconds timestamps
+    const date = timestamp > 10000000000 ? new Date(timestamp) : new Date(timestamp * 1000);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-    return diff < 24 * 60 * 60 * 1000; // less than 1 day, returns true
+    return diff > 0 && diff < 24 * 60 * 60 * 1000; // less than 1 day and valid, returns true
   };
 
   if (!active) {

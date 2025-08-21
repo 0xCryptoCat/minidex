@@ -198,7 +198,7 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
       )}
 
       {/* Holder Insights Section */}
-      {data && (
+      {data && data.holderMetrics.topHolders.length > 0 && (
         <>
           <div className="security-row">
             <div className="security-name">
@@ -222,7 +222,7 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
           </div>
 
           {/* Expanded Holder Details */}
-          {expandedSections.holders && (
+          {expandedSections.holders && data.holderMetrics.topHolders.length > 0 && (
             <div style={{ 
               background: 'var(--bg-elev)', 
               margin: '8px 0', 
@@ -267,7 +267,7 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
                     )}
                     <span style={{ fontWeight: 600, marginLeft: 'auto' }}>{holder.balance}</span>
                     <span style={{ color: 'var(--text-muted)', minWidth: '40px', textAlign: 'right' }}>
-                      {holder.percent}%
+                      {(parseFloat(holder.percent) < 1 ? (parseFloat(holder.percent) * 100).toFixed(2) : parseFloat(holder.percent).toFixed(2))}%
                     </span>
                     {holder.isLocked && (
                       <LockIcon sx={{ fontSize: 14, color: 'var(--accent-lime)' }} />
@@ -384,7 +384,7 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
                           <span style={{ fontWeight: 600, fontSize: '11px' }}>{lpHolder.balance}</span>
                         )}
                         <span style={{ color: 'var(--text-muted)', minWidth: '40px', textAlign: 'right' }}>
-                          {lpHolder.percent}%
+                          {(parseFloat(lpHolder.percent) < 1 ? (parseFloat(lpHolder.percent) * 100).toFixed(2) : parseFloat(lpHolder.percent).toFixed(2))}%
                         </span>
                       </div>
                     ))}

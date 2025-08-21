@@ -300,17 +300,14 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
                 <CopyButton text={active.pairAddress} label="pair address" />
                 {pairExplorer && (
                   <a href={pairExplorer} target="_blank" rel="noopener noreferrer">
-                    <OpenInNewIcon sx={{ fontSize: 16 }} />
+                    <OpenInNewIcon sx={{ fontSize: 16, color: 'var(--text-muted)' }} />
                   </a>
                 )}
               </div>
               <div className="addr-liquidity">
-                {active.liquidity ? (
-                  <div style={{ textAlign: 'right', fontSize: '12px' }}>
-                    <div style={{ fontWeight: 600 }}>{formatUsd(active.liquidity.usd)}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>
-                      {active.liquidity.base} • {active.liquidity.quote}
-                    </div>
+                {active.liquidity?.usd ? (
+                  <div style={{ textAlign: 'right', fontSize: '12px', fontWeight: 600 }}>
+                    {formatUsd(active.liquidity.usd)}
                   </div>
                 ) : (
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>—</span>
@@ -326,15 +323,14 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
                 <CopyButton text={active.baseToken.address} label={`${active.baseToken.symbol} address`} />
                 {baseExplorer && (
                   <a href={baseExplorer} target="_blank" rel="noopener noreferrer">
-                    <OpenInNewIcon sx={{ fontSize: 16 }} />
+                    <OpenInNewIcon sx={{ fontSize: 16, color: 'var(--text-muted)' }} />
                   </a>
                 )}
               </div>
               <div className="addr-liquidity">
-                {securityData?.tokenMetrics.totalSupply ? (
-                  <div style={{ textAlign: 'right', fontSize: '12px' }}>
-                    <div style={{ fontWeight: 600 }}>{securityData.tokenMetrics.totalSupply}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Supply</div>
+                {active.liquidity?.base ? (
+                  <div style={{ textAlign: 'right', fontSize: '12px', fontWeight: 600 }}>
+                    {formatCompact(Number(active.liquidity.base))}
                   </div>
                 ) : (
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>—</span>
@@ -350,17 +346,14 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
                 <CopyButton text={active.quoteToken.address} label={`${active.quoteToken.symbol} address`} />
                 {quoteExplorer && (
                   <a href={quoteExplorer} target="_blank" rel="noopener noreferrer">
-                    <OpenInNewIcon sx={{ fontSize: 16 }} />
+                    <OpenInNewIcon sx={{ fontSize: 16, color: 'var(--text-muted)' }} />
                   </a>
                 )}
               </div>
               <div className="addr-liquidity">
-                {active.marketCap || active.fdv ? (
-                  <div style={{ textAlign: 'right', fontSize: '12px' }}>
-                    <div style={{ fontWeight: 600 }}>{formatUsd(active.marketCap || active.fdv)}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>
-                      {active.marketCap ? 'Market Cap' : 'FDV'}
-                    </div>
+                {active.liquidity?.quote ? (
+                  <div style={{ textAlign: 'right', fontSize: '12px', fontWeight: 600 }}>
+                    {formatCompact(Number(active.liquidity.quote))}
                   </div>
                 ) : (
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>—</span>
@@ -394,13 +387,11 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
               <span>FDV/MKT CAP</span>
               <strong>{formatUsd(active.fdv)}</strong>
             </div>
-            {/* Show Total Supply as third column when FDV/MKT CAP is merged */}
-            {securityData && (
-              <div className="kpi-item">
-                <span>Total Supply</span>
-                <strong>{securityData.tokenMetrics.totalSupply}</strong>
-              </div>
-            )}
+            {/* Always show Total Supply as third column when FDV/MKT CAP is merged */}
+            <div className="kpi-item">
+              <span>Total Supply</span>
+              <strong>{securityData?.tokenMetrics.totalSupply || '—'}</strong>
+            </div>
           </>
         ) : (
           <div className="kpi-three-col">
@@ -434,17 +425,26 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
           <div className="kpi-item">
             <span>TXn Fees</span>
             <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '1px' }}>
-              <span style={{ color: securityData.tokenMetrics.buyTax && securityData.tokenMetrics.buyTax > 0 ? 'var(--accent-lime)' : 'var(--text)'}}>
-                {securityData.tokenMetrics.buyTax?.toFixed(1) || '0'}%
-              </span>
-              <span style={{ color: 'var(--text-muted)' }}>|</span>
-              <span style={{ color: securityData.tokenMetrics.sellTax && securityData.tokenMetrics.sellTax > 0 ? 'var(--accent-maroon)' : 'var(--text)'}}>
-                {securityData.tokenMetrics.sellTax?.toFixed(1) || '0'}%
-              </span>
-              <span style={{ color: 'var(--text-muted)' }}>|</span>
-              <span style={{ color: 'var(--text)' }}>
-                {securityData.tokenMetrics.transferTax?.toFixed(1) || '0'}%
-              </span>
+              {/* Check if all fees are 0%, if so show single 0% */}
+              {(securityData.tokenMetrics.buyTax || 0) === 0 && 
+               (securityData.tokenMetrics.sellTax || 0) === 0 && 
+               (securityData.tokenMetrics.transferTax || 0) === 0 ? (
+                <span style={{ color: 'var(--text)' }}>0%</span>
+              ) : (
+                <>
+                  <span style={{ color: securityData.tokenMetrics.buyTax && securityData.tokenMetrics.buyTax > 0 ? 'var(--accent-lime)' : 'var(--text)'}}>
+                    {securityData.tokenMetrics.buyTax?.toFixed(1) || '0'}%
+                  </span>
+                  <span style={{ color: 'var(--text-muted)' }}>|</span>
+                  <span style={{ color: securityData.tokenMetrics.sellTax && securityData.tokenMetrics.sellTax > 0 ? 'var(--accent-maroon)' : 'var(--text)'}}>
+                    {securityData.tokenMetrics.sellTax?.toFixed(1) || '0'}%
+                  </span>
+                  <span style={{ color: 'var(--text-muted)' }}>|</span>
+                  <span style={{ color: 'var(--text)' }}>
+                    {securityData.tokenMetrics.transferTax?.toFixed(1) || '0'}%
+                  </span>
+                </>
+              )}
             </div>
           </div>
         )}

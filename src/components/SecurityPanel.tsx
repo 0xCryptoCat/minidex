@@ -466,14 +466,12 @@ export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, er
                                 {holder.tag}
                             </span>
                         )}
-                        <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-                          <span style={{ fontWeight: 600 }}>{holder.balance}</span>
-                          {tokenPriceUsd && holder.rawBalance && calculateUsdValue(holder.rawBalance, tokenPriceUsd) && (
-                            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                        <span style={{ fontWeight: 600, marginLeft: 'auto' }}>{holder.balance}</span>
+                        {tokenPriceUsd && holder.rawBalance && calculateUsdValue(holder.rawBalance, tokenPriceUsd) && (
+                            <span style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}>
                               ({calculateUsdValue(holder.rawBalance, tokenPriceUsd)})
-                            </div>
-                          )}
-                        </div>
+                            </span>
+                        )}
                         <span style={{ color: 'var(--text-muted)', minWidth: '40px', textAlign: 'right' }}>
                         {(parseFloat(holder.percent) < 1 ? (parseFloat(holder.percent) * 100).toFixed(2) : parseFloat(holder.percent).toFixed(2))}%
                         </span>

@@ -47,6 +47,8 @@ export default function ChartOnlyView({
   const [chartType, setChartType] = useState<'candlestick' | 'line'>('candlestick');
   const [showVolume, setShowVolume] = useState(true);
   const [crosshairMode, setCrosshairMode] = useState<'normal' | 'magnet'>('normal');
+  const [showGrid, setShowGrid] = useState(true);
+  const [showCrosshairLabels, setShowCrosshairLabels] = useState(true);
   const loggedRef = useRef(false);
   const DEBUG = (import.meta as any).env?.DEBUG === 'true';
 
@@ -149,7 +151,7 @@ export default function ChartOnlyView({
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="chart-controls">
-        <div className="chart-controls-left">
+        <div className="chart-controls-left" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
           <TimeframeSelector 
             selectedTf={tf}
             availableTfs={availableTfs}
@@ -220,15 +222,37 @@ export default function ChartOnlyView({
             </button>
           </div>
           
-          {/* Volume Toggle */}
-          <label className="volume-toggle" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
-            <input 
-              type="checkbox" 
-              checked={showVolume} 
-              onChange={(e) => setShowVolume(e.target.checked)}
-            /> 
-            <span>Volume</span>
-          </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+            {/* Volume Toggle */}
+            <label className="volume-toggle" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
+              <input 
+                type="checkbox" 
+                checked={showVolume} 
+                onChange={(e) => setShowVolume(e.target.checked)}
+              /> 
+              <span>Volume</span>
+            </label>
+            
+            {/* Grid Toggle */}
+            <label className="grid-toggle" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
+              <input 
+                type="checkbox" 
+                checked={showGrid} 
+                onChange={(e) => setShowGrid(e.target.checked)}
+              /> 
+              <span>Grid</span>
+            </label>
+            
+            {/* Crosshair Labels Toggle */}
+            <label className="crosshair-labels-toggle" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
+              <input 
+                type="checkbox" 
+                checked={showCrosshairLabels} 
+                onChange={(e) => setShowCrosshairLabels(e.target.checked)}
+              /> 
+              <span>Labels</span>
+            </label>
+          </div>
         </div>
         <div className="chart-controls-right">
           {/* Crosshair Mode Toggle */}
@@ -245,8 +269,9 @@ export default function ChartOnlyView({
               cursor: 'pointer'
             }}
             title={`Crosshair: ${crosshairMode}`}
-          />
+          >
             {crosshairMode === 'magnet' ? '🧲' : '+'}
+          </button>
         </div>
       </div>
       {showMarkers && noTrades && (
@@ -257,23 +282,24 @@ export default function ChartOnlyView({
           )}
         </div>
       )}
-      <div style={{ flex: 1, position: 'relative' }}>
-        <PriceChart
-          pairId={pairId}
-          tf={tf}
-          xDomain={xDomain}
-          onXDomainChange={onXDomainChange}
-          markers={showMarkers ? markers : []}
-          chain={chain}
-          poolAddress={poolAddress}
-          tokenAddress={tokenAddress}
-          tokenDetail={tokenDetail}
-          displayMode={displayMode}
-          onDisplayModeChange={setDisplayMode}
-          chartType={chartType}
-          showVolume={showVolume}
-          crosshairMode={crosshairMode}
-        />
+      <div style={{ flex: 1, position: 'relative' }}>          <PriceChart
+            pairId={pairId}
+            tf={tf}
+            xDomain={xDomain}
+            onXDomainChange={onXDomainChange}
+            markers={showMarkers ? markers : []}
+            chain={chain}
+            poolAddress={poolAddress}
+            tokenAddress={tokenAddress}
+            tokenDetail={tokenDetail}
+            displayMode={displayMode}
+            onDisplayModeChange={setDisplayMode}
+            chartType={chartType}
+            showVolume={showVolume}
+            crosshairMode={crosshairMode}
+            showGrid={showGrid}
+            showCrosshairLabels={showCrosshairLabels}
+          />
       </div>
       
       {/* Chart info badges moved below */}

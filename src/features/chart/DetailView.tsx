@@ -291,48 +291,84 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
 
       {/* Addresses */}
       <div className="detail-addrs">
-        {active.pairAddress && (
-          <div className="addr-row">
-            <span>Pair:</span>
-            <div>
-              <span>{formatShortAddr(active.pairAddress)}</span>
-              <CopyButton text={active.pairAddress} label="pair address" />
-              {pairExplorer && (
-                <a href={pairExplorer} target="_blank" rel="noopener noreferrer">
-                  <OpenInNewIcon sx={{ fontSize: 16 }} />
-                </a>
-              )}
-            </div>
-          </div>
-        )}
-        {active.baseToken && (
-          <div className="addr-row">
-            <span>{truncateSymbol(active.baseToken.symbol)}:</span>
-            <div>
-              <span>{formatShortAddr(active.baseToken.address)}</span>
-              <CopyButton text={active.baseToken.address} label={`${active.baseToken.symbol} address`} />
-              {baseExplorer && (
-                <a href={baseExplorer} target="_blank" rel="noopener noreferrer">
-                  <OpenInNewIcon sx={{ fontSize: 16 }} />
-                </a>
-              )}
-            </div>
-          </div>
-        )}
-        {active.quoteToken && (
-          <div className="addr-row">
-            <span>{truncateSymbol(active.quoteToken.symbol)}:</span>
-            <div>
-              <span>{formatShortAddr(active.quoteToken.address)}</span>
-              <CopyButton text={active.quoteToken.address} label={`${active.quoteToken.symbol} address`} />
-              {quoteExplorer && (
-                <a href={quoteExplorer} target="_blank" rel="noopener noreferrer">
-                  <OpenInNewIcon sx={{ fontSize: 16 }} />
-                </a>
-              )}
-            </div>
-          </div>
-        )}
+        <div className="addr-grid">
+          {active.pairAddress && (
+            <>
+              <div className="addr-label">Pair:</div>
+              <div className="addr-value">
+                <span>{formatShortAddr(active.pairAddress)}</span>
+                <CopyButton text={active.pairAddress} label="pair address" />
+                {pairExplorer && (
+                  <a href={pairExplorer} target="_blank" rel="noopener noreferrer">
+                    <OpenInNewIcon sx={{ fontSize: 16 }} />
+                  </a>
+                )}
+              </div>
+              <div className="addr-liquidity">
+                {active.liquidity ? (
+                  <div style={{ textAlign: 'right', fontSize: '12px' }}>
+                    <div style={{ fontWeight: 600 }}>{formatUsd(active.liquidity.usd)}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>
+                      {active.liquidity.base} • {active.liquidity.quote}
+                    </div>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>—</span>
+                )}
+              </div>
+            </>
+          )}
+          {active.baseToken && (
+            <>
+              <div className="addr-label">{truncateSymbol(active.baseToken.symbol)}:</div>
+              <div className="addr-value">
+                <span>{formatShortAddr(active.baseToken.address)}</span>
+                <CopyButton text={active.baseToken.address} label={`${active.baseToken.symbol} address`} />
+                {baseExplorer && (
+                  <a href={baseExplorer} target="_blank" rel="noopener noreferrer">
+                    <OpenInNewIcon sx={{ fontSize: 16 }} />
+                  </a>
+                )}
+              </div>
+              <div className="addr-liquidity">
+                {securityData?.tokenMetrics.totalSupply ? (
+                  <div style={{ textAlign: 'right', fontSize: '12px' }}>
+                    <div style={{ fontWeight: 600 }}>{securityData.tokenMetrics.totalSupply}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>Supply</div>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>—</span>
+                )}
+              </div>
+            </>
+          )}
+          {active.quoteToken && (
+            <>
+              <div className="addr-label">{truncateSymbol(active.quoteToken.symbol)}:</div>
+              <div className="addr-value">
+                <span>{formatShortAddr(active.quoteToken.address)}</span>
+                <CopyButton text={active.quoteToken.address} label={`${active.quoteToken.symbol} address`} />
+                {quoteExplorer && (
+                  <a href={quoteExplorer} target="_blank" rel="noopener noreferrer">
+                    <OpenInNewIcon sx={{ fontSize: 16 }} />
+                  </a>
+                )}
+              </div>
+              <div className="addr-liquidity">
+                {active.marketCap || active.fdv ? (
+                  <div style={{ textAlign: 'right', fontSize: '12px' }}>
+                    <div style={{ fontWeight: 600 }}>{formatUsd(active.marketCap || active.fdv)}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>
+                      {active.marketCap ? 'Market Cap' : 'FDV'}
+                    </div>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>—</span>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* KPIs Grid */}
@@ -349,6 +385,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
         {/* Three-column KPI row for Liquidity, FDV, Market Cap */}
         {active.fdv && active.marketCap && Math.abs(active.fdv - active.marketCap) < 1000 ? (
           <>
+            {/* When FDV and Market Cap are merged, create 3-column: Liquidity, FDV/MKT CAP, Total Supply */}
             <div className="kpi-item">
               <span>Liquidity</span>
               <strong>{formatUsd(active.liquidity?.usd)}</strong>
@@ -357,6 +394,13 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
               <span>FDV/MKT CAP</span>
               <strong>{formatUsd(active.fdv)}</strong>
             </div>
+            {/* Show Total Supply as third column when FDV/MKT CAP is merged */}
+            {securityData && (
+              <div className="kpi-item">
+                <span>Total Supply</span>
+                <strong>{securityData.tokenMetrics.totalSupply}</strong>
+              </div>
+            )}
           </>
         ) : (
           <div className="kpi-three-col">
@@ -375,10 +419,35 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
           </div>
         )}
 
-        {/* Security-based Token KPIs */}
-        <TokenKPIs 
-          data={securityData}
-        />
+        {/* Security-based Token KPIs - Only show if FDV/MKT CAP are NOT merged or no Total Supply shown above */}
+        {(!active.fdv || !active.marketCap || Math.abs(active.fdv - active.marketCap) >= 1000 || !securityData) && (
+          <TokenKPIs 
+            data={securityData}
+          />
+        )}
+
+        {/* TXn Fees - Show separately when FDV/MKT CAP are merged and we have tax data */}
+        {active.fdv && active.marketCap && Math.abs(active.fdv - active.marketCap) < 1000 && securityData && 
+         (securityData.tokenMetrics.buyTax !== undefined || 
+          securityData.tokenMetrics.sellTax !== undefined || 
+          securityData.tokenMetrics.transferTax !== undefined) && (
+          <div className="kpi-item">
+            <span>TXn Fees</span>
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '1px' }}>
+              <span style={{ color: securityData.tokenMetrics.buyTax && securityData.tokenMetrics.buyTax > 0 ? 'var(--accent-lime)' : 'var(--text)'}}>
+                {securityData.tokenMetrics.buyTax?.toFixed(1) || '0'}%
+              </span>
+              <span style={{ color: 'var(--text-muted)' }}>|</span>
+              <span style={{ color: securityData.tokenMetrics.sellTax && securityData.tokenMetrics.sellTax > 0 ? 'var(--accent-maroon)' : 'var(--text)'}}>
+                {securityData.tokenMetrics.sellTax?.toFixed(1) || '0'}%
+              </span>
+              <span style={{ color: 'var(--text-muted)' }}>|</span>
+              <span style={{ color: 'var(--text)' }}>
+                {securityData.tokenMetrics.transferTax?.toFixed(1) || '0'}%
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Owner/Creator Metrics */}
         <OwnerMetrics 

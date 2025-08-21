@@ -24,28 +24,14 @@ export function TokenKPIs({ data }: TokenKPIsProps) {
         tokenMetrics.sellTax !== undefined || 
         tokenMetrics.transferTax !== undefined) && (
         <div className="kpi-item">
-          <span>TX Fees (B/S/T)</span>
-          <strong>
-            <span style={{ 
-              color: tokenMetrics.buyTax && tokenMetrics.buyTax > 10 ? 'var(--accent-maroon)' : 
-                    tokenMetrics.buyTax && tokenMetrics.buyTax > 5 ? 'var(--accent-telegram)' : 'var(--accent-lime)'
-            }}>
-              {tokenMetrics.buyTax?.toFixed(1) || '0'}%
-            </span>
-            <span style={{ color: 'var(--text-muted)', margin: '0 4px' }}>/</span>
-            <span style={{ 
-              color: tokenMetrics.sellTax && tokenMetrics.sellTax > 10 ? 'var(--accent-maroon)' : 
-                    tokenMetrics.sellTax && tokenMetrics.sellTax > 5 ? 'var(--accent-telegram)' : 'var(--accent-lime)'
-            }}>
-              {tokenMetrics.sellTax?.toFixed(1) || '0'}%
-            </span>
-            <span style={{ color: 'var(--text-muted)', margin: '0 4px' }}>/</span>
-            <span style={{ 
-              color: tokenMetrics.transferTax && tokenMetrics.transferTax > 5 ? 'var(--accent-maroon)' : 'var(--accent-lime)'
-            }}>
-              {tokenMetrics.transferTax?.toFixed(1) || '0'}%
-            </span>
-          </strong>
+          <span>TXn Fees</span>
+          <div style={{ display: 'flex', flexDirection: 'row' , alignItems: 'center', gap: '1px' }}>
+            <span style={{ color: tokenMetrics.buyTax && tokenMetrics.buyTax > 0 ? 'var(--accent-lime)' : 'var(--text)'}}>{tokenMetrics.buyTax?.toFixed(1) || '0'}%</span>
+            <span style={{ color: 'var(--text-muted)' }}>|</span>
+            <span style={{ color: tokenMetrics.sellTax && tokenMetrics.sellTax > 0 ? 'var(--accent-maroon)' : 'var(--text)'}}>{tokenMetrics.sellTax?.toFixed(1) || '0'}%</span>
+            <span style={{ color: 'var(--text-muted)' }}>|</span>
+            <span style={{ color: 'var(--text)' }}>{tokenMetrics.transferTax?.toFixed(1) || '0'}%</span>
+          </div>
         </div>
       )}
     </>
@@ -83,7 +69,7 @@ export function OwnerMetrics({ data, chain }: OwnerMetricsProps) {
                        parseFloat(ownerMetrics.ownerPercent) > 10 ? 'var(--accent-telegram)' : 'var(--text)'
               }}
             >
-              {parseFloat(ownerMetrics.ownerPercent).toFixed(1)}%
+              {ownerMetrics.ownerPercent}%
             </strong>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>SUPPLY</div>
           </div>

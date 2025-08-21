@@ -8,6 +8,7 @@ import {
   LockClock as LockIcon,
   ContentCopy as CopyIcon,
   OpenInNew as ExternalIcon,
+  Whatshot as WhatshotIcon,
 } from '@mui/icons-material';
 import CopyButton from './CopyButton';
 import { formatShortAddr } from '../lib/format';
@@ -53,8 +54,14 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
     }
     
     const totalIssues = data.securityMetrics.filter(m => !m.value);
-    if (totalIssues.length > 2) {
+    
+    // "Mild Issues" for non-critical but non-verified states
+    if (totalIssues.length > 5) {
       return { text: `${totalIssues.length} Issues`, className: 'bad' };
+    } else if (totalIssues.length > 2) {
+      return { text: `${totalIssues.length} Mild Issues`, className: 'warning' };
+    } else if (totalIssues.length > 0) {
+      return { text: `${totalIssues.length} Minor Issues`, className: 'warning' };
     }
     
     return { text: 'Verified', className: 'good' };
@@ -64,7 +71,7 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
 
   return (
     <div className="security-section">
-      <h3 style={{ margin: '0 0 var(--space-3) 0', fontSize: '1rem', fontWeight: 600 }}>
+      <h3 className="security-title">
         Security Analysis
         {data?.ownerMetrics.isRenounced && (
           <span style={{
@@ -72,11 +79,11 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
             padding: '4px 8px',
             fontSize: '10px',
             fontWeight: 600,
-            textTransform: 'uppercase',
+            textTransform: 'lowercase',
             borderRadius: '12px',
             border: '1px solid var(--accent-lime)',
             color: 'var(--accent-lime)',
-            background: 'rgba(163, 255, 18, 0.1)'
+            background: 'rgba(163, 255, 18, 0)'
           }}>
             Renounced
           </span>
@@ -155,57 +162,6 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
             ))}
           </div>
 
-          {/* Token Metrics */}
-          <div style={{ marginBottom: '16px' }}>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>
-              Token Supply
-            </h4>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <span style={{ color: 'var(--text-muted)' }}>Total Supply</span>
-              <span style={{ fontWeight: 600 }}>{data.tokenMetrics.totalSupply}</span>
-            </div>
-          </div>
-
-          {/* Tax Information */}
-          {(data.tokenMetrics.buyTax !== undefined || 
-            data.tokenMetrics.sellTax !== undefined || 
-            data.tokenMetrics.transferTax !== undefined) && (
-            <div style={{ marginBottom: '16px' }}>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>
-                Transaction Fees
-              </h4>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                <span style={{ 
-                  color: data.tokenMetrics.buyTax && data.tokenMetrics.buyTax > 10 ? 'var(--accent-maroon)' : 
-                        data.tokenMetrics.buyTax && data.tokenMetrics.buyTax > 5 ? 'var(--accent-telegram)' : 'var(--accent-lime)'
-                }}>
-                  {data.tokenMetrics.buyTax?.toFixed(1) || '0'}%
-                </span>
-                <span style={{ color: 'var(--text-muted)' }}>/</span>
-                <span style={{ 
-                  color: data.tokenMetrics.sellTax && data.tokenMetrics.sellTax > 10 ? 'var(--accent-maroon)' : 
-                        data.tokenMetrics.sellTax && data.tokenMetrics.sellTax > 5 ? 'var(--accent-telegram)' : 'var(--accent-lime)'
-                }}>
-                  {data.tokenMetrics.sellTax?.toFixed(1) || '0'}%
-                </span>
-                <span style={{ color: 'var(--text-muted)' }}>/</span>
-                <span style={{ 
-                  color: data.tokenMetrics.transferTax && data.tokenMetrics.transferTax > 5 ? 'var(--accent-maroon)' : 'var(--accent-lime)'
-                }}>
-                  {data.tokenMetrics.transferTax?.toFixed(1) || '0'}%
-                </span>
-              </div>
-              <div style={{ 
-                fontSize: '10px', 
-                color: 'var(--text-muted)', 
-                textAlign: 'center', 
-                marginTop: '4px' 
-              }}>
-                Buy / Sell / Transfer
-              </div>
-            </div>
-          )}
-
           {/* Owner Information */}
           {data.ownerMetrics.ownerAddress && !data.ownerMetrics.isRenounced && (
             <div style={{ marginBottom: '16px' }}>
@@ -222,7 +178,7 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
                   target="_blank" 
                   rel="noopener noreferrer"
                 >
-                  <ExternalIcon sx={{ fontSize: 12 }} />
+                  <ExternalIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
                 </a>
                 {data.ownerMetrics.ownerPercent && (
                   <span style={{ 
@@ -232,7 +188,7 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
                     borderRadius: '4px',
                     color: parseFloat(data.ownerMetrics.ownerPercent) > 10 ? 'var(--accent-maroon)' : 'var(--text-muted)'
                   }}>
-                    {parseFloat(data.ownerMetrics.ownerPercent).toFixed(1)}%
+                    {data.ownerMetrics.ownerPercent}%
                   </span>
                 )}
               </div>
@@ -249,8 +205,8 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
               <span>Holder Insights</span>
             </div>
             <div className="security-result">
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                {data.holderMetrics.holderCount.toLocaleString()} holders
+              <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                {data.holderMetrics.holderCount.toLocaleString()} Holders
               </span>
               <button 
                 className="security-expand" 
@@ -274,8 +230,8 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
               padding: '16px',
               fontSize: '12px'
             }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '12px', fontWeight: 600 }}>
-                Top Holders
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '12px', fontWeight: 400 }}>
+                Top 10
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {data.holderMetrics.topHolders.slice(0, 10).map((holder, i) => (
@@ -286,35 +242,35 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
                     padding: '6px 0',
                     borderBottom: i < 9 ? '1px solid var(--border-subtle)' : 'none'
                   }}>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '10px', minWidth: '32px' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '12px', minWidth: '32px' }}>
                       {formatShortAddr(holder.address)}
                     </span>
                     <CopyButton text={holder.address} label="holder address" />
                     <a href={addressUrl(chain as any, holder.address as any)} target="_blank" rel="noopener noreferrer">
-                      <ExternalIcon sx={{ fontSize: 10 }} />
+                      <ExternalIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
                     </a>
                     {holder.tag && (
                       <span style={{ 
-                        fontSize: '9px', 
-                        padding: '2px 4px', 
-                        background: 'var(--bg)', 
-                        borderRadius: '3px',
+                        fontSize: '10px', 
+                        padding: '2px 6px', 
+                        border: '1px solid var(--bg-elev-2)', 
+                        borderRadius: '15px',
                         color: 'var(--text-muted)'
                       }}>
                         {holder.tag}
                       </span>
                     )}
                     {holder.isContract ? (
-                      <ContractIcon sx={{ fontSize: 12, color: 'var(--accent-telegram)' }} />
+                      <ContractIcon sx={{ fontSize: 14, color: 'var(--warning)' }} />
                     ) : (
-                      <WalletIcon sx={{ fontSize: 12, color: 'var(--text-muted)' }} />
+                      <WalletIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
                     )}
                     <span style={{ fontWeight: 600, marginLeft: 'auto' }}>{holder.balance}</span>
                     <span style={{ color: 'var(--text-muted)', minWidth: '40px', textAlign: 'right' }}>
-                      {parseFloat(holder.percent).toFixed(1)}%
+                      {holder.percent}%
                     </span>
                     {holder.isLocked && (
-                      <LockIcon sx={{ fontSize: 12, color: 'var(--accent-lime)' }} />
+                      <LockIcon sx={{ fontSize: 14, color: 'var(--accent-lime)' }} />
                     )}
                   </div>
                 ))}
@@ -356,58 +312,83 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
               padding: '16px',
               fontSize: '12px'
             }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '12px', fontWeight: 600 }}>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '12px', fontWeight: 400 }}>
                 DEX Liquidity
               </h4>
-              {data.liquidityMetrics.dexes.map((dex, i) => (
-                <div key={i} style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  padding: '4px 0',
-                  borderBottom: i < data.liquidityMetrics.dexes.length - 1 ? '1px solid var(--border-subtle)' : 'none'
-                }}>
-                  <span style={{ fontWeight: 600 }}>{dex.name}</span>
-                  <span style={{ color: 'var(--text-muted)' }}>${dex.liquidity}</span>
-                </div>
-              ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {data.liquidityMetrics.dexes.map((dex, i) => (
+                  <div key={i} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    padding: '6px 0',
+                    borderBottom: i < data.liquidityMetrics.dexes.length - 1 ? '1px solid var(--border-subtle)' : 'none'
+                  }}>
+                    <span style={{ fontWeight: 600, flex: 1 }}>{dex.name}</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>${dex.liquidity}</span>
+                  </div>
+                ))}
+              </div>
 
               {data.liquidityMetrics.lpHolders.length > 0 && (
                 <>
-                  <h4 style={{ margin: '16px 0 8px 0', fontSize: '12px', fontWeight: 600 }}>
+                  <h4 style={{ margin: '16px 0 8px 0', fontSize: '12px', fontWeight: 400 }}>
                     LP Holders ({data.liquidityMetrics.lpHolderCount || data.liquidityMetrics.lpHolders.length})
                   </h4>
-                  {data.liquidityMetrics.lpHolders.slice(0, 5).map((lpHolder, i) => (
-                    <div key={i} style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '6px',
-                      padding: '4px 0',
-                      fontSize: '11px'
-                    }}>
-                      <span style={{ color: 'var(--text-muted)' }}>
-                        {formatShortAddr(lpHolder.address)}
-                      </span>
-                      {lpHolder.lockerService && LP_LOCKER_MAPPING[lpHolder.lockerService] && (
-                        <span style={{ 
-                          fontSize: '9px', 
-                          padding: '2px 4px', 
-                          background: 'var(--accent-lime)', 
-                          color: 'var(--bg)',
-                          borderRadius: '3px',
-                          fontWeight: 600
-                        }}>
-                          {LP_LOCKER_MAPPING[lpHolder.lockerService].name}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {data.liquidityMetrics.lpHolders.slice(0, 10).map((lpHolder, i) => (
+                      <div key={i} style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px',
+                        padding: '6px 0',
+                        borderBottom: i < Math.min(9, data.liquidityMetrics.lpHolders.length - 1) ? '1px solid var(--border-subtle)' : 'none'
+                      }}>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '12px', minWidth: '32px' }}>
+                          {formatShortAddr(lpHolder.address)}
                         </span>
-                      )}
-                      {lpHolder.isLocked && (
-                        <LockIcon sx={{ fontSize: 10, color: 'var(--accent-lime)' }} />
-                      )}
-                      <span style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}>
-                        {parseFloat(lpHolder.percent).toFixed(1)}%
-                      </span>
-                    </div>
-                  ))}
+                        <CopyButton text={lpHolder.address} label="LP holder address" />
+                        <a href={addressUrl(chain as any, lpHolder.address as any)} target="_blank" rel="noopener noreferrer">
+                          <ExternalIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
+                        </a>
+                        {lpHolder.tag && (
+                          <span style={{ 
+                            fontSize: '10px', 
+                            padding: '2px 6px', 
+                            border: '1px solid var(--bg-elev-2)', 
+                            borderRadius: '15px',
+                            color: 'var(--text-muted)'
+                          }}>
+                            {lpHolder.tag}
+                          </span>
+                        )}
+                        {lpHolder.tag === 'null' && (
+                          <WhatshotIcon sx={{ fontSize: 14, color: 'var(--warning)' }} />
+                        )}
+                        {lpHolder.lockerService && LP_LOCKER_MAPPING[lpHolder.lockerService] && (
+                          <span style={{ 
+                            fontSize: '9px', 
+                            padding: '2px 4px', 
+                            background: 'var(--accent-lime)', 
+                            color: 'var(--bg)',
+                            borderRadius: '3px',
+                            fontWeight: 600
+                          }}>
+                            {LP_LOCKER_MAPPING[lpHolder.lockerService].name}
+                          </span>
+                        )}
+                        {lpHolder.isLocked && (
+                          <LockIcon sx={{ fontSize: 10, color: 'var(--accent-lime)' }} />
+                        )}
+                        {lpHolder.balance && (
+                          <span style={{ fontWeight: 600, fontSize: '11px' }}>{lpHolder.balance}</span>
+                        )}
+                        <span style={{ color: 'var(--text-muted)', minWidth: '40px', textAlign: 'right' }}>
+                          {lpHolder.percent}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
             </div>

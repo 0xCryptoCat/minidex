@@ -21,7 +21,7 @@
 
 /* Loading States */
 .detail-top-skeleton {
-  padding: 0 16px 24px;
+  padding: 0 16px 10px;
 }
 
 .loading-skeleton {
@@ -132,6 +132,15 @@
   line-height: 1.2;
 }
 
+/* Pool and Time container */
+.detail-pair-id {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1.25rem;
+  flex-wrap: nowrap;
+}
+
 /* Pool Selector */
 .pool-selector-wrapper {
   position: relative;
@@ -191,6 +200,18 @@
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 12px;
+}
+
+/* Creation time tag */
+.pair-created-at {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+.pair-created-at .sprout-emoji {
+  font-size: 16px;
+  line-height: 1;
 }
 
 .token-name {
@@ -345,6 +366,40 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
+.addr-grid {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 12px 8px;
+  align-items: center;
+}
+
+.addr-label {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.addr-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.addr-liquidity {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 80px;
+}
+
+/* Legacy addr-row support for backwards compatibility */
 .addr-row {
   display: flex;
   align-items: center;
@@ -785,6 +840,16 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
+.security-title {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
 .security-row {
   display: flex;
   align-items: center;
@@ -827,9 +892,19 @@
   color: var(--accent-lime);
 }
 
+.security-status.warning {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+
 .security-status.bad {
   background: rgba(var(--accent-maroon-rgb), 0.2);
   color: var(--accent-maroon);
+}
+
+.security-status.warning {
+  background: rgba(255, 165, 0, 0.2);
+  color: #ffa500;
 }
 
 .security-status.pending {
@@ -848,7 +923,6 @@
 }
 
 .security-expand:hover {
-  background: var(--hover);
   color: var(--text);
 }
 

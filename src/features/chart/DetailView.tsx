@@ -6,6 +6,7 @@ import TwitterFeedPanel from '../../components/TwitterFeedPanel';
 import { SecurityPanel } from '../../components/SecurityPanel';
 import { TokenKPIs, OwnerMetrics } from '../../components/TokenKPIs';
 import { useGoSecurity } from '../../lib/useGoSecurity';
+import { useHoneypotSecurity } from '../../lib/useHoneypotSecurity';
 import { addressUrl } from '../../lib/explorer';
 import { getChainIcon, getSocialIcon } from '../../lib/chain-icons';
 import { 
@@ -51,6 +52,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
   
   // Fetch security data for the token
   const { loading: securityLoading, error: securityError, data: securityData } = useGoSecurity(chain, address);
+  const { loading: honeypotLoading, error: honeypotError, data: honeypotData } = useHoneypotSecurity(chain, address);
   
   // Helper function to truncate long ticker symbols
   const truncateSymbol = (symbol: string, maxLength: number = 10) => {
@@ -568,8 +570,11 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
       {/* Security Analysis */}
       <SecurityPanel 
         data={securityData}
+        honeypotData={honeypotData}
         loading={securityLoading}
+        honeypotLoading={honeypotLoading}
         error={securityError}
+        honeypotError={honeypotError}
         chain={chain}
         address={address}
       />

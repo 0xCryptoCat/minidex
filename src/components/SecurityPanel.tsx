@@ -9,22 +9,27 @@ import {
   ContentCopy as CopyIcon,
   OpenInNew as ExternalIcon,
   Whatshot as WhatshotIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import CopyButton from './CopyButton';
 import { formatShortAddr } from '../lib/format';
 import { addressUrl } from '../lib/explorer';
 import type { ProcessedSecurityData } from '../lib/goplus-types';
+import type { ProcessedHoneypotData } from '../lib/honeypot-types';
 import { LP_LOCKER_MAPPING } from '../lib/goplus-types';
 
 interface SecurityPanelProps {
   data: ProcessedSecurityData | null;
+  honeypotData: ProcessedHoneypotData | null;
   loading: boolean;
+  honeypotLoading: boolean;
   error: string | null;
+  honeypotError: string | null;
   chain: string;
   address: string;
 }
 
-export function SecurityPanel({ data, loading, error, chain, address }: SecurityPanelProps) {
+export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, error, honeypotError, chain, address }: SecurityPanelProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
   const toggleSection = (section: string) => {
@@ -40,6 +45,28 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
     } else {
       const color = critical ? 'var(--accent-maroon)' : 'var(--text-muted)';
       return <CrossIcon sx={{ fontSize: 16, color }} />;
+    }
+  };
+
+  const getHoneypotStatus = () => {
+    if (honeypotLoading) return { text: 'Checking...', className: 'pending' };
+    if (honeypotError || !honeypotData) return { text: 'Unavailable', className: 'pending' };
+    if (!honeypotData.available) return { text: 'Unavailable', className: 'pending' };
+    
+    if (honeypotData.isHoneypot) {
+      return { text: 'Honeypot Detected', className: 'bad' };
+    }
+    
+    // Use risk level for status
+    switch (honeypotData.risk.level) {
+      case 'very_low': return { text: 'Very Low Risk', className: 'good' };
+      case 'low': return { text: 'Low Risk', className: 'good' };
+      case 'medium': return { text: 'Medium Risk', className: 'warning' };
+      case 'high': return { text: 'High Risk', className: 'bad' };
+      case 'very_high': return { text: 'Very High Risk', className: 'bad' };
+      case 'honeypot': return { text: 'Honeypot', className: 'bad' };
+      case 'unknown':
+      default: return { text: 'Unknown Risk', className: 'pending' };
     }
   };
 
@@ -68,6 +95,7 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
   };
 
   const status = getSecurityStatus();
+  const honeypotStatus = getHoneypotStatus();
 
   const nullAddresses = [
     '0x0000000000000000000000000000000000000000',
@@ -96,26 +124,169 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
         )}
       </h3>
       
-      {/* HoneyPot.is Row - Placeholder for future implementation */}
+      {/* HoneyPot.is Row */}
       <div className="security-row">
         <div className="security-name">
           <span>HoneyPot.is</span>
         </div>
         <div className="security-result">
-          <span className="security-status pending">Coming Soon</span>
+          <span className={`security-status ${honeypotStatus.className}`}>
+            {honeypotStatus.text}
+          </span>
           <button 
             className="security-expand" 
             onClick={() => toggleSection('honeypot')}
-            disabled
+            disabled={!honeypotData?.available}
             style={{ 
-              opacity: 0.5,
-              cursor: 'not-allowed'
+              opacity: honeypotData?.available ? 1 : 0.5,
+              cursor: honeypotData?.available ? 'pointer' : 'not-allowed',
+              transform: (expandedSections.honeypot && honeypotData?.available) ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease'
             }}
           >
             <ExpandMoreIcon sx={{ fontSize: 16 }} />
           </button>
         </div>
       </div>
+
+      {/* Expanded HoneyPot.is Details */}
+      {expandedSections.honeypot && honeypotData?.available && (
+        <div style={{ 
+          background: 'var(--bg-elev)', 
+          margin: '8px 0', 
+          borderRadius: '8px', 
+          padding: '16px',
+          fontSize: '13px'
+        }}>
+          {/* Risk Level and Flags */}
+          <div style={{ marginBottom: '16px' }}>
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>
+              Risk Assessment
+            </h4>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span style={{ fontWeight: 600 }}>{honeypotData.risk.description}</span>
+              {honeypotData.risk.score !== undefined && (
+                <span style={{ 
+                  fontSize: '11px', 
+                  padding: '2px 6px', 
+                  background: honeypotData.risk.score > 60 ? 'var(--accent-maroon)' : 
+                             honeypotData.risk.score > 20 ? 'var(--accent-telegram)' : 'var(--accent-lime)', 
+                  color: 'var(--bg)',
+                  borderRadius: '4px',
+                  fontWeight: 600
+                }}>
+                  {honeypotData.risk.score}/100
+                </span>
+              )}
+            </div>
+            
+            {/* Risk Flags */}
+            {honeypotData.flags && honeypotData.flags.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
+                {honeypotData.flags.map((flag, i) => (
+                  <div key={i} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '6px',
+                    fontSize: '11px'
+                  }}>
+                    <WarningIcon sx={{ 
+                      fontSize: 12, 
+                      color: flag.severity === 'critical' ? 'var(--accent-maroon)' :
+                             flag.severity === 'high' ? 'var(--warning)' :
+                             flag.severity === 'medium' ? 'var(--accent-telegram)' : 'var(--text-muted)'
+                    }} />
+                    <span style={{ color: 'var(--text-muted)' }}>{flag.message}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Transaction Taxes */}
+          {(honeypotData.taxes.buy > 0 || honeypotData.taxes.sell > 0 || honeypotData.taxes.transfer > 0) && (
+            <div style={{ marginBottom: '16px' }}>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>
+                Transaction Taxes
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: honeypotData.taxes.buy > 10 ? 'var(--accent-maroon)' : 'var(--text)' }}>
+                    {honeypotData.taxes.buy.toFixed(1)}%
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>BUY</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: honeypotData.taxes.sell > 10 ? 'var(--accent-maroon)' : 'var(--text)' }}>
+                    {honeypotData.taxes.sell.toFixed(1)}%
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>SELL</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: honeypotData.taxes.transfer > 10 ? 'var(--accent-maroon)' : 'var(--text)' }}>
+                    {honeypotData.taxes.transfer.toFixed(1)}%
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>TRANSFER</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Max Buy/Sell Limits */}
+          {honeypotData.limits && (
+            <div style={{ marginBottom: '16px' }}>
+              <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>
+                Transaction Limits
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {honeypotData.limits.maxBuy && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Max Buy</span>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 600 }}>{honeypotData.limits.maxBuy.formattedValue}</div>
+                      {honeypotData.limits.maxBuy.percentage > 0 && (
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                          {honeypotData.limits.maxBuy.percentage.toFixed(2)}% of supply
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {honeypotData.limits.maxSell && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Max Sell</span>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 600 }}>{honeypotData.limits.maxSell.formattedValue}</div>
+                      {honeypotData.limits.maxSell.percentage > 0 && (
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                          {honeypotData.limits.maxSell.percentage.toFixed(2)}% of supply
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Contract Information */}
+          <div>
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>
+              Contract Info
+            </h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Open Source</span>
+                {getStatusIcon(honeypotData.contractInfo.openSource)}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Proxy Contract</span>
+                {getStatusIcon(!honeypotData.contractInfo.isProxy)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Go+ Security Row */}
       <div className="security-row">
@@ -204,7 +375,7 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
       )}
 
       {/* Holder Insights Section */}
-      {data && data.holderMetrics.holderCount > 0 && (
+      {((data && data.holderMetrics.holderCount > 0) || (honeypotData?.totalHolders && honeypotData.totalHolders > 0)) && (
         <>
           <div className="security-row">
             <div className="security-name">
@@ -212,7 +383,7 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
             </div>
             <div className="security-result">
               <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
-                {data.holderMetrics.holderCount.toLocaleString()} Holders
+                {(data?.holderMetrics.holderCount || honeypotData?.totalHolders || 0).toLocaleString()} Holders
               </span>
               <button 
                 className="security-expand" 
@@ -228,7 +399,7 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
           </div>
 
           {/* Expanded Holder Details */}
-          {expandedSections.holders && data.holderMetrics.holderCount > 0 && (
+          {expandedSections.holders && (
             <div style={{ 
               background: 'var(--bg-elev)', 
               margin: '8px 0', 
@@ -240,7 +411,7 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
                 Top 10
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {data.holderMetrics.topHolders && data.holderMetrics.topHolders.length > 0 ? (
+                {data?.holderMetrics.topHolders && data.holderMetrics.topHolders.length > 0 ? (
                   data.holderMetrics.topHolders.slice(0, 10).map((holder, i) => (
                     <div key={i} style={{ 
                         display: 'flex', 
@@ -281,12 +452,15 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
                         )}
                     </div>
                     )
-                  )) : (
-                <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  No holder data available
-                </div>
-              )}
-            </div>
+                  )
+                ) : (
+                  <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    {honeypotData?.totalHolders 
+                      ? `${honeypotData.totalHolders.toLocaleString()} holders (detailed breakdown not available)`
+                      : 'No holder data available'}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </>

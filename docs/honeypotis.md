@@ -112,7 +112,7 @@ This guide will get you all set up and ready to use the Honeypot API. We’ll co
 
 _API Keys are currently not required - please leave the API key out of your requests in order._
 
-This will change in the near future.
+This will change in the near future, so build in fallback to show an "Unavailable" status to Honeypot.Is section!
 
 ## Client
 

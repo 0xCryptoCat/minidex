@@ -43,6 +43,10 @@ export default function ChartOnlyView({
   const [tfError, setTfError] = useState(false);
   const [displayMode, setDisplayMode] = useState<DisplayMode>('price');
   const [meta, setMeta] = useState<FetchMeta | null>(null);
+  // New chart configuration states
+  const [chartType, setChartType] = useState<'candlestick' | 'line'>('candlestick');
+  const [showVolume, setShowVolume] = useState(true);
+  const [crosshairMode, setCrosshairMode] = useState<'normal' | 'magnet'>('normal');
   const loggedRef = useRef(false);
   const DEBUG = (import.meta as any).env?.DEBUG === 'true';
 
@@ -179,9 +183,70 @@ export default function ChartOnlyView({
             /> 
             <span>Trades</span>
           </label>
+          
+          {/* Chart Type Toggle */}
+          <div className="chart-type-toggle" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <button
+              className={`chart-type-button ${chartType === 'candlestick' ? 'selected' : ''}`}
+              onClick={() => setChartType('candlestick')}
+              type="button"
+              style={{
+                padding: '4px 8px',
+                fontSize: '11px',
+                border: '1px solid var(--border)',
+                borderRadius: '4px',
+                background: chartType === 'candlestick' ? 'var(--accent-lime)' : 'transparent',
+                color: chartType === 'candlestick' ? 'var(--bg)' : 'var(--text)',
+                cursor: 'pointer'
+              }}
+            >
+              Candles
+            </button>
+            <button
+              className={`chart-type-button ${chartType === 'line' ? 'selected' : ''}`}
+              onClick={() => setChartType('line')}
+              type="button"
+              style={{
+                padding: '4px 8px',
+                fontSize: '11px',
+                border: '1px solid var(--border)',
+                borderRadius: '4px',
+                background: chartType === 'line' ? 'var(--accent-lime)' : 'transparent',
+                color: chartType === 'line' ? 'var(--bg)' : 'var(--text)',
+                cursor: 'pointer'
+              }}
+            >
+              Line
+            </button>
+          </div>
+          
+          {/* Volume Toggle */}
+          <label className="volume-toggle" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}>
+            <input 
+              type="checkbox" 
+              checked={showVolume} 
+              onChange={(e) => setShowVolume(e.target.checked)}
+            /> 
+            <span>Volume</span>
+          </label>
         </div>
         <div className="chart-controls-right">
-          {/* Space for future controls */}
+          {/* Crosshair Mode Toggle */}
+          <button
+            onClick={() => setCrosshairMode(prev => prev === 'normal' ? 'magnet' : 'normal')}
+            type="button"
+            style={{
+              padding: '4px 8px',
+              fontSize: '10px',
+              border: '1px solid var(--border)',
+              borderRadius: '4px',
+              background: crosshairMode === 'magnet' ? 'var(--accent-telegram)' : 'transparent',
+              color: crosshairMode === 'magnet' ? 'var(--bg)' : 'var(--text-muted)',
+              cursor: 'pointer'
+            }}
+            title={`Crosshair: ${crosshairMode}`}
+          />
+            {crosshairMode === 'magnet' ? '🧲' : '+'}
         </div>
       </div>
       {showMarkers && noTrades && (
@@ -205,6 +270,9 @@ export default function ChartOnlyView({
           tokenDetail={tokenDetail}
           displayMode={displayMode}
           onDisplayModeChange={setDisplayMode}
+          chartType={chartType}
+          showVolume={showVolume}
+          crosshairMode={crosshairMode}
         />
       </div>
       

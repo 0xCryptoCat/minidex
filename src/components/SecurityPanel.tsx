@@ -6,7 +6,6 @@ import {
   AccountBalanceWallet as WalletIcon,
   AccountTree as ContractIcon,
   LockClock as LockIcon,
-  ContentCopy as CopyIcon,
   OpenInNew as ExternalIcon,
   Whatshot as WhatshotIcon,
   Warning as WarningIcon,
@@ -18,6 +17,40 @@ import type { ProcessedSecurityData } from '../lib/goplus-types';
 import type { ProcessedHoneypotData } from '../lib/honeypot-types';
 import { LP_LOCKER_MAPPING } from '../lib/goplus-types';
 
+// Helper function to calculate USD value from token balance
+function calculateUsdValue(balance: string, priceUsd?: number): string | null {
+  if (!priceUsd || !balance || balance === '0') return null;
+  
+  try {
+    // Remove formatting suffixes (K, M, B) and convert to number
+    let numericBalance = 0;
+    const cleanBalance = balance.replace(/[^\d.-]/g, '');
+    
+    if (balance.includes('B')) {
+      numericBalance = parseFloat(cleanBalance) * 1e9;
+    } else if (balance.includes('M')) {
+      numericBalance = parseFloat(cleanBalance) * 1e6;
+    } else if (balance.includes('K')) {
+      numericBalance = parseFloat(cleanBalance) * 1e3;
+    } else {
+      numericBalance = parseFloat(cleanBalance);
+    }
+    
+    if (isNaN(numericBalance)) return null;
+    
+    const usdValue = numericBalance * priceUsd;
+    
+    // Format USD value
+    if (usdValue >= 1e6) return `$${(usdValue / 1e6).toFixed(1)}M`;
+    if (usdValue >= 1e3) return `$${(usdValue / 1e3).toFixed(1)}K`;
+    if (usdValue >= 1) return `$${usdValue.toFixed(0)}`;
+    if (usdValue >= 0.01) return `$${usdValue.toFixed(2)}`;
+    return `$${usdValue.toFixed(4)}`;
+  } catch {
+    return null;
+  }
+}
+
 interface SecurityPanelProps {
   data: ProcessedSecurityData | null;
   honeypotData: ProcessedHoneypotData | null;
@@ -27,9 +60,10 @@ interface SecurityPanelProps {
   honeypotError: string | null;
   chain: string;
   address: string;
+  tokenPriceUsd?: number;
 }
 
-export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, error, honeypotError, chain, address }: SecurityPanelProps) {
+export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, error, honeypotError, chain, address, tokenPriceUsd }: SecurityPanelProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
   const toggleSection = (section: string) => {
@@ -340,7 +374,9 @@ export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, er
           </div>
 
           {/* Creator Holdings - only show when meaningful data exists */}
-          {data.ownerMetrics.ownerAddress && !data.ownerMetrics.isRenounced && (data.ownerMetrics.ownerPercent || data.ownerMetrics.ownerBalance) && (
+          {data.ownerMetrics.ownerAddress && !data.ownerMetrics.isRenounced && 
+           ((data.ownerMetrics.ownerPercent && data.ownerMetrics.ownerPercent !== '' && parseFloat(data.ownerMetrics.ownerPercent) > 0) || 
+            (data.ownerMetrics.ownerBalance && data.ownerMetrics.ownerBalance !== '' && data.ownerMetrics.ownerBalance !== '0')) && (
             <div style={{ marginBottom: '16px' }}>
               <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>
                 Creator Holdings
@@ -443,7 +479,14 @@ export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, er
                                 {holder.tag}
                             </span>
                         )}
-                        <span style={{ fontWeight: 600, marginLeft: 'auto' }}>{holder.balance}</span>
+                        <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                          <span style={{ fontWeight: 600 }}>{holder.balance}</span>
+                          {tokenPriceUsd && calculateUsdValue(holder.balance, tokenPriceUsd) && (
+                            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                              {calculateUsdValue(holder.balance, tokenPriceUsd)}
+                            </div>
+                          )}
+                        </div>
                         <span style={{ color: 'var(--text-muted)', minWidth: '40px', textAlign: 'right' }}>
                         {(parseFloat(holder.percent) < 1 ? (parseFloat(holder.percent) * 100).toFixed(2) : parseFloat(holder.percent).toFixed(2))}%
                         </span>

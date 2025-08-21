@@ -577,6 +577,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
         honeypotError={honeypotError}
         chain={chain}
         address={address}
+        tokenPriceUsd={active.priceUsd}
       />
     </div>
   );

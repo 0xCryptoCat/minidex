@@ -61,6 +61,11 @@ export function OwnerMetrics({ data, chain }: OwnerMetricsProps) {
 
   const { ownerMetrics } = data;
   
+  // Hide if no meaningful data to show (no balance or percentage)
+  if (!ownerMetrics.ownerBalance && !ownerMetrics.ownerPercent) {
+    return null;
+  }
+  
   return (
     <div className="kpi-item kpi-wide">
       <span>Creator Holdings</span>

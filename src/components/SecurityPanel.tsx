@@ -339,11 +339,11 @@ export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, er
             ))}
           </div>
 
-          {/* Owner Information */}
-          {data.ownerMetrics.ownerAddress && !data.ownerMetrics.isRenounced && (
+          {/* Creator Holdings - only show when meaningful data exists */}
+          {data.ownerMetrics.ownerAddress && !data.ownerMetrics.isRenounced && (data.ownerMetrics.ownerPercent || data.ownerMetrics.ownerBalance) && (
             <div style={{ marginBottom: '16px' }}>
               <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>
-                Creator
+                Creator Holdings
               </h4>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>

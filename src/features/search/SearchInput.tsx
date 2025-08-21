@@ -327,7 +327,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
-                  <div className="token-icon-container">
+                  <div className="token-icon-container" style={{ borderRadius: '10px' }}>
                     {r.icon ? (
                       <img 
                         src={r.icon} 
@@ -345,7 +345,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
                       style={{
                         width: '36px',
                         height: '36px',
-                        borderRadius: '50%',
+                        borderRadius: '25px',
                         display: r.icon ? 'none' : 'flex',
                         alignItems: 'center',
                         justifyContent: 'center'

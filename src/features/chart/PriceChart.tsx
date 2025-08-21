@@ -40,6 +40,10 @@ interface Props {
   tokenDetail?: TokenResponse | null;
   displayMode?: DisplayMode;
   onDisplayModeChange?: (mode: DisplayMode) => void;
+  // New props for chart configuration
+  chartType?: 'candlestick' | 'line';
+  showVolume?: boolean;
+  crosshairMode?: 'normal' | 'magnet';
 }
 
 export default function PriceChart({
@@ -54,12 +58,21 @@ export default function PriceChart({
   tokenDetail = null,
   displayMode = 'price',
   onDisplayModeChange,
+  chartType = 'candlestick',
+  showVolume = true,
+  crosshairMode = 'normal',
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<any>(null);
+  const baselineSeriesRef = useRef<any>(null);
   const volumeSeriesRef = useRef<any>(null);
+  const baselineGuideCandlesRef = useRef<any>(null);
+  const baselineGuideLineRef = useRef<any>(null);
+  const candlesDataRef = useRef<{ time: number; open: number; high: number; low: number; close: number }[]>([]);
+  const volumeDataRef = useRef<{ time: number; value: number; color: string }[]>([]);
   const markersMapRef = useRef<Map<number, TradeMarkerCluster[]>>(new Map());
+  const [hoverBarData, setHoverBarData] = useState<{ time: number; open: number|null; high: number|null; low: number|null; close: number|null } | null>(null);
   const [hoveredMarkers, setHoveredMarkers] = useState<TradeMarkerCluster[] | null>(null);
   const [provider, setProvider] = useState<string>('');
   const [degraded, setDegraded] = useState(false);
@@ -72,6 +85,35 @@ export default function PriceChart({
   const rangeRafRef = useRef<number | null>(null);
   const DEBUG = (import.meta as any).env?.DEBUG === 'true';
 
+  // Helper function for binary search
+  const lowerBoundByTime = (arr: { time: number }[], t: number) => {
+    let lo = 0, hi = arr.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (arr[mid].time < t) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo;
+  };
+
+  // Function to update baseline base price whenever visible range changes
+  const recomputeBaselineFromFirstVisible = () => {
+    if (!chartRef.current || chartType !== 'line') return;
+    const range = chartRef.current.timeScale().getVisibleRange();
+    if (!range || range.from === undefined) return;
+    const data = candlesDataRef.current;
+    if (!data || data.length === 0) return;
+    let idx = lowerBoundByTime(data, range.from as number);
+    if (idx > data.length - 1) idx = data.length - 1;
+    const first = data[idx];
+    if (!first) return;
+    const basePrice = first.open;
+    // Update baseline series base value
+    baselineSeriesRef.current?.applyOptions({
+      baseValue: { type: 'price', price: basePrice }
+    });
+  };
+
   const explorerTemplate = useMemo(() => {
     if (!chain) return undefined;
     const entry: any = (chains as any[]).find((c) => c.slug === chain);
@@ -80,6 +122,30 @@ export default function PriceChart({
 
   useEffect(() => {
     if (!containerRef.current) return;
+    
+    // Custom price formatter for axis labels (K/M/B abbreviations and tiny subscripts for small values)
+    function formatPrice(v: number): string {
+      if (v == null || !isFinite(v)) return '';
+      const a = Math.abs(v);
+      if (a >= 1e3) {
+        if (a < 1e6) return (v / 1e3).toFixed(1) + 'K';
+        if (a < 1e9) return (v / 1e6).toFixed(1) + 'M';
+        if (a < 1e12) return (v / 1e9).toFixed(1) + 'B';
+        return (v / 1e12).toFixed(1) + 'T';
+      }
+      if (a > 0 && a < 1e-4) {
+        const exp = Math.floor(Math.log10(a));
+        const zeros = Math.abs(exp) - 1;
+        if (zeros >= 3) {
+          const sub = zeros - 1;
+          const sci = v.toExponential(3);
+          const mantissa = sci.split('e')[0].replace('.', '');
+          const subscript = String(sub).split('').map(d => String.fromCharCode(0x2080 + +d)).join('');
+          return `0.0${subscript}${mantissa}`;
+        }
+      }
+      return String(v.toFixed(4)).replace(/\.?0+$/, '');
+    }
     
     // Create chart with modern theme
     const chart = createChart(containerRef.current, { 
@@ -91,21 +157,26 @@ export default function PriceChart({
         fontSize: 12,
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       },
+      localization: { priceFormatter: formatPrice },
       grid: {
         vertLines: { color: 'rgba(255, 255, 255, 0.1)' },
         horzLines: { color: 'rgba(255, 255, 255, 0.1)' },
       },
       crosshair: {
-        mode: 1, // Normal crosshair mode
+        mode: crosshairMode === 'magnet' ? 2 : 1, // Magnet or Normal crosshair mode
         vertLine: {
           color: 'rgba(255, 255, 255, 0.3)',
           width: 1,
           style: 2, // Dashed line
+          labelVisible: true,
+          labelBackgroundColor: '#333',
         },
         horzLine: {
           color: 'rgba(255, 255, 255, 0.3)',
           width: 1,
           style: 2, // Dashed line
+          labelVisible: true,
+          labelBackgroundColor: '#333',
         },
       },
       timeScale: {
@@ -145,22 +216,43 @@ export default function PriceChart({
       borderDownColor: '#e13232',
       wickUpColor: '#34c759',
       wickDownColor: '#e13232',
+      lastValueVisible: false,
+      priceLineVisible: false,
+      priceFormat: { type: 'price', minMove: 0.00000001, precision: 8 },
     });
     
-    // Add volume series with theme colors
+    // Add baseline series for line chart mode (area line with dual-color fill)
+    const baselineSeries = chart.addBaselineSeries({
+      baseValue: { type: 'price', price: 0 }, // will be updated dynamically
+      topLineColor: '#34c759',
+      bottomLineColor: '#e13232',
+      topFillColor1: 'rgba(52,199,89,0.75)',
+      topFillColor2: 'rgba(52,199,89,0.00)',
+      bottomFillColor1: 'rgba(225,50,50,0.00)',
+      bottomFillColor2: 'rgba(225,50,50,0.75)',
+      lastValueVisible: false,
+      priceLineVisible: false,
+      priceFormat: { type: 'price', minMove: 0.00000001, precision: 8 },
+    });
+    baselineSeries.applyOptions({ visible: chartType === 'line' }); // show based on chart type
+    
+    // Add volume histogram series with theme colors
     const volumeSeries = chart.addHistogramSeries({
       priceScaleId: '',
       priceFormat: { type: 'volume' },
       color: 'rgba(255, 255, 255, 0.2)',
+      lastValueVisible: false,
+      priceLineVisible: false,
     });
     
     volumeSeries.priceScale().applyOptions({
       scaleMargins: { top: 0.8, bottom: 0 },
-      borderColor: 'rgba(255, 255, 255, 0.2)',
+      borderColor: 'rgba(255, 255, 255, 0.1)',
     });
     
     chartRef.current = chart;
     candleSeriesRef.current = candleSeries;
+    baselineSeriesRef.current = baselineSeries;
     volumeSeriesRef.current = volumeSeries;
 
     function handleResize() {
@@ -182,6 +274,8 @@ export default function PriceChart({
         }
       });
     }
+
+    chart.timeScale().subscribeVisibleTimeRangeChange(recomputeBaselineFromFirstVisible);
 
     const crosshairHandler = (param: any) => {
       if (param.time === undefined) {
@@ -265,7 +359,7 @@ export default function PriceChart({
         const cleaned = toLWCandles(candles);
         
         if (candles.length > 0 && cleaned.length === candles.length) {
-          // Transform data based on display mode
+          // Transform data based on display mode          
           const transformedData = cleaned.map((cd) => {
             // For market cap mode, we need totalSupply data from tokenDetail
             // Currently this is a placeholder until totalSupply is available in TokenResponse
@@ -300,8 +394,28 @@ export default function PriceChart({
             };
           });
           
+          // Store data in refs for baseline calculations
+          candlesDataRef.current = transformedData;
+          volumeDataRef.current = v;
+          
+          // Convert candles to baseline data (using close prices)
+          const baselineData = transformedData.map((cd) => ({
+            time: cd.time as UTCTimestamp,
+            value: cd.close,
+          }));
+          
+          // Update series data
           candleSeriesRef.current?.setData(transformedData);
+          baselineSeriesRef.current?.setData(baselineData);
           volumeSeriesRef.current?.setData(v);
+          
+          // Trigger baseline recalculation for line chart mode
+          if (chartType === 'line') {
+            setTimeout(() => {
+              recomputeBaselineFromFirstVisible();
+            }, 100);
+          }
+          
           setHasData(true);
           setIsLoading(false);
           
@@ -351,6 +465,23 @@ export default function PriceChart({
       loggedRef.current = true;
     }
   }, [hasData, meta]);
+
+  // Effect to handle chart type and volume visibility changes
+  useEffect(() => {
+    if (!candleSeriesRef.current || !baselineSeriesRef.current || !volumeSeriesRef.current) return;
+    
+    // Update series visibility based on chart type
+    candleSeriesRef.current.applyOptions({ visible: chartType === 'candlestick' });
+    baselineSeriesRef.current.applyOptions({ visible: chartType === 'line' });
+    volumeSeriesRef.current.applyOptions({ visible: showVolume });
+    
+    // Trigger baseline recalculation for line chart mode
+    if (chartType === 'line') {
+      setTimeout(() => {
+        recomputeBaselineFromFirstVisible();
+      }, 100);
+    }
+  }, [chartType, showVolume]);
 
   return (
     <div className="modern-chart-container" style={{ position: 'relative', height: '100%', minHeight: '400px' }}>

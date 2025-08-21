@@ -69,6 +69,12 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
 
   const status = getSecurityStatus();
 
+  const nullAddresses = [
+    '0x0000000000000000000000000000000000000000',
+    '0x000000000000000000000000000000000000dead',
+    '0xdead000000000000000042069420694206942069',
+  ];
+
   return (
     <div className="security-section">
       <h3 className="security-title">
@@ -243,28 +249,28 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
                         padding: '6px 0',
                         borderBottom: i < 9 ? '1px solid var(--border-subtle)' : 'none'
                     }}>
-                        <span style={{ color: 'var(--text-muted)', fontSize: '12px', minWidth: '32px' }}>
+                        <code style={{ color: 'var(--text-muted)', fontSize: '12px', minWidth: '32px' }}>
                         {formatShortAddr(holder.address)}
-                        </span>
+                        </code>
                         <CopyButton text={holder.address} label="holder address" />
                         <a href={addressUrl(chain as any, holder.address as any)} target="_blank" rel="noopener noreferrer">
                         <ExternalIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
                         </a>
-                        {holder.tag && (
-                        <span style={{ 
-                            fontSize: '10px', 
-                            padding: '2px 6px', 
-                            border: '1px solid var(--bg-elev-2)', 
-                            borderRadius: '15px',
-                            color: 'var(--text-muted)'
-                        }}>
-                            {holder.tag}
-                        </span>
-                        )}
                         {holder.isContract ? (
                         <ContractIcon sx={{ fontSize: 14, color: 'var(--warning)' }} />
                         ) : (
                         <WalletIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
+                        )}
+                        {holder.tag && (
+                            <span style={{ 
+                                fontSize: '10px', 
+                                padding: '2px 6px', 
+                                border: '1px solid var(--bg-elev-2)', 
+                                borderRadius: '15px',
+                                color: 'var(--text-muted)'
+                            }}>
+                                {holder.tag}
+                            </span>
                         )}
                         <span style={{ fontWeight: 600, marginLeft: 'auto' }}>{holder.balance}</span>
                         <span style={{ color: 'var(--text-muted)', minWidth: '40px', textAlign: 'right' }}>
@@ -368,7 +374,8 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
                             {lpHolder.tag}
                           </span>
                         )}
-                        {lpHolder.tag === 'null' && (
+                        // if the address is in nullAddresses and owns LP, show a warning icon
+                        {nullAddresses.includes(lpHolder.address) && lpHolder.balance > '0' && (
                           <WhatshotIcon sx={{ fontSize: 14, color: 'var(--warning)' }} />
                         )}
                         {lpHolder.lockerService && LP_LOCKER_MAPPING[lpHolder.lockerService] && (
@@ -384,10 +391,10 @@ export function SecurityPanel({ data, loading, error, chain, address }: Security
                           </span>
                         )}
                         {lpHolder.isLocked && (
-                          <LockIcon sx={{ fontSize: 10, color: 'var(--accent-lime)' }} />
+                          <LockIcon sx={{ fontSize: 14, color: 'var(--accent-lime)' }} />
                         )}
                         {lpHolder.balance && (
-                          <span style={{ fontWeight: 600, fontSize: '11px' }}>{lpHolder.balance}</span>
+                          <span style={{ fontWeight: 600, marginLeft: 'auto' }}>{lpHolder.balance}</span>
                         )}
                         <span style={{ color: 'var(--text-muted)', minWidth: '40px', textAlign: 'right' }}>
                           {(parseFloat(lpHolder.percent) < 1 ? (parseFloat(lpHolder.percent) * 100).toFixed(2) : parseFloat(lpHolder.percent).toFixed(2))}%

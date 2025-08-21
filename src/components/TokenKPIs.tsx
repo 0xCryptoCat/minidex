@@ -32,13 +32,13 @@ export function TokenKPIs({ data }: TokenKPIsProps) {
             {(tokenMetrics.buyTax || 0) === 0 && 
              (tokenMetrics.sellTax || 0) === 0 && 
              (tokenMetrics.transferTax || 0) === 0 ? (
-              <span style={{ color: 'var(--text)' }}>0%</span>
+              <strong style={{ color: 'var(--text)' }}>0%</strong>
             ) : (
               <>
                 <span style={{ color: tokenMetrics.buyTax && tokenMetrics.buyTax > 0 ? 'var(--accent-lime)' : 'var(--text)'}}>{tokenMetrics.buyTax?.toFixed(1) || '0'}%</span>
-                <span style={{ color: 'var(--text-muted)' }}>|</span>
+                <span style={{ color: 'var(--text-muted)', opacity: 0.5 }}>|</span>
                 <span style={{ color: tokenMetrics.sellTax && tokenMetrics.sellTax > 0 ? 'var(--accent-maroon)' : 'var(--text)'}}>{tokenMetrics.sellTax?.toFixed(1) || '0'}%</span>
-                <span style={{ color: 'var(--text-muted)' }}>|</span>
+                <span style={{ color: 'var(--text-muted)', opacity: 0.5 }}>|</span>
                 <span style={{ color: 'var(--text)' }}>{tokenMetrics.transferTax?.toFixed(1) || '0'}%</span>
               </>
             )}

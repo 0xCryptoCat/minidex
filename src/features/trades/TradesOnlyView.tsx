@@ -26,30 +26,6 @@ import '../../styles/trades.css';
 
 const ROW_HEIGHT = 52;
 
-// Helper function to format numbers with max 3 decimals
-const formatPriceValue = (value: number | undefined): string => {
-  if (!value) return '0';
-  
-  // Use smart formatting but limit to max 3 decimals
-  const formatted = formatSmartAmountReact(value);
-  
-  // If it's a simple decimal number, ensure max 3 decimals
-  if (typeof formatted === 'string' && formatted.includes('.')) {
-    const [whole, decimal] = formatted.split('.');
-    if (decimal && decimal.length > 3) {
-      return `${whole}.${decimal.slice(0, 3)}`;
-    }
-  }
-  
-  return String(formatted);
-};
-
-// Helper function to get trader transaction count
-const getTraderTxCount = (wallet: string | undefined, allTrades: Trade[]): number => {
-  if (!wallet) return 0;
-  return allTrades.filter(t => t.wallet === wallet).length;
-};
-
 interface Props {
   pairId: string;
   chain: string;
@@ -89,6 +65,7 @@ export default function TradesOnlyView({
   const [meta, setMeta] = useState<FetchMeta | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('time');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [priceColumnMode, setPriceColumnMode] = useState<'price' | 'total'>('total'); // Default to total
   const [containerHeight, setContainerHeight] = useState(400);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -185,6 +162,34 @@ export default function TradesOnlyView({
     };
   }, []);
 
+  // Helper function to count transactions per trader
+  const getTraderTxCount = (wallet: string): number => {
+    if (!wallet) return 0;
+    return rows.filter(t => t.wallet === wallet).length;
+  };
+
+  // Helper function to format numbers with max 3 decimals
+  const formatTradeAmount = (value?: number): ReactNode => {
+    if (value === undefined || value === null || !Number.isFinite(value)) return '-';
+    if (value === 0) return '0';
+
+    const abs = Math.abs(value);
+
+    // For numbers >= 1000, use compact notation
+    if (abs >= 1000) {
+      if (abs >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+      if (abs >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
+      if (abs >= 1e3) return `${(value / 1e3).toFixed(2)}K`;
+    }
+
+    // For other numbers, limit to 3 decimals max
+    if (abs >= 1) return value.toFixed(Math.min(3, 2));
+    if (abs >= 0.001) return value.toFixed(3);
+    
+    // For very small numbers, use the original formatting
+    return formatSmartAmountReact(value);
+  };
+
   const columns: ColumnConfig[] = useMemo(
     () => [
       {
@@ -204,130 +209,76 @@ export default function TradesOnlyView({
       },
       {
         key: 'price',
-        header: 'Price',
-        accessor: (t) => t.price,
-        render: (t) => (
-          <div className="price-cell">
-            <div>${formatPriceValue(t.price)}</div>
-          </div>
-        ),
+        header: 'Price/Total',
+        accessor: (t) => priceColumnMode === 'total' ? (t.amountBase || 0) * (t.price || 0) : t.price,
+        render: (t) => {
+          const total = (t.amountBase || 0) * (t.price || 0);
+          const sideColor = t.side === 'buy' ? 'var(--buy-primary)' : 'var(--sell-primary)';
+          return (
+            <div className="price-total-cell">
+              <div className="price-total-row" style={{ color: sideColor, fontWeight: 600 }}>
+                ∑$<span>{formatTradeAmount(total)}</span>
+              </div>
+              <div className="price-total-row" style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                ~$<span>{formatTradeAmount(t.price)}</span>
+              </div>
+            </div>
+          );
+        },
         comparator: (a: number | undefined, b: number | undefined) =>
           (a || 0) - (b || 0),
       },
       {
-        key: 'total',
-        header: 'Total',
-        accessor: (t) => (t.amountBase || 0) * (t.price || 0),
-        render: (t) => (
-          <div className="total-cell">
-            <div>${formatPriceValue((t.amountBase || 0) * (t.price || 0))}</div>
-          </div>
-        ),
-        comparator: (a: number, b: number) => a - b,
-      },
-      {
         key: 'tokens',
         header: 'Tokens',
-        accessor: (t) => t.amountBase || 0, // Sort by base amount
-        render: (t) => (
-          <div className="tokens-cell" style={{ 
-            display: 'flex', 
-            flexDirection: 'column',
-            gap: '2px',
-            width: '100%'
-          }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              width: '100%',
-              maxWidth: '100%'
-            }}>
-              <div style={{ 
-                textAlign: 'left',
-                maxWidth: '60%',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                color: t.side === 'buy' ? 'var(--buy-primary)' : 'var(--sell-primary)',
-                fontWeight: 'bold'
-              }}>
-                {formatPriceValue(t.amountBase)}
+        accessor: (t) => t.amountBase || 0,
+        render: (t) => {
+          const sideColor = t.side === 'buy' ? 'var(--buy-primary)' : 'var(--sell-primary)';
+          return (
+            <div className="tokens-cell">
+              <div className="tokens-row">
+                <div className="tokens-amount" style={{ color: sideColor, fontWeight: 600 }}>
+                  {formatTradeAmount(t.amountBase)}
+                </div>
+                <div className="tokens-symbol" style={{ color: sideColor, fontWeight: 600 }}>
+                  {baseSymbol || 'BASE'}
+                </div>
               </div>
-              <div style={{ 
-                textAlign: 'right',
-                maxWidth: '40%',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                color: t.side === 'buy' ? 'var(--buy-primary)' : 'var(--sell-primary)',
-                fontWeight: 'bold'
-              }}>
-                {baseSymbol || 'BASE'}
+              <div className="tokens-row">
+                <div className="tokens-amount" style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                  {formatTradeAmount(t.amountQuote)}
+                </div>
+                <div className="tokens-symbol" style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                  {quoteSymbol || 'QUOTE'}
+                </div>
               </div>
             </div>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              width: '100%',
-              maxWidth: '100%'
-            }}>
-              <div style={{ 
-                textAlign: 'left',
-                maxWidth: '60%',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                color: 'var(--text-muted)',
-                fontWeight: 'normal',
-                fontSize: '0.9em'
-              }}>
-                {formatPriceValue(t.amountQuote)}
-              </div>
-              <div style={{ 
-                textAlign: 'right',
-                maxWidth: '40%',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                color: 'var(--text-muted)',
-                fontWeight: 'normal',
-                fontSize: '0.9em'
-              }}>
-                {quoteSymbol || 'QUOTE'}
-              </div>
-            </div>
-          </div>
-        ),
+          );
+        },
         comparator: (a: number, b: number) => a - b,
       },
       {
         key: 'wallet',
         header: 'Maker',
         accessor: (t) => t.wallet || '',
-        render: (t) => (
-          <div className="maker-cell" style={{ 
-            display: 'flex', 
-            flexDirection: 'column',
-            gap: '2px',
-            width: '100%'
-          }}>
-            <div style={{ whiteSpace: 'nowrap' }}>
-              {formatShortAddr(t.wallet)}
+        render: (t) => {
+          const traderTxCount = getTraderTxCount(t.wallet || '');
+          return (
+            <div className="maker-cell">
+              <div className="maker-addr" style={{ whiteSpace: 'nowrap' }}>
+                {formatShortAddr(t.wallet)}
+              </div>
+              <div className="maker-txs" style={{ color: 'var(--text-muted)', fontSize: '10px' }}>
+                {traderTxCount} Txs
+              </div>
             </div>
-            <div style={{ 
-              color: 'var(--text-muted)',
-              fontSize: '0.85em',
-              fontWeight: 'normal'
-            }}>
-              {getTraderTxCount(t.wallet, rows)} Txs
-            </div>
-          </div>
-        ),
+          );
+        },
         comparator: (a: string, b: string) => a.localeCompare(b),
         className: 'maker-column',
       },
     ],
-    [baseSymbol, quoteSymbol, rows]
+    [baseSymbol, quoteSymbol, priceColumnMode, rows]
   );
 
   const sorted = useMemo(() => {
@@ -587,54 +538,122 @@ export default function TradesOnlyView({
             // Force header visibility
             border: '3px solid var(--bg-elev)',
             color: 'var(--text)',
-            padding: '12px 10px',
+            padding: '8px 10px',
             fontWeight: 'bold',
             fontSize: '16px',
             display: 'grid',
             gridTemplateColumns: '0.5fr 1.25fr 1.25fr 2fr 1fr',
             gap: '8px',
+            height: '40px',
           }}
         >
-          {columns.map((c) => {
-            const getIcon = (key: SortKey) => {
-              switch (key) {
-                case 'time':
-                  return <HistoryIcon sx={{ fontSize: 13, color: 'var(--text)' }} />;
-                case 'price':
-                  return <AttachMoneyIcon sx={{ fontSize: 13, color: 'var(--text)' }} />;
-                case 'total':
-                  return <FunctionsIcon sx={{ fontSize: 13, color: 'var(--text)' }} />;
-                case 'tokens':
-                  return <CurrencyExchangeIcon sx={{ fontSize: 13, color: 'var(--text)' }} />;
-                case 'wallet':
-                  return <AccountBalanceWalletIcon sx={{ fontSize: 13, color: 'var(--text)' }} />;
-                default:
-                  return c.header;
-              }
-            };
+          {/* Time Column */}
+          <div
+            className="tr-cell"
+            onClick={() => handleSort('time')}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              fontWeight: 'bold',
+            }}
+          >
+            <HistoryIcon style={{ fontSize: 16, color: 'var(--text)' }} />
+            {sortKey === 'time' && (
+              sortDir === 'asc' ? 
+                <KeyboardArrowUpIcon style={{ fontSize: 14 }} /> : 
+                <KeyboardArrowDownIcon style={{ fontSize: 14 }} />
+            )}
+          </div>
 
-            return (
-              <div
-                key={c.key}
-                className="tr-cell"
-                onClick={() => handleSort(c.key)}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  fontWeight: 'bold',
-                  cursor: 'pointer'
-                }}
-              >
-                {getIcon(c.key)}
-                {sortKey === c.key && (
-                  sortDir === 'asc' ? 
-                    <KeyboardArrowUpIcon style={{ fontSize: 16, marginLeft: '4px' }} /> : 
-                    <KeyboardArrowDownIcon style={{ fontSize: 16, marginLeft: '4px' }} />
-                )}
-              </div>
-            );
-          })}
+          {/* Price/Total Column with dual sorting */}
+          <div
+            className="tr-cell"
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              fontWeight: 'bold',
+            }}
+          >
+            <div
+              onClick={() => {
+                setPriceColumnMode('total');
+                handleSort('price');
+              }}
+              style={{
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                opacity: priceColumnMode === 'total' ? 1 : 0.6,
+              }}
+            >
+              <FunctionsIcon style={{ fontSize: 16, color: 'var(--text)' }} />
+              {sortKey === 'price' && priceColumnMode === 'total' && (
+                sortDir === 'asc' ? 
+                  <KeyboardArrowUpIcon style={{ fontSize: 14 }} /> : 
+                  <KeyboardArrowDownIcon style={{ fontSize: 14 }} />
+              )}
+            </div>
+            <div style={{ width: '4px' }} />
+            <div
+              onClick={() => {
+                setPriceColumnMode('price');
+                handleSort('price');
+              }}
+              style={{
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                opacity: priceColumnMode === 'price' ? 1 : 0.6,
+              }}
+            >
+              <AttachMoneyIcon style={{ fontSize: 16, color: 'var(--text)' }} />
+              {sortKey === 'price' && priceColumnMode === 'price' && (
+                sortDir === 'asc' ? 
+                  <KeyboardArrowUpIcon style={{ fontSize: 14 }} /> : 
+                  <KeyboardArrowDownIcon style={{ fontSize: 14 }} />
+              )}
+            </div>
+          </div>
+
+          {/* Tokens Column */}
+          <div
+            className="tr-cell"
+            onClick={() => handleSort('tokens')}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              fontWeight: 'bold',
+            }}
+          >
+            <CurrencyExchangeIcon style={{ fontSize: 16, color: 'var(--text)' }} />
+            {sortKey === 'tokens' && (
+              sortDir === 'asc' ? 
+                <KeyboardArrowUpIcon style={{ fontSize: 14 }} /> : 
+                <KeyboardArrowDownIcon style={{ fontSize: 14 }} />
+            )}
+          </div>
+
+          {/* Maker Column */}
+          <div
+            className="tr-cell"
+            onClick={() => handleSort('wallet')}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              fontWeight: 'bold',
+            }}
+          >
+            <AccountBalanceWalletIcon style={{ fontSize: 16, color: 'var(--text)' }} />
+            {sortKey === 'wallet' && (
+              sortDir === 'asc' ? 
+                <KeyboardArrowUpIcon style={{ fontSize: 14 }} /> : 
+                <KeyboardArrowDownIcon style={{ fontSize: 14 }} />
+            )}
+          </div>
         </div>
         <div className="trades-list-container" style={{ backgroundColor: 'var(--bg-elev)' }}>
           {/* Enhanced Telegram webapp compatibility - always use fallback in Telegram */}

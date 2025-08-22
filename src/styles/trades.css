@@ -477,3 +477,65 @@
 .trades-list-fallback::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
+
+/* New cell layouts for merged columns */
+.price-total-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.price-total-row {
+  display: flex;
+  align-items: center;
+  line-height: 1.2;
+  font-size: 12px;
+}
+
+.tokens-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tokens-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  line-height: 1.2;
+  font-size: 12px;
+}
+
+.tokens-amount {
+  flex: 1;
+  text-align: left;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tokens-symbol {
+  flex: 0 0 auto;
+  text-align: right;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.maker-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.maker-addr {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.maker-txs {
+  font-size: 10px;
+  line-height: 1.2;
+}

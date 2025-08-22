@@ -9,6 +9,10 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import FunctionsIcon from '@mui/icons-material/Functions';
 import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import AddBoxIcon from '@mui/icons-material/AddBox';
+import IndeterminateCheckBoxIcon from '@mui/icons-material/IndeterminateCheckBox';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
+import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
 import type { Trade } from '../../lib/types';
 import { trades } from '../../lib/api';
 import {
@@ -22,6 +26,7 @@ import {
 } from '../../lib/format';
 import { addressUrl, txUrl } from '../../lib/explorer';
 import ChartLoader from '../../components/ChartLoader';
+import CopyButton from '../../components/CopyButton';
 import '../../styles/trades.css';
 
 const ROW_HEIGHT = 52;
@@ -190,6 +195,79 @@ export default function TradesOnlyView({
     return formatSmartAmountReact(value);
   };
 
+  // Helper function to analyze trader data
+  const getTraderAnalysis = (wallet: string) => {
+    if (!wallet) return null;
+    
+    const traderTrades = rows.filter(t => t.wallet === wallet);
+    const buys = traderTrades.filter(t => t.side === 'buy');
+    const sells = traderTrades.filter(t => t.side === 'sell');
+    
+    const buyUsdTotal = buys.reduce((sum, t) => sum + ((t.amountBase || 0) * (t.price || 0)), 0);
+    const sellUsdTotal = sells.reduce((sum, t) => sum + ((t.amountBase || 0) * (t.price || 0)), 0);
+    const pnlUsd = sellUsdTotal - buyUsdTotal;
+    const volumeUsd = buyUsdTotal + sellUsdTotal;
+    
+    const buyBaseTotal = buys.reduce((sum, t) => sum + (t.amountBase || 0), 0);
+    const sellBaseTotal = sells.reduce((sum, t) => sum + (t.amountBase || 0), 0);
+    const stillHeldBase = buyBaseTotal - sellBaseTotal;
+    
+    // Get last known price for unrealized PnL calculation
+    const lastTrade = rows[rows.length - 1];
+    const currentPrice = lastTrade?.price || 0;
+    const unrealizedUsd = stillHeldBase > 0 ? stillHeldBase * currentPrice : 0;
+    
+    return {
+      buyCount: buys.length,
+      sellCount: sells.length,
+      totalTrades: traderTrades.length,
+      buyUsdTotal,
+      sellUsdTotal,
+      pnlUsd,
+      volumeUsd,
+      buyBaseTotal,
+      sellBaseTotal,
+      stillHeldBase,
+      unrealizedUsd,
+      currentPrice
+    };
+  };
+
+  // Helper function to get account size indicator
+  const getAccountSizeIndicator = (volumeUsd: number) => {
+    if (volumeUsd >= 50000) {
+      return { 
+        icon: 'https://img.icons8.com/ios-glyphs/30/squid.png',
+        fallback: '🦑',
+        name: 'Kraken'
+      };
+    } else if (volumeUsd >= 10000) {
+      return { 
+        icon: 'https://img.icons8.com/ios-glyphs/30/whale.png',
+        fallback: '🐋',
+        name: 'Whale'
+      };
+    } else if (volumeUsd >= 1000) {
+      return { 
+        icon: 'https://img.icons8.com/ios-glyphs/30/dolphin.png',
+        fallback: '🐬',
+        name: 'Dolphin'
+      };
+    } else if (volumeUsd >= 250) {
+      return { 
+        icon: 'https://img.icons8.com/ios-glyphs/30/fish.png',
+        fallback: '🐠',
+        name: 'Fish'
+      };
+    } else {
+      return { 
+        icon: 'https://img.icons8.com/ios-glyphs/30/prawn.png',
+        fallback: '🦐',
+        name: 'Shrimp'
+      };
+    }
+  };
+
   const columns: ColumnConfig[] = useMemo(
     () => [
       {
@@ -217,7 +295,7 @@ export default function TradesOnlyView({
           return (
             <div className="price-total-cell">
               <div className="price-total-row" style={{ color: sideColor, fontWeight: 600 }}>
-                ∑$<span>{formatTradeAmount(total)}</span>
+                <span style={{ fontSize: '10px', paddingBottom: '2px' }}>∑</span>$<span>{formatTradeAmount(total)}</span>
               </div>
               <div className="price-total-row" style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
                 ~$<span>{formatTradeAmount(t.price)}</span>
@@ -373,104 +451,217 @@ export default function TradesOnlyView({
         {isExpanded && (
           <div className="tr-expanded">
             <div className="tr-expanded-content">
-              {t.wallet && (
-                <>
-                  <div className="expanded-section">
-                    <h4 className="expanded-section-title">TXn Details</h4>
-                    <div className="expanded-details">
-                      <div className="expanded-item">
-                        <span className="stat-label">Wallet:</span>
-                        <div className="stat-value">
-                          <span>{formatShortAddr(t.wallet)}</span>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigator.clipboard?.writeText(t.wallet!);
-                            }}
-                            className="copy-btn"
-                            title="Copy wallet address"
-                          >
-                            <ContentCopyIcon sx={{ fontSize: 14 }} />
-                          </button>
-                          {addressUrl(chain as any, t.wallet) && (
-                            <a 
-                              href={addressUrl(chain as any, t.wallet)} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="external-link"
-                              title="View on explorer"
-                            >
-                              <LaunchIcon sx={{ fontSize: 14 }} />
-                            </a>
-                          )}
+              {t.wallet && (() => {
+                const analysis = getTraderAnalysis(t.wallet);
+                if (!analysis) return null;
+                
+                const accountSize = getAccountSizeIndicator(analysis.volumeUsd);
+                
+                return (
+                  <>
+                    {/* Section Top: Account Size + TXn Hash + Maker Address */}
+                    <div className="expanded-section-top" style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 2fr 2fr',
+                      gap: '12px',
+                      marginBottom: '16px',
+                      padding: '12px',
+                      background: 'var(--bg)',
+                      borderRadius: 'var(--radius)',
+                      border: '1px solid var(--border)',
+                    }}>
+                      {/* Account Size Indicator */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '4px' }}>
+                        <img 
+                          src={accountSize.icon} 
+                          alt={accountSize.name}
+                          style={{ width: '24px', height: '24px' }}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.nextElementSibling!.textContent = accountSize.fallback;
+                          }}
+                        />
+                        <span style={{ display: 'none', fontSize: '20px' }}></span>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center' }}>
+                          {accountSize.name}
                         </div>
                       </div>
-                      {t.txHash && (
-                        <div className="expanded-item">
-                          <span className="stat-label">Tx Hash:</span>
-                          <div className="stat-value">
-                            <span>{formatShortAddr(t.txHash)}</span>
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigator.clipboard?.writeText(t.txHash!);
-                              }}
-                              className="copy-btn"
-                              title="Copy transaction hash"
-                            >
-                              <ContentCopyIcon sx={{ fontSize: 14 }} />
-                            </button>
+                      
+                      {/* TXn Hash */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px' }}>
+                            Transaction Hash
+                          </div>
+                          <div style={{ fontSize: '12px', color: 'var(--text)', fontFamily: 'monospace' }}>
+                            {t.txHash ? formatShortAddr(t.txHash) : 'Unknown'}
+                          </div>
+                        </div>
+                        {t.txHash && (
+                          <>
+                            <CopyButton text={t.txHash} />
                             {txUrl(chain as any, t.txHash) && (
                               <a 
                                 href={txUrl(chain as any, t.txHash)} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
-                                className="external-link"
-                                title="View transaction on explorer"
+                                style={{ color: 'var(--text)', textDecoration: 'none' }}
                               >
-                                <LaunchIcon sx={{ fontSize: 14 }} />
+                                <LaunchIcon sx={{ fontSize: 16 }} />
                               </a>
                             )}
+                          </>
+                        )}
+                      </div>
+                      
+                      {/* Maker Address */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px' }}>
+                            Maker Address
+                          </div>
+                          <div style={{ fontSize: '12px', color: 'var(--text)', fontFamily: 'monospace' }}>
+                            {formatShortAddr(t.wallet)}
                           </div>
                         </div>
-                      )}
-                    </div> 
-                  </div>
-                  
-                  {(() => {
-                    const stats = t.wallet ? getTraderStats(t.wallet) : null;
-                    return stats && stats.tradeCount > 1 ? (
-                      <div className="expanded-section">
-                        <h4 className="expanded-section-title">Trader Stats</h4>
-                        <div className="expanded-stats">
-                          <div className="stat-item">
-                            <span className="stat-label">Total Trades:</span>
-                            <span className="stat-value">{stats.tradeCount}</span>
-                          </div>
-                          <div className="stat-item">
-                            <span className="stat-label">Buy/Sell:</span>
-                            <span className="stat-value">
-                              <span className="buy-count">{stats.buyCount}</span>
-                              <span className="stat-separator">/</span>
-                              <span className="sell-count">{stats.sellCount}</span>
-                            </span>
-                          </div>
-                          <div className="stat-item">
-                            <span className="stat-label">Total Volume:</span>
-                            <span className="stat-value">{formatUsd(stats.totalVolume, { compact: true })}</span>
-                          </div>
-                          <div className="stat-item">
-                            <span className="stat-label">Avg Trade:</span>
-                            <span className="stat-value">{formatUsd(stats.avgTradeSize, { compact: true })}</span>
-                          </div>
+                        <CopyButton text={t.wallet} />
+                        {addressUrl(chain as any, t.wallet) && (
+                          <a 
+                            href={addressUrl(chain as any, t.wallet)} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ color: 'var(--text)', textDecoration: 'none' }}
+                          >
+                            <LaunchIcon sx={{ fontSize: 16 }} />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Section Middle: Buys/Sells/PnL Analysis */}
+                    <div className="expanded-section-middle" style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'auto 1fr 1fr 1fr',
+                      gap: '8px',
+                      marginBottom: '16px',
+                      padding: '12px',
+                      background: 'var(--bg)',
+                      borderRadius: 'var(--radius)',
+                      border: '1px solid var(--border)',
+                    }}>
+                      {/* Buys Row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--buy-primary)' }}>
+                        <AddBoxIcon sx={{ fontSize: 16 }} />
+                        <span style={{ fontSize: '12px', fontWeight: 600 }}>Buys</span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text)', textAlign: 'right' }}>
+                        ${formatTradeAmount(analysis.buyUsdTotal)}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text)', textAlign: 'right' }}>
+                        {formatTradeAmount(analysis.buyBaseTotal)} {baseSymbol}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text)', textAlign: 'right' }}>
+                        {analysis.buyCount} txs
+                      </div>
+
+                      {/* Sells Row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--sell-primary)' }}>
+                        <IndeterminateCheckBoxIcon sx={{ fontSize: 16 }} />
+                        <span style={{ fontSize: '12px', fontWeight: 600 }}>Sells</span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text)', textAlign: 'right' }}>
+                        ${formatTradeAmount(analysis.sellUsdTotal)}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text)', textAlign: 'right' }}>
+                        {formatTradeAmount(analysis.sellBaseTotal)} {baseSymbol}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text)', textAlign: 'right' }}>
+                        {analysis.sellCount} txs
+                      </div>
+
+                      {/* PnL Row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text)' }}>
+                        <AnalyticsIcon sx={{ fontSize: 16 }} />
+                        <span style={{ fontSize: '12px', fontWeight: 600 }}>PnL</span>
+                      </div>
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: analysis.pnlUsd >= 0 ? 'var(--buy-primary)' : 'var(--sell-primary)', 
+                        textAlign: 'right',
+                        fontWeight: 600 
+                      }}>
+                        {analysis.pnlUsd >= 0 ? '+' : ''}${formatTradeAmount(Math.abs(analysis.pnlUsd))}
+                      </div>
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: analysis.stillHeldBase >= 0 ? 'var(--buy-primary)' : 'var(--sell-primary)', 
+                        textAlign: 'right' 
+                      }}>
+                        {analysis.stillHeldBase >= 0 ? '+' : ''}{formatTradeAmount(Math.abs(analysis.stillHeldBase))} {baseSymbol}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text)', textAlign: 'right' }}>
+                        {analysis.totalTrades} total
+                      </div>
+                    </div>
+
+                    {/* Section Bottom: Unrealized Holdings */}
+                    <div className="expanded-section-bottom" style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr 2fr',
+                      gap: '12px',
+                      padding: '12px',
+                      background: 'var(--bg)',
+                      borderRadius: 'var(--radius)',
+                      border: '1px solid var(--border)',
+                    }}>
+                      {/* Unrealized Icon */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <BusinessCenterIcon sx={{ fontSize: 16, color: 'var(--text)' }} />
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Holdings</span>
+                      </div>
+                      
+                      {/* Unrealized USD Value */}
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px' }}>
+                          Unrealized USD
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--text)', fontWeight: 600 }}>
+                          {analysis.stillHeldBase > 0 ? `$${formatTradeAmount(analysis.unrealizedUsd)}` : 'Unknown'}
                         </div>
                       </div>
-                    ) : null;
-                  })()}
-                </>
-              )}
+                      
+                      {/* Holdings Progress Bar */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
+                          <span style={{ color: 'var(--text)' }}>
+                            Held: {analysis.stillHeldBase > 0 ? formatTradeAmount(analysis.stillHeldBase) : '0'} {baseSymbol}
+                          </span>
+                          <span style={{ color: 'var(--text-muted)' }}>
+                            Bought: {formatTradeAmount(analysis.buyBaseTotal)} {baseSymbol}
+                          </span>
+                        </div>
+                        <div style={{ 
+                          width: '100%', 
+                          height: '4px', 
+                          background: 'var(--text-muted)', 
+                          borderRadius: '2px',
+                          overflow: 'hidden'
+                        }}>
+                          <div style={{
+                            width: analysis.buyBaseTotal > 0 ? `${Math.min(100, (analysis.stillHeldBase / analysis.buyBaseTotal) * 100)}%` : '0%',
+                            height: '100%',
+                            background: analysis.stillHeldBase > 0 ? 'var(--text)' : 'var(--text-muted)',
+                            transition: 'width 0.3s ease'
+                          }} />
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -571,8 +762,8 @@ export default function TradesOnlyView({
             className="tr-cell"
             style={{ 
               display: 'flex', 
+              justifyContent: 'space-around',
               alignItems: 'center', 
-              justifyContent: 'center',
               fontWeight: 'bold',
             }}
           >
@@ -585,7 +776,7 @@ export default function TradesOnlyView({
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                opacity: priceColumnMode === 'total' ? 1 : 0.6,
+                opacity: priceColumnMode === 'total' ? 1 : 0.5,
               }}
             >
               <FunctionsIcon style={{ fontSize: 16, color: 'var(--text)' }} />
@@ -624,7 +815,7 @@ export default function TradesOnlyView({
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
-              justifyContent: 'center',
+              justifyContent: 'space-between',
               fontWeight: 'bold',
             }}
           >
@@ -680,7 +871,7 @@ export default function TradesOnlyView({
                 const isExpanded = expandedRow === tradeId;
                 const baseHeight = ROW_HEIGHT;
                 const stats = trade.wallet ? getTraderStats(trade.wallet) : null;
-                const expandedHeight = isExpanded ? (100 + (stats && stats.tradeCount > 1 ? 80 : 0)) : 0;
+                const expandedHeight = isExpanded ? 220 : 0; // Fixed height for the new 3-section layout
                 
                 return (
                   <div

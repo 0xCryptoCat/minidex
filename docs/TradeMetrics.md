@@ -42,7 +42,7 @@ A comprehensive individual and group trade metrics panel that provides both indi
 
 #### Display Format:
 ```
-📈 Transaction Summary
+📈 Transactions Summary
 ├─ 1,247 Total Trades (742 Buy • 505 Sell)
 ├─ $2.4M Total Volume ($1.6M Buy • $800K Sell)
 ├─ 2.0x Buy/Sell Ratio

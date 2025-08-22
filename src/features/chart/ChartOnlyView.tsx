@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Timeframe, Provider, TokenResponse } from '../../lib/types';
-import type { ProcessedSecurityData } from '../../lib/goplus-types';
 import PriceChart from './PriceChart';
-import TimeframeSelector from './TimeframeSelector';
 import { getTradeMarkers, type TradeMarkerCluster } from '../trades/TradeMarkers';
 import { ohlc } from '../../lib/api';
 import { getCachedTf, setCachedTf } from '../../lib/tf-cache';
@@ -33,7 +31,6 @@ interface Props {
   onXDomainChange?: (d: [number, number]) => void;
   tokenAddress: string;
   tokenDetail?: TokenResponse | null;
-  securityData?: ProcessedSecurityData | null;
 }
 
 export default function ChartOnlyView({
@@ -45,7 +42,6 @@ export default function ChartOnlyView({
   onXDomainChange,
   tokenAddress,
   tokenDetail = null,
-  securityData = null,
 }: Props) {
   const [showMarkers, setShowMarkers] = useState(false);
   const [markers, setMarkers] = useState<TradeMarkerCluster[]>([]);
@@ -132,7 +128,6 @@ export default function ChartOnlyView({
 
   useEffect(() => {
     if (showMarkers && noTrades && meta && !loggedRef.current && DEBUG) {
-      console.log('no-trades meta', meta);
       loggedRef.current = true;
     }
   }, [showMarkers, noTrades, meta]);
@@ -344,8 +339,6 @@ export default function ChartOnlyView({
           crosshairMode={crosshairMode}
           showGrid={showGrid}
           showCrosshairLabels={showCrosshairLabels}
-          availableTfs={availableTfs}
-          onTfChange={handleTfChange}
         />
       </div>
       

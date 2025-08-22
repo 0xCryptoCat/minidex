@@ -46,8 +46,6 @@ interface Props {
   crosshairMode?: 'normal' | 'magnet';
   showGrid?: boolean;
   showCrosshairLabels?: boolean;
-  availableTfs?: Timeframe[];
-  onTfChange?: (tf: Timeframe) => void;
 }
 
 export default function PriceChart({
@@ -67,8 +65,6 @@ export default function PriceChart({
   crosshairMode = 'normal',
   showGrid = true,
   showCrosshairLabels = true,
-  availableTfs = [],
-  onTfChange,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -575,12 +571,9 @@ export default function PriceChart({
         if (candles.length > 0 && cleaned.length === candles.length) {
           // Transform data based on display mode          
           const transformedData = cleaned.map((cd) => {
-            // For market cap mode, we need totalSupply data from tokenDetail
-            // Currently this is a placeholder until totalSupply is available in TokenResponse
+            // Market cap mode (currently disabled - requires totalSupply data)
             if (displayMode === 'marketcap' && tokenDetail?.info && false) {
-              // TODO: Implement actual market cap calculation when totalSupply is available
-              // const supply = Number(tokenDetail.info.totalSupply);
-              const supply = 1000000000; // Placeholder for now
+              const supply = 1000000000; // Default supply estimate
               return {
                 time: cd.time as UTCTimestamp,
                 open: cd.open * supply,
@@ -675,7 +668,6 @@ export default function PriceChart({
           setIsLoading(false);
           
           if (!sampleCandlesLoggedRef.current && DEBUG) {
-            console.log('sample candles', candles.slice(0, 2).map((cd) => ({ t: cd.t, o: cd.o, h: cd.h, l: cd.l, c: cd.c })));
             sampleCandlesLoggedRef.current = true;
           }
         } else {
@@ -716,7 +708,6 @@ export default function PriceChart({
 
   useEffect(() => {
     if (!hasData && meta && !loggedRef.current && DEBUG) {
-      console.log('no-data meta', meta);
       loggedRef.current = true;
     }
   }, [hasData, meta]);
@@ -775,7 +766,7 @@ export default function PriceChart({
   }, [showGrid, showCrosshairLabels]);
 
   return (
-    <div className="modern-chart-container" style={{ position: 'relative', height: '100%', minHeight: '400px' }}>
+    <div className="modern-chart-container" style={{ position: 'relative', height: '100%' }}>
       {degraded && (
         <div
           style={{
@@ -794,36 +785,6 @@ export default function PriceChart({
           }}
         >
           Data feed degraded - retrying...
-        </div>
-      )}
-      
-      {/* Timeframe Selector - top left overlay */}
-      {availableTfs.length > 0 && onTfChange && (
-        <div style={{
-          position: 'absolute',
-          top: 8,
-          left: 8,
-          zIndex: 5,
-        }}>
-          <select
-            value={tf}
-            onChange={(e) => onTfChange(e.target.value as Timeframe)}
-            style={{
-              background: 'transparent',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              color: 'var(--text-muted)',
-              fontSize: '12px',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              outline: 'none',
-            }}
-          >
-            {availableTfs.map(timeframe => (
-              <option key={timeframe} value={timeframe} style={{ background: 'var(--bg)', color: 'var(--text)' }}>
-                {timeframe}
-              </option>
-            ))}
-          </select>
         </div>
       )}
       

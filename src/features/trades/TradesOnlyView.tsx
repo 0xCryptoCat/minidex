@@ -624,8 +624,8 @@ export default function TradesOnlyView({
                       {/* Unrealized USD Value */}
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ 
-                          fontSize: '12px', 
-                          color: analysis.stillHeldBase >= 0 ? 'var(--buy-primary)' : 'var(--sell-primary)', 
+                          fontSize: '12px',
+                          color: analysis.unrealizedUsd < analysis.buyUsdTotal && analysis.sellUsdTotal < 0 ? 'var(--warning)' : (analysis.stillHeldBase >= 0 ? 'var(--buy-primary)' : 'var(--sell-primary)'), 
                           fontWeight: 600 
                           }}>
                           {analysis.stillHeldBase > 0 ? `$${formatTradeAmount(analysis.unrealizedUsd)}` : 'Unknown'}

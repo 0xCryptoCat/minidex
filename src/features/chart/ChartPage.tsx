@@ -4,7 +4,6 @@ import type { PoolSummary, TokenMeta, TokenResponse, Provider } from '../../lib/
 import { pairs, token as fetchToken } from '../../lib/api';
 import { poolDataManager } from '../../lib/pool-manager';
 import { useGoSecurity } from '../../lib/useGoSecurity';
-import PoolSwitcher from '../detail/PoolSwitcher';
 import ChartOnlyView from './ChartOnlyView';
 import DetailView from '../detail/DetailView';
 import DetailTop from '../detail/DetailTop';
@@ -191,7 +190,6 @@ export default function ChartPage() {
                   onXDomainChange={setXDomain}
                   tokenAddress={address}
                   tokenDetail={tokenDetail}
-                  securityData={securityData}
                 />
               </div>
             </div>

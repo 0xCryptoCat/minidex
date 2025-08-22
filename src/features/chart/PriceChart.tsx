@@ -386,7 +386,7 @@ export default function PriceChart({
         lineWidth: 1,
         lineStyle: 3, // Dotted line
         axisLabelVisible: true,
-        title: 'Current',
+        title: '',
       });
     }
   };

@@ -505,7 +505,7 @@ export default function TradesOnlyView({
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
-                                style={{ color: 'var(--text)', textDecoration: 'none', fontSize: 14 }}
+                                style={{ color: 'var(--text)', textDecoration: 'none', fontSize: 14, paddingTop: '5px' }}
                               >
                                 <LaunchIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
                               </a>
@@ -531,7 +531,7 @@ export default function TradesOnlyView({
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
-                                style={{ color: 'var(--text)', textDecoration: 'none', fontSize: 14 }}
+                                style={{ color: 'var(--text)', textDecoration: 'none', fontSize: 14, paddingTop: '5px' }}
                               >
                                 <LaunchIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
                               </a>
@@ -564,7 +564,7 @@ export default function TradesOnlyView({
                         {formatTradeAmount(analysis.buyBaseTotal)}
                       </div>
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'right' }}>
-                        {analysis.buyCount} txs
+                        {analysis.buyCount} Txs
                       </div>
 
                       {/* Sells Row */}
@@ -578,7 +578,7 @@ export default function TradesOnlyView({
                         {formatTradeAmount(analysis.sellBaseTotal)}
                       </div>
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'right' }}>
-                        {analysis.sellCount} txs
+                        {analysis.sellCount} Txs
                       </div>
 
                       {/* PnL Row */}
@@ -601,7 +601,7 @@ export default function TradesOnlyView({
                         {formatTradeAmount(Math.abs(analysis.stillHeldBase))}
                       </div>
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'right' }}>
-                        {analysis.totalTrades} total
+                        {analysis.totalTrades} Txs
                       </div>
                     </div>
 

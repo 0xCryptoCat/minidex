@@ -493,6 +493,7 @@
 
 .tokens-cell {
   display: flex;
+  align-items: space-around;
   flex-direction: column;
   gap: 2px;
 }

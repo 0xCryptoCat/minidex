@@ -430,8 +430,8 @@ export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, er
               padding: '16px',
               fontSize: '12px'
             }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '12px', fontWeight: 400 }}>
-                Top 10
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '12px', fontWeight: 400, color: 'var(--muted)', textTransform: 'uppercase' }}>
+                Top 10 Holders
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {data?.holderMetrics.topHolders && data.holderMetrics.topHolders.length > 0 ? (
@@ -443,9 +443,19 @@ export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, er
                         padding: '6px 0',
                         borderBottom: i < 9 ? '1px solid var(--border-subtle)' : 'none'
                     }}>
-                        <code style={{ color: 'var(--text-muted)', fontSize: '12px', minWidth: '32px' }}>
-                        {formatShortAddr(holder.address)}
-                        </code>
+                        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                          <code style={{ color: 'var(--text-muted)', fontSize: '12px', minWidth: '32px' }}>
+                          {formatShortAddr(holder.address)}
+                          </code>
+                          {holder.tag && (
+                            <span style={{ 
+                                fontSize: '10px', 
+                                color: 'var(--text-disabled)',
+                            }}>
+                                {holder.tag}
+                            </span>
+                          )}
+                        </div>
                         <CopyButton text={holder.address} label="holder address" />
                         <a href={addressUrl(chain as any, holder.address as any)} target="_blank" rel="noopener noreferrer">
                         <ExternalIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
@@ -454,17 +464,6 @@ export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, er
                         <ContractIcon sx={{ fontSize: 14, color: 'var(--warning)' }} />
                         ) : (
                         <WalletIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
-                        )}
-                        {holder.tag && (
-                            <span style={{ 
-                                fontSize: '10px', 
-                                padding: '2px 6px', 
-                                border: '1px solid var(--bg-elev-2)', 
-                                borderRadius: '15px',
-                                color: 'var(--text-muted)'
-                            }}>
-                                {holder.tag}
-                            </span>
                         )}
                         <span style={{ fontWeight: 600, marginLeft: 'auto' }}>{holder.balance}</span>
                         {tokenPriceUsd && holder.rawBalance && calculateUsdValue(holder.rawBalance, tokenPriceUsd) && (
@@ -526,7 +525,7 @@ export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, er
               padding: '16px',
               fontSize: '12px'
             }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '12px', fontWeight: 400 }}>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: '12px', fontWeight: 400, color: 'var(--muted)', textTransform: 'uppercase' }}>
                 DEX Liquidity
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -546,7 +545,7 @@ export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, er
 
               {data.liquidityMetrics.lpHolders.length > 0 && (
                 <>
-                  <h4 style={{ margin: '16px 0 8px 0', fontSize: '12px', fontWeight: 400 }}>
+                  <h4 style={{ margin: '16px 0 8px 0', fontSize: '12px', fontWeight: 400, color: 'var(--muted)', textTransform: 'uppercase' }}>
                     LP Holders ({data.liquidityMetrics.lpHolderCount || data.liquidityMetrics.lpHolders.length})
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

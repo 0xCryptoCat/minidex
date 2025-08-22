@@ -443,7 +443,7 @@ export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, er
                         padding: '6px 0',
                         borderBottom: i < 9 ? '1px solid var(--border-subtle)' : 'none'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'column' }}>
                           <code style={{ color: 'var(--text-muted)', fontSize: '12px', minWidth: '32px' }}>
                           {formatShortAddr(holder.address)}
                           </code>
@@ -537,7 +537,7 @@ export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, er
                     padding: '6px 0',
                     borderBottom: i < data.liquidityMetrics.dexes.length - 1 ? '1px solid var(--border-subtle)' : 'none'
                   }}>
-                    <span style={{ fontWeight: 600, flex: 1 }}>{dex.name}</span>
+                    <span style={{ fontWeight: 600, flex: 1, color: 'var(--text-muted)' }}>{dex.name}</span>
                     <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>${dex.liquidity}</span>
                   </div>
                 ))}
@@ -557,24 +557,23 @@ export function SecurityPanel({ data, honeypotData, loading, honeypotLoading, er
                         padding: '6px 0',
                         borderBottom: i < Math.min(9, data.liquidityMetrics.lpHolders.length - 1) ? '1px solid var(--border-subtle)' : 'none'
                       }}>
-                        <span style={{ color: 'var(--text-muted)', fontSize: '12px', minWidth: '32px' }}>
-                          {formatShortAddr(lpHolder.address)}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'column' }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '12px', minWidth: '32px' }}>
+                            {formatShortAddr(lpHolder.address)}
+                          </span>
+                          {lpHolder.tag && (
+                            <span style={{ 
+                              fontSize: '10px',
+                              color: 'var(--text-muted)'
+                            }}>
+                              {lpHolder.tag}
+                            </span>
+                          )}
+                        </div>  
                         <CopyButton text={lpHolder.address} label="LP holder address" />
                         <a href={addressUrl(chain as any, lpHolder.address as any)} target="_blank" rel="noopener noreferrer">
                           <ExternalIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
                         </a>
-                        {lpHolder.tag && (
-                          <span style={{ 
-                            fontSize: '10px', 
-                            padding: '2px 6px', 
-                            border: '1px solid var(--bg-elev-2)', 
-                            borderRadius: '15px',
-                            color: 'var(--text-muted)'
-                          }}>
-                            {lpHolder.tag}
-                          </span>
-                        )}
                         {nullAddresses.includes(lpHolder.address) && lpHolder.balance > '0' && (
                           <WhatshotIcon sx={{ fontSize: 14, color: 'var(--warning)' }} />
                         )}

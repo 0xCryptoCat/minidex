@@ -442,7 +442,7 @@ export default function TradesOnlyView({
               style={{
                 // Force cell visibility
                 padding: '4px',
-                display: 'flex',
+                display: 'flow',
                 alignItems: 'center',
                 fontWeight: 'bold',
               }}

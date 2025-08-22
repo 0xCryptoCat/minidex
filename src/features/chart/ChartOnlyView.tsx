@@ -167,6 +167,36 @@ export default function ChartOnlyView({
         borderRadius: 'var(--radius)',
       
       }}>
+        {/* Timeframe Selector Row */}
+        <div style={{ 
+          display: 'flex', 
+          gap: 'var(--space-1)', 
+          marginBottom: 'var(--space-2)',
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginRight: 'var(--space-1)' }}>TF:</span>
+          {availableTfs.map((t) => (
+            <button
+              key={t}
+              onClick={() => handleTfChange(t)}
+              style={{
+                background: tf === t ? 'var(--brand-primary)' : 'transparent',
+                border: `1px solid ${tf === t ? 'var(--brand-primary)' : 'var(--border)'}`,
+                color: tf === t ? 'white' : 'var(--text)',
+                padding: '4px 8px',
+                borderRadius: 'var(--radius-small)',
+                fontSize: '12px',
+                cursor: 'pointer',
+                transition: 'all var(--transition-fast)',
+              }}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+        
+        {/* Chart Controls Grid */}
         <div style={{ 
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(32px, 1fr))',
@@ -283,6 +313,49 @@ export default function ChartOnlyView({
             {crosshairMode === 'normal' ? <BorderInnerIcon sx={{ fontSize: 16 }} /> : <AutoFixHighIcon sx={{ fontSize: 16 }} />}
           </button>
         </div>
+        
+        {/* Display Mode Toggle */}
+        <div style={{ 
+          display: 'flex', 
+          gap: 'var(--space-1)', 
+          marginTop: 'var(--space-2)',
+          alignItems: 'center'
+        }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginRight: 'var(--space-1)' }}>Display:</span>
+          <button
+            onClick={() => setDisplayMode('price')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: displayMode === 'price' ? 'var(--brand-primary)' : 'var(--text-muted)',
+              padding: '4px 8px',
+              borderRadius: 'var(--radius-small)',
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontWeight: displayMode === 'price' ? 600 : 400,
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            Price
+          </button>
+          <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>/</span>
+          <button
+            onClick={() => setDisplayMode('marketcap')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: displayMode === 'marketcap' ? 'var(--brand-primary)' : 'var(--text-muted)',
+              padding: '4px 8px',
+              borderRadius: 'var(--radius-small)',
+              fontSize: '12px',
+              cursor: 'pointer',
+              fontWeight: displayMode === 'marketcap' ? 600 : 400,
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            MCap
+          </button>
+        </div>
       </div>
 
       {/* OHLCV Data Section */}
@@ -333,6 +406,7 @@ export default function ChartOnlyView({
           poolAddress={poolAddress}
           tokenAddress={tokenAddress}
           tokenDetail={tokenDetail}
+          pools={tokenDetail?.pools || []}
           displayMode={displayMode}
           onDisplayModeChange={setDisplayMode}
           chartType={chartType}

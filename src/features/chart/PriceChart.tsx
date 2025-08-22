@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { createChart, type IChartApi, type UTCTimestamp } from 'lightweight-charts';
-import type { Timeframe, Candle, TokenResponse } from '../../lib/types';
+import type { Timeframe, Candle, TokenResponse, PoolDetail } from '../../lib/types';
 import { ohlc, trades } from '../../lib/api';
 import { formatFetchMeta, type FetchMeta, formatUsd } from '../../lib/format';
 import { createPoller } from '../../lib/polling';
@@ -38,6 +38,7 @@ interface Props {
   poolAddress: string;
   tokenAddress: string;
   tokenDetail?: TokenResponse | null;
+  pools?: PoolDetail[]; // Pool data for market cap calculation
   displayMode?: DisplayMode;
   onDisplayModeChange?: (mode: DisplayMode) => void;
   // New props for chart configuration
@@ -58,6 +59,7 @@ export default function PriceChart({
   poolAddress,
   tokenAddress,
   tokenDetail = null,
+  pools = [],
   displayMode = 'price',
   onDisplayModeChange,
   chartType = 'candlestick',
@@ -443,9 +445,9 @@ export default function PriceChart({
         lockVisibleTimeRangeOnResize: false,
         shiftVisibleRangeOnNewBar: false,
         allowShiftVisibleRangeOnWhitespaceReplacement: true,
-        // Enable whitespace scrolling beyond first/last bars
         allowBoldLabels: false,
         uniformDistribution: false,
+        // Remove tickMarkFormatter to enable proper whitespace scrolling
       },
       rightPriceScale: {
         borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -459,8 +461,22 @@ export default function PriceChart({
       leftPriceScale: {
         visible: false,
       },
-      handleScroll: true,
-      handleScale: true,
+      handleScroll: {
+        mouseWheel: true,
+        pressedMouseMove: true,
+        horzTouchDrag: true,
+        vertTouchDrag: true,
+      },
+      handleScale: {
+        axisPressedMouseMove: true,
+        axisDoubleClickReset: true,
+        mouseWheel: true,
+        pinch: true,
+      },
+      kineticScroll: {
+        touch: true,
+        mouse: false,
+      },
     });
     
     // Add candlestick series with theme colors
@@ -572,18 +588,18 @@ export default function PriceChart({
               // Be sure the OHLCV decimals are at max 3 decimals for USD values
               ohlcvElement.innerHTML = `
                 <div style="color:${color};">
-                  <strong style="color:white;">O</strong> ${formatPrice(lastCandle.open)}, 
-                  <strong style="color:white;">H</strong> ${formatPrice(lastCandle.high)}, 
-                  <strong style="color:white;">L</strong> ${formatPrice(lastCandle.low)}, 
+                  <strong style="color:white;">O</strong> ${formatPrice(lastCandle.open)}
+                  <strong style="color:white;">H</strong> ${formatPrice(lastCandle.high)}
+                  <strong style="color:white;">L</strong> ${formatPrice(lastCandle.low)}
                   <strong style="color:white;">C</strong> ${formatPrice(lastCandle.close)}
-                  ${lastVolume ? `, <strong style="color:white;">Vol</strong> $${formatUSD(lastVolume.value)}` : ''}
+                  ${lastVolume ? `<strong style="color:white;">Vol</strong> $${formatUSD(lastVolume.value)}` : ''}
                 </div>
               `;
             } else {
               ohlcvElement.innerHTML = `
                 <div style="color:${color};">
                   <strong style="color:white;">Price</strong> ${formatPrice(lastCandle.close)}
-                  ${lastVolume ? `, <strong style="color:white;">Vol</strong> $${formatUSD(lastVolume.value)}` : ''}
+                  ${lastVolume ? `<strong style="color:white;">Vol</strong> $${formatUSD(lastVolume.value)}` : ''}
                 </div>
               `;
             }
@@ -734,16 +750,21 @@ export default function PriceChart({
         if (candles.length > 0 && cleaned.length === candles.length) {
           // Transform data based on display mode          
           const transformedData = cleaned.map((cd) => {
-            // Market cap mode (currently disabled - requires totalSupply data)
-            if (displayMode === 'marketcap' && tokenDetail?.info && false) {
-              const supply = 1000000000; // Default supply estimate
-              return {
-                time: cd.time as UTCTimestamp,
-                open: cd.open * supply,
-                high: cd.high * supply,
-                low: cd.low * supply,
-                close: cd.close * supply,
-              };
+            // Market cap mode - calculate market cap using pool's market cap as reference
+            if (displayMode === 'marketcap' && tokenDetail && pools && pools.length > 0) {
+              // Find the active pool's market cap for calculation
+              const activePool = pools.find(p => p.poolAddress === poolAddress) || pools[0];
+              if (activePool?.marketCap && activePool?.priceUsd) {
+                // Calculate supply from market cap and current price: supply = marketCap / priceUsd
+                const calculatedSupply = activePool.marketCap / activePool.priceUsd;
+                return {
+                  time: cd.time as UTCTimestamp,
+                  open: cd.open * calculatedSupply,
+                  high: cd.high * calculatedSupply,
+                  low: cd.low * calculatedSupply,
+                  close: cd.close * calculatedSupply,
+                };
+              }
             }
             return {
               time: cd.time as UTCTimestamp,

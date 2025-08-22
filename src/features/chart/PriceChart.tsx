@@ -264,7 +264,7 @@ export default function PriceChart({
     // Regular numbers - use appropriate precision
     if (a >= 1) return v.toFixed(2);
     if (a >= 0.01) return v.toFixed(2);
-    return v.toFixed(6).replace(/\.?0+$/, '');
+    return v.toFixed(4).replace(/\.?0+$/, '');
   };
 
   // Helper function for USD formatting in OHLCV display
@@ -569,6 +569,7 @@ export default function PriceChart({
           if (lastCandle) {
             const color = lastCandle.close >= lastCandle.open ? '#34c759' : '#e13232';
             if (chartType === 'candlestick') {
+              // Be sure the OHLCV decimals are at max 3 decimals for USD values
               ohlcvElement.innerHTML = `
                 <div style="color:${color};">
                   <strong style="color:white;">O</strong> ${formatPrice(lastCandle.open)}, 

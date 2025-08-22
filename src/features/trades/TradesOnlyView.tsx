@@ -231,7 +231,7 @@ export default function TradesOnlyView({
       {
         key: 'tokens',
         header: 'Tokens',
-        accessor: (t) => t.amountBase || 0,
+        accessor: (t) => t.amountQuote || 0, // Sort by quote value instead of base
         render: (t) => {
           const sideColor = t.side === 'buy' ? 'var(--buy-primary)' : 'var(--sell-primary)';
           return (
@@ -542,7 +542,7 @@ export default function TradesOnlyView({
             fontWeight: 'bold',
             fontSize: '16px',
             display: 'grid',
-            gridTemplateColumns: '0.5fr 1.25fr 1.25fr 2fr 1fr',
+            gridTemplateColumns: '0.5fr 1.25fr 2.5fr 1fr',
             gap: '8px',
             height: '40px',
           }}
@@ -639,20 +639,16 @@ export default function TradesOnlyView({
           {/* Maker Column */}
           <div
             className="tr-cell"
-            onClick={() => handleSort('wallet')}
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center',
               fontWeight: 'bold',
+              cursor: 'default', // No pointer cursor since it's not clickable
             }}
           >
             <AccountBalanceWalletIcon style={{ fontSize: 16, color: 'var(--text)' }} />
-            {sortKey === 'wallet' && (
-              sortDir === 'asc' ? 
-                <KeyboardArrowUpIcon style={{ fontSize: 14 }} /> : 
-                <KeyboardArrowDownIcon style={{ fontSize: 14 }} />
-            )}
+            {/* No sorting arrows for maker column */}
           </div>
         </div>
         <div className="trades-list-container" style={{ backgroundColor: 'var(--bg-elev)' }}>

@@ -27,7 +27,7 @@
 .trades-header,
 .tr-row {
   display: grid;
-  grid-template-columns: 0.5fr 1.25fr 1.25fr 2fr 1fr;
+  grid-template-columns: 0.5fr 1.25fr 2.5fr 1fr;
   align-items: center;
   gap: 8px;
   padding: 0 16px;
@@ -36,7 +36,7 @@
 @media (max-width: 768px) {
   .trades-header,
   .tr-row {
-    grid-template-columns: 0.5fr 1.25fr 1.25fr 2fr 1fr;
+    grid-template-columns: 0.5fr 1.25fr 2.5fr 1fr;
     gap: 4px;
     padding: 0 12px;
   }
@@ -504,24 +504,25 @@
   align-items: center;
   line-height: 1.2;
   font-size: 12px;
+  width: 100%;
 }
 
 .tokens-amount {
   flex: 1;
   text-align: left;
-  max-width: 60%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  margin-right: 8px;
 }
 
 .tokens-symbol {
   flex: 0 0 auto;
   text-align: right;
-  max-width: 40%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .maker-cell {

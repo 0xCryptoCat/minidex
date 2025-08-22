@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 6,
+            "activePatchIndex": 8,
             "patches": [
                 {
                     "date": 1755347748705,
@@ -32,6 +32,14 @@
                 {
                     "date": 1755714818848,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -2,8 +2,9 @@\n import { useParams, useNavigate, useSearchParams } from 'react-router-dom';\n import type { PoolSummary, TokenMeta, TokenResponse, Provider } from '../../lib/types';\n import { pairs, token as fetchToken } from '../../lib/api';\n import { poolDataManager } from '../../lib/pool-manager';\n+import { useGoSecurity } from '../../lib/useGoSecurity';\n import PoolSwitcher from './PoolSwitcher';\n import ChartOnlyView from './ChartOnlyView';\n import DetailView from './DetailView';\n import DetailTop from './DetailTop';\n@@ -32,8 +33,14 @@\n   const [noData, setNoData] = useState(false);\n   const [unsupported, setUnsupported] = useState(false);\n   const { setProvider: setGlobalProvider } = useProvider();\n \n+  // Fetch security data for market cap calculations and general security info\n+  const { loading: securityLoading, error: securityError, data: securityData } = useGoSecurity(\n+    chain || '', \n+    address || ''\n+  );\n+\n   useEffect(() => {\n     if (!searchParams.get('view')) {\n       const params = new URLSearchParams(searchParams);\n       params.set('view', 'detail');\n@@ -183,8 +190,9 @@\n                   xDomain={xDomain}\n                   onXDomainChange={setXDomain}\n                   tokenAddress={address}\n                   tokenDetail={tokenDetail}\n+                  securityData={securityData}\n                 />\n               </div>\n             </div>\n           )}\n"
+                },
+                {
+                    "date": 1755851663428,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -6,9 +6,9 @@\n import { useGoSecurity } from '../../lib/useGoSecurity';\n import PoolSwitcher from './PoolSwitcher';\n import ChartOnlyView from './ChartOnlyView';\n import DetailView from './DetailView';\n-import DetailTop from './DetailTop';\n+import DetailTop from '../detail/DetailTop';\n import TradesOnlyView from '../trades/TradesOnlyView';\n import copy from '../../copy/en.json';\n import { useProvider } from '../../lib/provider';\n import { resolvePairSymbols } from '../../lib/pairs';\n"
+                },
+                {
+                    "date": 1755851678268,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -3,11 +3,11 @@\n import type { PoolSummary, TokenMeta, TokenResponse, Provider } from '../../lib/types';\n import { pairs, token as fetchToken } from '../../lib/api';\n import { poolDataManager } from '../../lib/pool-manager';\n import { useGoSecurity } from '../../lib/useGoSecurity';\n-import PoolSwitcher from './PoolSwitcher';\n+import PoolSwitcher from '../detail/PoolSwitcher';\n import ChartOnlyView from './ChartOnlyView';\n-import DetailView from './DetailView';\n+import DetailView from '../detail/DetailView';\n import DetailTop from '../detail/DetailTop';\n import TradesOnlyView from '../trades/TradesOnlyView';\n import copy from '../../copy/en.json';\n import { useProvider } from '../../lib/provider';\n"
                 }
             ],
             "date": 1755347748705,

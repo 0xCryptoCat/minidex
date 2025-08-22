@@ -27,7 +27,7 @@
 .trades-header,
 .tr-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 0.5fr 1.25fr 1.25fr 2fr 1fr;
   align-items: center;
   gap: 8px;
   padding: 0 16px;
@@ -36,7 +36,7 @@
 @media (max-width: 768px) {
   .trades-header,
   .tr-row {
-    grid-template-columns: 0.8fr 0.8fr 0.8fr 1fr 1fr 1fr;
+    grid-template-columns: 0.5fr 1.25fr 1.25fr 2fr 1fr;
     gap: 4px;
     padding: 0 12px;
   }

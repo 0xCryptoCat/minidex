@@ -4,10 +4,10 @@ import type { PoolSummary, TokenMeta, TokenResponse, Provider } from '../../lib/
 import { pairs, token as fetchToken } from '../../lib/api';
 import { poolDataManager } from '../../lib/pool-manager';
 import { useGoSecurity } from '../../lib/useGoSecurity';
-import PoolSwitcher from './PoolSwitcher';
+import PoolSwitcher from '../detail/PoolSwitcher';
 import ChartOnlyView from './ChartOnlyView';
-import DetailView from './DetailView';
-import DetailTop from './DetailTop';
+import DetailView from '../detail/DetailView';
+import DetailTop from '../detail/DetailTop';
 import TradesOnlyView from '../trades/TradesOnlyView';
 import copy from '../../copy/en.json';
 import { useProvider } from '../../lib/provider';

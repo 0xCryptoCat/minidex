@@ -435,7 +435,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
               {(securityData.tokenMetrics.buyTax || 0) === 0 && 
                (securityData.tokenMetrics.sellTax || 0) === 0 && 
                (securityData.tokenMetrics.transferTax || 0) === 0 ? (
-                <span style={{ color: 'var(--text)' }}>0%</span>
+                <strong style={{ color: 'var(--text)' }}>0%</strong>
               ) : (
                 <>
                   <span style={{ color: securityData.tokenMetrics.buyTax && securityData.tokenMetrics.buyTax > 0 ? 'var(--accent-lime)' : 'var(--text)'}}>

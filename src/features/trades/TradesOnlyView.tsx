@@ -13,6 +13,7 @@ import AddBoxIcon from '@mui/icons-material/AddBox';
 import IndeterminateCheckBoxIcon from '@mui/icons-material/IndeterminateCheckBox';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
+import PriceChangeIcon from '@mui/icons-material/PriceChange';
 import type { Trade } from '../../lib/types';
 import { trades } from '../../lib/api';
 import {
@@ -297,10 +298,10 @@ export default function TradesOnlyView({
           return (
             <div className="price-total-cell">
               <div className="price-total-row" style={{ color: sideColor, fontWeight: 600 }}>
-                <span style={{ fontSize: '10px', paddingBottom: '2px' }}>∑</span>$<span>{formatTradeAmount(total)}</span>
+                $<span>{formatTradeAmount(total)}</span>
               </div>
               <div className="price-total-row" style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-                ~$<span>{formatTradeAmount(t.price)}</span>
+                <PriceChangeIcon sx={{ fontSize: '12px', color: 'var(--text-muted)' }} /><span>{formatTradeAmount(t.price)}</span>
               </div>
             </div>
           );
@@ -453,7 +454,7 @@ export default function TradesOnlyView({
         </div>
         
         {isExpanded && (
-          <div className="tr-expanded">
+          <div className="tr-expanded" style={{ background: t.side === 'buy' ? 'rgb(32 45 36)' : 'rgb(49 31 33)' }}>
             <div className="tr-expanded-content">
               {t.wallet && (() => {
                 const analysis = getTraderAnalysis(t.wallet);
@@ -812,9 +813,8 @@ export default function TradesOnlyView({
             className="tr-cell"
             onClick={() => handleSort('tokens')}
             style={{ 
-              display: 'flex', 
+              display: 'flow', 
               alignItems: 'center', 
-              justifyContent: 'space-around',
               fontWeight: 'bold',
             }}
           >

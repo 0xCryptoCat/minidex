@@ -727,38 +727,6 @@
   width: 100% !important;
 }
 
-/* Make chart fill available height */
-.chart-container > div > div:first-child {
-  flex: 1;
-}
-
-.trades-container {
-  padding: 0;
-  margin: 0 16px 24px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.trades-container > div {
-  border-radius: 16px;
-  overflow: hidden;
-  background: var(--bg-elev);
-  border: 1px solid var(--border-subtle);
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 300px;
-}
-
-.chart-container > div,
-.trades-container > div {
-  border-radius: 16px;
-  overflow: hidden;
-  background: var(--bg-elev);
-  border: 1px solid var(--border-subtle);
-}
-
 /* Mobile Optimizations */
 @media (max-width: 768px) {  
   .detail-letter {

@@ -326,7 +326,7 @@
 .tr-expanded {
   position: relative;
   z-index: 1;
-  background: var(--bg-elev);
+  background: var(--bg);
   padding: 16px;
   border-bottom: 2px solid var(--brand-primary);
   animation: expandRow .3s ease-out;
@@ -354,7 +354,6 @@
 .tr-expanded-content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }
 
 .expanded-section {

@@ -270,6 +270,7 @@ export default function TradesOnlyView({
 
   const columns: ColumnConfig[] = useMemo(
     () => [
+      /* Time Column */
       {
         key: 'time',
         header: 'Time',
@@ -285,6 +286,7 @@ export default function TradesOnlyView({
         ),
         comparator: (a: number, b: number) => a - b,
       },
+      /* Price Column */
       {
         key: 'price',
         header: 'Price/Total',
@@ -306,6 +308,7 @@ export default function TradesOnlyView({
         comparator: (a: number | undefined, b: number | undefined) =>
           (a || 0) - (b || 0),
       },
+      /* Tokens Column */
       {
         key: 'tokens',
         header: 'Tokens',
@@ -335,6 +338,7 @@ export default function TradesOnlyView({
         },
         comparator: (a: number, b: number) => a - b,
       },
+      /* Maker Column */
       {
         key: 'wallet',
         header: 'Maker',
@@ -346,7 +350,7 @@ export default function TradesOnlyView({
               <div className="maker-addr" style={{ whiteSpace: 'nowrap' }}>
                 {formatShortAddr(t.wallet)}
               </div>
-              <div className="maker-txs" style={{ color: 'var(--text-muted)', fontSize: '10px' }}>
+              <div className="maker-txs" style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 400 }}>
                 {traderTxCount} Txs
               </div>
             </div>
@@ -464,9 +468,9 @@ export default function TradesOnlyView({
                       display: 'grid',
                       gridTemplateColumns: '1fr 2fr 2fr',
                       gap: '12px',
-                      marginBottom: '16px',
+                      marginBottom: '10px',
                       padding: '12px',
-                      background: 'var(--bg)',
+                      background: 'var(--bg-elev)',
                       borderRadius: 'var(--radius)',
                       border: '1px solid var(--border)',
                     }}>
@@ -475,30 +479,24 @@ export default function TradesOnlyView({
                         <img 
                           src={accountSize.icon} 
                           alt={accountSize.name}
-                          style={{ width: '24px', height: '24px' }}
+                          style={{ width: '24px', height: '24px', filter: 'invert(1)' }}
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
                             target.nextElementSibling!.textContent = accountSize.fallback;
                           }}
                         />
-                        <span style={{ display: 'none', fontSize: '20px' }}></span>
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', textAlign: 'center' }}>
-                          {accountSize.name}
-                        </div>
                       </div>
                       
                       {/* TXn Hash */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px' }}>
-                            Transaction Hash
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                            TX HASH
                           </div>
-                          <div style={{ fontSize: '12px', color: 'var(--text)', fontFamily: 'monospace' }}>
+                          <div style={{ fontSize: '12px', color: 'var(--text)', fontFamily: 'monospace', display: 'flex', alignItems: 'center' }}>
                             {t.txHash ? formatShortAddr(t.txHash) : 'Unknown'}
-                          </div>
-                        </div>
-                        {t.txHash && (
+                            {t.txHash && (
                           <>
                             <CopyButton text={t.txHash} />
                             {txUrl(chain as any, t.txHash) && (
@@ -507,85 +505,85 @@ export default function TradesOnlyView({
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 onClick={(e) => e.stopPropagation()}
-                                style={{ color: 'var(--text)', textDecoration: 'none' }}
+                                style={{ color: 'var(--text)', textDecoration: 'none', fontSize: 14 }}
                               >
-                                <LaunchIcon sx={{ fontSize: 16 }} />
+                                <LaunchIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
                               </a>
                             )}
                           </>
                         )}
+                          </div>
+                        </div>
                       </div>
                       
                       {/* Maker Address */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px' }}>
-                            Maker Address
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                            MAKER
                           </div>
-                          <div style={{ fontSize: '12px', color: 'var(--text)', fontFamily: 'monospace' }}>
+                          <div style={{ fontSize: '12px', color: 'var(--text)', fontFamily: 'monospace', display: 'flex', alignItems: 'center' }}>
                             {formatShortAddr(t.wallet)}
+                            <CopyButton text={t.wallet} />
+                            {addressUrl(chain as any, t.wallet) && (
+                              <a 
+                                href={addressUrl(chain as any, t.wallet)} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                style={{ color: 'var(--text)', textDecoration: 'none', fontSize: 14 }}
+                              >
+                                <LaunchIcon sx={{ fontSize: 14, color: 'var(--text-muted)' }} />
+                              </a>
+                            )}
                           </div>
                         </div>
-                        <CopyButton text={t.wallet} />
-                        {addressUrl(chain as any, t.wallet) && (
-                          <a 
-                            href={addressUrl(chain as any, t.wallet)} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            style={{ color: 'var(--text)', textDecoration: 'none' }}
-                          >
-                            <LaunchIcon sx={{ fontSize: 16 }} />
-                          </a>
-                        )}
                       </div>
                     </div>
 
                     {/* Section Middle: Buys/Sells/PnL Analysis */}
                     <div className="expanded-section-middle" style={{
                       display: 'grid',
+                      alignItems: 'center',
                       gridTemplateColumns: 'auto 1fr 1fr 1fr',
                       gap: '8px',
-                      marginBottom: '16px',
+                      marginBottom: '10px',
                       padding: '12px',
-                      background: 'var(--bg)',
+                      background: 'var(--bg-elev)',
                       borderRadius: 'var(--radius)',
                       border: '1px solid var(--border)',
                     }}>
                       {/* Buys Row */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--buy-primary)' }}>
-                        <AddBoxIcon sx={{ fontSize: 16 }} />
-                        <span style={{ fontSize: '12px', fontWeight: 600 }}>Buys</span>
+                        <AddBoxIcon sx={{ fontSize: 16, fontWeight: 600 }} />
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text)', textAlign: 'right' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--buy-primary)', textAlign: 'right' }}>
                         ${formatTradeAmount(analysis.buyUsdTotal)}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text)', textAlign: 'right' }}>
-                        {formatTradeAmount(analysis.buyBaseTotal)} {baseSymbol}
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', textAlign: 'right' }}>
+                        {formatTradeAmount(analysis.buyBaseTotal)}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text)', textAlign: 'right' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'right' }}>
                         {analysis.buyCount} txs
                       </div>
 
                       {/* Sells Row */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--sell-primary)' }}>
-                        <IndeterminateCheckBoxIcon sx={{ fontSize: 16 }} />
-                        <span style={{ fontSize: '12px', fontWeight: 600 }}>Sells</span>
+                        <IndeterminateCheckBoxIcon sx={{ fontSize: 16, fontWeight: 600 }} />
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text)', textAlign: 'right' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--sell-primary)', textAlign: 'right' }}>
                         ${formatTradeAmount(analysis.sellUsdTotal)}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text)', textAlign: 'right' }}>
-                        {formatTradeAmount(analysis.sellBaseTotal)} {baseSymbol}
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)', textAlign: 'right' }}>
+                        {formatTradeAmount(analysis.sellBaseTotal)}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text)', textAlign: 'right' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'right' }}>
                         {analysis.sellCount} txs
                       </div>
 
                       {/* PnL Row */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text)' }}>
-                        <AnalyticsIcon sx={{ fontSize: 16 }} />
-                        <span style={{ fontSize: '12px', fontWeight: 600 }}>PnL</span>
+                        <AnalyticsIcon sx={{ fontSize: 16, fontWeight: 600 }} />
                       </div>
                       <div style={{ 
                         fontSize: '12px', 
@@ -593,16 +591,16 @@ export default function TradesOnlyView({
                         textAlign: 'right',
                         fontWeight: 600 
                       }}>
-                        {analysis.pnlUsd >= 0 ? '+' : ''}${formatTradeAmount(Math.abs(analysis.pnlUsd))}
+                        {analysis.pnlUsd >= 0 ? '+' : '-'}${formatTradeAmount(Math.abs(analysis.pnlUsd))}
                       </div>
                       <div style={{ 
                         fontSize: '12px', 
-                        color: analysis.stillHeldBase >= 0 ? 'var(--buy-primary)' : 'var(--sell-primary)', 
+                        color: 'var(--text)', 
                         textAlign: 'right' 
                       }}>
-                        {analysis.stillHeldBase >= 0 ? '+' : ''}{formatTradeAmount(Math.abs(analysis.stillHeldBase))} {baseSymbol}
+                        {formatTradeAmount(Math.abs(analysis.stillHeldBase))}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text)', textAlign: 'right' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'right' }}>
                         {analysis.totalTrades} total
                       </div>
                     </div>
@@ -610,25 +608,26 @@ export default function TradesOnlyView({
                     {/* Section Bottom: Unrealized Holdings */}
                     <div className="expanded-section-bottom" style={{
                       display: 'grid',
-                      gridTemplateColumns: '1fr 1fr 2fr',
+                      alignItems: 'center',
+                      gridTemplateColumns: '0.5fr 0.5fr 2fr',
                       gap: '12px',
-                      padding: '12px',
-                      background: 'var(--bg)',
+                      padding: '10px',
+                      background: 'var(--bg-elev)',
                       borderRadius: 'var(--radius)',
                       border: '1px solid var(--border)',
                     }}>
                       {/* Unrealized Icon */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <BusinessCenterIcon sx={{ fontSize: 16, color: 'var(--text)' }} />
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Holdings</span>
                       </div>
                       
                       {/* Unrealized USD Value */}
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px' }}>
-                          Unrealized USD
-                        </div>
-                        <div style={{ fontSize: '12px', color: 'var(--text)', fontWeight: 600 }}>
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: analysis.stillHeldBase >= 0 ? 'var(--buy-primary)' : 'var(--sell-primary)', 
+                          fontWeight: 600 
+                          }}>
                           {analysis.stillHeldBase > 0 ? `$${formatTradeAmount(analysis.unrealizedUsd)}` : 'Unknown'}
                         </div>
                       </div>
@@ -636,11 +635,11 @@ export default function TradesOnlyView({
                       {/* Holdings Progress Bar */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
-                          <span style={{ color: 'var(--text)' }}>
-                            Held: {analysis.stillHeldBase > 0 ? formatTradeAmount(analysis.stillHeldBase) : '0'} {baseSymbol}
+                          <span style={{ color: 'var(--text)', textAlign: 'left' }}>
+                            {analysis.stillHeldBase > 0 ? formatTradeAmount(analysis.stillHeldBase) : '0'}
                           </span>
-                          <span style={{ color: 'var(--text-muted)' }}>
-                            Bought: {formatTradeAmount(analysis.buyBaseTotal)} {baseSymbol}
+                          <span style={{ color: 'var(--text-muted)', textAlign: 'right' }}>
+                            {formatTradeAmount(analysis.buyBaseTotal)}
                           </span>
                         </div>
                         <div style={{ 
@@ -815,7 +814,7 @@ export default function TradesOnlyView({
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
-              justifyContent: 'space-between',
+              justifyContent: 'space-around',
               fontWeight: 'bold',
             }}
           >
@@ -842,6 +841,8 @@ export default function TradesOnlyView({
             {/* No sorting arrows for maker column */}
           </div>
         </div>
+
+        {/* Trades List Container */}
         <div className="trades-list-container" style={{ backgroundColor: 'var(--bg-elev)' }}>
           {/* Enhanced Telegram webapp compatibility - always use fallback in Telegram */}
           {(window as any).Telegram?.WebApp ? (

@@ -316,7 +316,7 @@ export default function TradesOnlyView({
         render: (t) => {
           const sideColor = t.side === 'buy' ? 'var(--buy-primary)' : 'var(--sell-primary)';
           return (
-            <div className="tokens-cell">
+            <div className="tokens-cell" style={{ display: 'flow', alignItems: 'space-around' }}>
               <div className="tokens-row">
                 <div className="tokens-amount" style={{ color: sideColor, fontWeight: 600 }}>
                   {formatTradeAmount(t.amountBase)}
@@ -812,7 +812,8 @@ export default function TradesOnlyView({
             className="tr-cell"
             onClick={() => handleSort('tokens')}
             style={{ 
-              display: 'flow', 
+              display: 'flex',
+              justifyContent: 'center', 
               alignItems: 'center', 
               fontWeight: 'bold',
             }}

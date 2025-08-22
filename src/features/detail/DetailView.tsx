@@ -125,7 +125,7 @@ export default function DetailView({ chain, address, pairId, pools, onSwitch, hi
           {/* Main Detail Section */}
           <div className="detail-top">
             <div className="detail-avatar">
-              <img src={info.imageUrl} alt={`${active.baseToken?.symbol || active.base} logo`} loading="lazy" />
+              <img src={info.imageUrl ? info.imageUrl : 'https://placehold.co/100x100/black/gray/?text=?'} alt={`${active.baseToken?.symbol || active.base}`} loading="lazy" />
             </div>
             
             <div className="detail-overview">

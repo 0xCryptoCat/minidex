@@ -77,19 +77,8 @@ export default function DetailTop({ detail, pairId, pools, chain, onPoolSwitch }
       <div className="detail-top">
         <div className="detail-avatar">
           <img 
-            src={info.imageUrl} 
-            alt={`${active.baseToken?.symbol || 'Token'} logo`} 
-            onError={(e) => {
-              // Fallback to letter avatar
-              e.currentTarget.style.display = 'none';
-              const parent = e.currentTarget.parentElement;
-              if (parent && !parent.querySelector('.detail-letter')) {
-                const fallback = document.createElement('div');
-                fallback.className = 'detail-letter';
-                fallback.textContent = active.baseToken?.symbol?.[0] || '?';
-                parent.appendChild(fallback);
-              }
-            }}
+            src={info.imageUrl ? info.imageUrl : 'https://placehold.co/100x100/black/gray/?text=?'} 
+            alt={`${active.baseToken?.symbol || ''}`}
             loading="lazy" 
           />
         </div>

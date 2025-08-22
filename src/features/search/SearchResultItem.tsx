@@ -79,10 +79,10 @@ export default function SearchResultItem({ result }: Props) {
       }}
       className={`search-result-item ${isSupported ? 'supported' : 'limited'}`}
     >
-      <td className="token-icon-cell">
+      <td className="token-icon-cell" style={{ borderRadius: '10px' }}>
         {icon ? (
           <img 
-            src={icon} 
+            src={icon ? icon : 'https://placehold.co/36x36/black/gray/?text=?'} 
             alt={`${symbol}`} 
             className="token-icon"
             onError={(e) => {
@@ -104,14 +104,14 @@ export default function SearchResultItem({ result }: Props) {
           }}
         >
           <img 
-            src={`https://placehold.co/36x36/909090/ffffff?text=${symbol?.[0]?.toUpperCase() || 'T'}`}
+            src={`https://placehold.co/36x36/black/gray?text=${symbol?.[0]?.toUpperCase() || 'T'}`}
             alt={`${symbol} placeholder`}
             style={{ width: '36px', height: '36px', borderRadius: '50%' }}
           />
         </div>
         {!icon && (
           <img 
-            src={`https://placehold.co/36x36/909090/ffffff?text=${symbol?.[0]?.toUpperCase() || 'T'}`}
+            src={`https://placehold.co/36x36/black/gray?text=${symbol?.[0]?.toUpperCase() || 'T'}`}
             alt={`${symbol} placeholder`}
             className="token-icon"
             style={{ width: '36px', height: '36px', borderRadius: '50%' }}

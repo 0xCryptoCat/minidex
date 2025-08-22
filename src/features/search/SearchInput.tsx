@@ -330,8 +330,8 @@ export default function SearchInput({ autoFocus, large }: Props) {
                   <div className="token-icon-container" style={{ borderRadius: '10px' }}>
                     {r.icon ? (
                       <img 
-                        src={r.icon} 
-                        alt={`${r.symbol} logo`} 
+                        src={r.icon ? r.icon : 'https://placehold.co/36x36/black/gray/?text=?'} 
+                        alt={`${r.symbol}`} 
                         className="token-icon"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
@@ -352,7 +352,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
                       }}
                     >
                       <img 
-                        src={`https://placehold.co/36x36/909090/ffffff?text=${r.symbol?.[0]?.toUpperCase() || 'T'}`}
+                        src={`https://placehold.co/36x36/black/white?text=${r.symbol?.[0]?.toUpperCase() || 'T'}`}
                         alt={`${r.symbol} placeholder`}
                         style={{ width: '36px', height: '36px', borderRadius: '50%' }}
                       />

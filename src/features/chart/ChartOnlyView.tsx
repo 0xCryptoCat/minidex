@@ -160,11 +160,12 @@ export default function ChartOnlyView({
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
       {/* Chart Settings Section */}
       <div className="section chart-settings-section" style={{ 
-        margin: '0',
+        margin: '0 16px 10px',
         padding: 'var(--space-2)',
         background: 'var(--bg-elev)',
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius)',
+      
       }}>
         <div style={{ 
           display: 'grid',
@@ -286,7 +287,7 @@ export default function ChartOnlyView({
 
       {/* OHLCV Data Section */}
       <div className="section ohlcv-section" style={{ 
-        margin: '0',
+        margin: '0 16px 10px',
         padding: 'var(--space-2)',
         background: 'var(--bg-elev)',
         border: '1px solid var(--border)',

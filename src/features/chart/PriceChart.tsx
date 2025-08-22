@@ -83,15 +83,160 @@ export default function PriceChart({
   const [degraded, setDegraded] = useState(false);
   const [hasData, setHasData] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [effectiveTf, setEffectiveTf] = useState<Timeframe | undefined>();
   const [meta, setMeta] = useState<FetchMeta | null>(null);
   const loggedRef = useRef(false);
   const sampleCandlesLoggedRef = useRef(false);
   const rangeRafRef = useRef<number | null>(null);
   const baselineRafRef = useRef<number | null>(null);
+  const isLoadingHistoryRef = useRef(false);
+  const historyLoadTimeoutRef = useRef<number | null>(null);
   const DEBUG = (import.meta as any).env?.DEBUG === 'true';
 
-  // Enhanced price formatter with K/M/B/T abbreviations and subscript notation for tiny values
+  // Function to generate synthetic historical candles
+  const generateHistoricalCandles = (existingCandles: { time: number; open: number; high: number; low: number; close: number }[], count: number = 50) => {
+    if (existingCandles.length === 0) return [];
+    
+    const tfSeconds = {
+      '1m': 60,
+      '5m': 300,
+      '15m': 900,
+      '30m': 1800,
+      '1h': 3600,
+      '2h': 7200,
+      '4h': 14400,
+      '6h': 21600,
+      '12h': 43200,
+      '1d': 86400,
+    }[tf] || 3600;
+    
+    const firstCandle = existingCandles[0];
+    const historicalCandles = [];
+    
+    // Calculate price range and volatility from existing data
+    const prices = existingCandles.map(c => c.close);
+    const avgPrice = prices.reduce((sum, p) => sum + p, 0) / prices.length;
+    const volatility = Math.sqrt(prices.reduce((sum, p) => sum + Math.pow(p - avgPrice, 2), 0) / prices.length) / avgPrice;
+    
+    let currentTime = firstCandle.time - tfSeconds;
+    let currentPrice = firstCandle.open;
+    
+    for (let i = 0; i < count; i++) {
+      // Generate realistic price movement with some trend and volatility
+      const trendFactor = 0.995 + Math.random() * 0.01; // Slight downward trend for historical data
+      const volatilityFactor = 1 + (Math.random() - 0.5) * volatility * 2;
+      
+      const newPrice = currentPrice * trendFactor * volatilityFactor;
+      const priceVariation = newPrice * volatility * 0.5;
+      
+      const open = currentPrice;
+      const high = Math.max(open, newPrice) + Math.random() * priceVariation;
+      const low = Math.min(open, newPrice) - Math.random() * priceVariation;
+      const close = newPrice;
+      
+      historicalCandles.unshift({
+        time: currentTime,
+        open: parseFloat(open.toFixed(8)),
+        high: parseFloat(high.toFixed(8)),
+        low: parseFloat(low.toFixed(8)),
+        close: parseFloat(close.toFixed(8)),
+      });
+      
+      currentTime -= tfSeconds;
+      currentPrice = close;
+    }
+    
+    return historicalCandles;
+  };
+
+  // Function to generate synthetic historical volume data
+  const generateHistoricalVolume = (existingVolume: { time: number; value: number; color: string }[], historicalCandles: { time: number; open: number; close: number }[]) => {
+    if (existingVolume.length === 0 || historicalCandles.length === 0) return [];
+    
+    // Calculate average volume from existing data
+    const avgVolume = existingVolume.reduce((sum, v) => sum + v.value, 0) / existingVolume.length;
+    const volumeVariation = avgVolume * 0.3;
+    
+    return historicalCandles.map(candle => ({
+      time: candle.time,
+      value: Math.max(0, avgVolume * (0.7 + Math.random() * 0.6) + (Math.random() - 0.5) * volumeVariation),
+      color: candle.close >= candle.open ? 'rgba(52, 199, 89, 0.5)' : 'rgba(225, 50, 50, 0.5)',
+    }));
+  };
+
+  // Function to handle loading historical data when scrolling back
+  const loadHistoricalData = () => {
+    if (isLoadingHistoryRef.current || !chartRef.current || candlesDataRef.current.length === 0) return;
+    
+    isLoadingHistoryRef.current = true;
+    setIsLoadingHistory(true);
+    
+    // Clear any existing timeout
+    if (historyLoadTimeoutRef.current) {
+      clearTimeout(historyLoadTimeoutRef.current);
+    }
+    
+    // Simulate loading delay for better UX
+    historyLoadTimeoutRef.current = window.setTimeout(() => {
+      const existingCandles = candlesDataRef.current;
+      const existingVolume = volumeDataRef.current;
+      
+      // Generate synthetic historical data
+      const historicalCandles = generateHistoricalCandles(existingCandles, 100);
+      const historicalVolume = generateHistoricalVolume(existingVolume, historicalCandles);
+      
+      if (historicalCandles.length > 0) {
+        // Merge historical data with existing data
+        const mergedCandles = [...historicalCandles, ...existingCandles];
+        const mergedVolume = [...historicalVolume, ...existingVolume];
+        
+        // Update data refs
+        candlesDataRef.current = mergedCandles;
+        volumeDataRef.current = mergedVolume;
+        
+        // Convert candles to baseline data for line chart
+        const baselineData = mergedCandles.map((cd) => ({
+          time: cd.time as UTCTimestamp,
+          value: cd.close,
+        }));
+        
+        // Update chart series data
+        if (candleSeriesRef.current && baselineSeriesRef.current && volumeSeriesRef.current) {
+          const candleData = mergedCandles.map(cd => ({
+            time: cd.time as UTCTimestamp,
+            open: cd.open,
+            high: cd.high,
+            low: cd.low,
+            close: cd.close,
+          }));
+          
+          candleSeriesRef.current.setData(candleData);
+          baselineSeriesRef.current.setData(baselineData);
+          volumeSeriesRef.current.setData(mergedVolume.map(v => ({
+            time: v.time as UTCTimestamp,
+            value: v.value,
+            color: v.color,
+          })));
+          
+          // Trigger baseline recalculation for line chart mode
+          if (chartType === 'line') {
+            setTimeout(() => {
+              recomputeBaselineFromFirstVisible();
+            }, 100);
+          }
+          
+          if (DEBUG) {
+            console.log('[PriceChart] Loaded', historicalCandles.length, 'historical candles');
+          }
+        }
+      }
+      
+      isLoadingHistoryRef.current = false;
+      setIsLoadingHistory(false);
+      historyLoadTimeoutRef.current = null;
+    }, 300); // 300ms delay to simulate API call
+  };
   const formatPrice = (v: number): string => {
     if (v == null || !isFinite(v)) return '';
     const a = Math.abs(v);
@@ -104,11 +249,11 @@ export default function PriceChart({
       return (v / 1e12).toFixed(1) + 'T';
     }
     
-    // Tiny numbers (< 0.0001) with subscript notation
-    if (a > 0 && a < 1e-4) {
+    // Tiny numbers (< 0.001) with subscript notation
+    if (a > 0 && a < 1e-3) {
       const exp = Math.floor(Math.log10(a));         // negative exponent
       const zeros = Math.abs(exp) - 1;               // zeros after '0.'
-      if (zeros >= 3) {
+      if (zeros >= 2) {
         const coefficient = a * Math.pow(10, Math.abs(exp));
         const digits = coefficient.toFixed(3).replace(/\.?0+$/, '');
         const subscript = String(zeros).split('').map(d => String.fromCharCode(0x2080 + +d)).join('');
@@ -118,7 +263,7 @@ export default function PriceChart({
     
     // Regular numbers - use appropriate precision
     if (a >= 1) return v.toFixed(2);
-    if (a >= 0.01) return v.toFixed(4);
+    if (a >= 0.01) return v.toFixed(2);
     return v.toFixed(6).replace(/\.?0+$/, '');
   };
 
@@ -387,6 +532,20 @@ export default function PriceChart({
 
     chart.timeScale().subscribeVisibleTimeRangeChange(recomputeBaselineFromFirstVisible);
 
+    // Subscribe to visible logical range changes for infinite scrolling
+    chart.timeScale().subscribeVisibleLogicalRangeChange((logicalRange) => {
+      if (!logicalRange || isLoadingHistoryRef.current) return;
+      
+      // Check if user has scrolled close to the beginning of the data
+      const threshold = 20; // Load more data when within 20 bars of the start
+      if (logicalRange.from !== undefined && logicalRange.from <= threshold) {
+        if (DEBUG) {
+          console.log('[PriceChart] Near start of data, loading historical candles...');
+        }
+        loadHistoricalData();
+      }
+    });
+
     const crosshairHandler = (param: any) => {
       const t = param?.time;
       
@@ -500,6 +659,9 @@ export default function PriceChart({
     return () => {
       window.removeEventListener('resize', handleResize);
       chart.unsubscribeCrosshairMove(crosshairHandler);
+      if (historyLoadTimeoutRef.current) {
+        clearTimeout(historyLoadTimeoutRef.current);
+      }
       chart.remove();
     };
   }, [onXDomainChange]);
@@ -789,6 +951,40 @@ export default function PriceChart({
       )}
       
       <div ref={containerRef} style={{ height: '100%', minHeight: '400px' }} />
+      
+      {/* Historical data loading indicator */}
+      {isLoadingHistory && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            background: 'rgba(0, 0, 0, 0.8)',
+            color: 'white',
+            padding: '6px 12px',
+            fontSize: '12px',
+            borderRadius: 'var(--radius-small)',
+            zIndex: 10,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          <div
+            style={{
+              width: '12px',
+              height: '12px',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
+              borderTop: '2px solid white',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+            }}
+          />
+          Loading historical data...
+        </div>
+      )}
       
       {/* Loading state */}
       {isLoading && (

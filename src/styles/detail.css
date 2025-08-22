@@ -701,7 +701,6 @@
 /* Chart Container Styling */
 .chart-container {
   padding: 0;
-  margin: 0 16px 24px;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -710,7 +709,6 @@
 .chart-container > div {
   border-radius: 16px;
   overflow: hidden;
-  background: var(--bg-elev);
   border: 1px solid var(--border-subtle);
   flex: 1;
   display: flex;
@@ -771,13 +769,6 @@
   .detail-links {
     margin-left: 12px;
     margin-right: 12px;
-  }
-  
-  .chart-container,
-  .trades-container {
-    margin-left: 12px;
-    margin-right: 12px;
-    margin-bottom: 16px;
   }
   
   .limitation-notice {

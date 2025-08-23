@@ -171,11 +171,12 @@ export default function PriceChart({
   };
 
   // Function to update baseline base price whenever visible range changes
+  // Fix: Remove chartType dependency and always recompute baseline
   const recomputeBaselineFromFirstVisible = () => {
     if (baselineRafRef.current) return; // Prevent multiple RAF calls
     baselineRafRef.current = requestAnimationFrame(() => {
       baselineRafRef.current = null;
-      if (!chartRef.current || chartType !== 'line') return;
+      if (!chartRef.current) return;
       
       const range = chartRef.current.timeScale().getVisibleRange();
       if (!range || range.from === undefined) return;
@@ -201,8 +202,9 @@ export default function PriceChart({
         });
       }
       
-      // Recreate guide line on active series
-      recreateGuideLines(basePrice);
+      // Recreate guide line on active series - get current mode from refs
+      const currentMode = candleSeriesRef.current?.options()?.visible ? 'candlestick' : 'line';
+      recreateGuideLines(basePrice, currentMode);
     });
   };
 
@@ -218,7 +220,10 @@ export default function PriceChart({
   };
 
   // Function to recreate guide lines based on current mode
-  const recreateGuideLines = (basePrice: number) => {
+  const recreateGuideLines = (basePrice: number, currentMode?: string) => {
+    // Get current mode if not provided
+    const mode = currentMode || (candleSeriesRef.current?.options()?.visible ? 'candlestick' : 'line');
+    
     // Remove existing guide lines
     if (baselineGuideCandlesRef.current && candleSeriesRef.current) {
       candleSeriesRef.current.removePriceLine(baselineGuideCandlesRef.current);
@@ -230,9 +235,9 @@ export default function PriceChart({
     }
 
     // Create new guide line on active series
-    if (chartType === 'candlestick' && candleSeriesRef.current) {
+    if (mode === 'candlestick' && candleSeriesRef.current) {
       baselineGuideCandlesRef.current = createGuideLineOn(candleSeriesRef.current, basePrice);
-    } else if (chartType === 'line' && baselineSeriesRef.current) {
+    } else if (mode === 'line' && baselineSeriesRef.current) {
       baselineGuideLineRef.current = createGuideLineOn(baselineSeriesRef.current, basePrice);
     }
   };
@@ -324,7 +329,7 @@ export default function PriceChart({
         fixLeftEdge: false,
         fixRightEdge: false,
         lockVisibleTimeRangeOnResize: false,
-        shiftVisibleRangeOnNewBar: false,
+        shiftVisibleRangeOnNewBar: false, // Can be enabled for auto-scroll when at right edge
         allowShiftVisibleRangeOnWhitespaceReplacement: true,
         allowBoldLabels: false,
         uniformDistribution: false,
@@ -351,7 +356,7 @@ export default function PriceChart({
         vertTouchDrag: true,
       },
       handleScale: {
-        axisPressedMouseMove: false, // Disable scaling via axis drag
+        axisPressedMouseMove: true, // Re-enable axis drag scaling as per prototype
         axisDoubleClickReset: true,
         mouseWheel: false, // Disable mouse wheel zoom
         pinch: true, // Keep pinch zoom for mobile
@@ -676,17 +681,15 @@ export default function PriceChart({
           baselineSeriesRef.current?.setData(baselineData);
           volumeSeriesRef.current?.setData(v);
           
-          // Fit content on first load for better initial view
-          if (chartRef.current && transformedData.length > 0) {
+          // Fit content only on first load for better initial view
+          if (chartRef.current && transformedData.length > 0 && !hasData) {
             chartRef.current.timeScale().fitContent();
           }
           
-          // Trigger baseline recalculation for line chart mode
-          if (chartType === 'line') {
-            setTimeout(() => {
-              recomputeBaselineFromFirstVisible();
-            }, 100);
-          }
+          // Trigger baseline recalculation for all modes (not just line)
+          setTimeout(() => {
+            recomputeBaselineFromFirstVisible();
+          }, 100);
           
           // Initialize OHLCV display with last candle
           const lastCandle = transformedData[transformedData.length - 1];
@@ -808,12 +811,7 @@ export default function PriceChart({
     if (hasData) {
       setTimeout(() => {
         recomputeBaselineFromFirstVisible();
-        // Only call fitContent on chart type change, not on every volume toggle
-        if (chartType === 'line') {
-          if (chartRef.current) {
-            chartRef.current.timeScale().fitContent();
-          }
-        }
+        // Note: Removed fitContent call here - only fit on explicit user action or data change
       }, 100);
     }
   }, [chartType, showVolume, hasData]);

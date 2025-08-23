@@ -345,7 +345,7 @@ export default function ChartOnlyView({
           </div>
         )} */}
         
-      <div>
+      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', margin: '0 16px' }}>
         {/* Chart Container - full width, no margins, no background */}
         <div style={{ 
           flex: 1, 

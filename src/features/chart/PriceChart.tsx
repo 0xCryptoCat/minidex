@@ -321,10 +321,10 @@ export default function PriceChart({
         borderColor: 'rgba(255, 255, 255, 0.2)',
         rightOffset: 12,
         barSpacing: 6,
-        fixLeftEdge: false,
-        fixRightEdge: false,
+        fixLeftEdge: true,
+        fixRightEdge: true,
         lockVisibleTimeRangeOnResize: false,
-        shiftVisibleRangeOnNewBar: false,
+        shiftVisibleRangeOnNewBar: true,
         allowShiftVisibleRangeOnWhitespaceReplacement: true,
         allowBoldLabels: false,
         uniformDistribution: false,
@@ -332,6 +332,7 @@ export default function PriceChart({
       },
       rightPriceScale: {
         borderColor: 'rgba(255, 255, 255, 0.2)',
+        autoScale: true,
         scaleMargins: {
           top: 0.1,
           bottom: showVolume ? 0.2 : 0.1, // Dynamic bottom margin based on volume
@@ -360,7 +361,7 @@ export default function PriceChart({
       },
     });
     
-    // Add candlestick series with theme colors and disable autoScale
+    // Add candlestick series with theme colors
     const candleSeries = chart.addCandlestickSeries({
       upColor: '#34c759', // --buy-primary
       downColor: '#e13232', // --sell-primary
@@ -371,12 +372,6 @@ export default function PriceChart({
       lastValueVisible: true,
       priceLineVisible: true,
       priceFormat: { type: 'price', minMove: 0.00000001, precision: 8 },
-      autoscaleInfoProvider: () => null, // Disable auto scaling
-    });
-
-    // Disable auto scaling on the price scale to allow free scrolling
-    candleSeries.applyOptions({
-      priceScaleId: 'right',
     });
     
     // Add baseline series for line chart mode (area line with dual-color fill)
@@ -393,15 +388,6 @@ export default function PriceChart({
       priceFormat: { type: 'price', minMove: 0.00000001, precision: 8 },
     });
     baselineSeries.applyOptions({ visible: chartType === 'line' }); // show based on chart type
-
-    // Disable auto scaling on the price scale to allow free scrolling
-    baselineSeries.applyOptions({
-      priceScaleId: 'right',
-    });
-
-    chart.priceScale('right').applyOptions({
-      autoScale: true,
-    });
 
     // Add volume histogram series with theme colors
     const volumeSeries = chart.addHistogramSeries({
@@ -808,6 +794,7 @@ export default function PriceChart({
     if (chartRef.current) {
       chartRef.current.applyOptions({
         rightPriceScale: {
+          autoScale: true,
           scaleMargins: {
             top: 0.1,
             bottom: showVolume ? 0.2 : 0.1,
@@ -820,8 +807,11 @@ export default function PriceChart({
     if (hasData) {
       setTimeout(() => {
         recomputeBaselineFromFirstVisible();
-        if (chartRef.current) {
-          chartRef.current.timeScale().fitContent();
+        // Only call fitContent on chart type change, not on every volume toggle
+        if (chartType === 'line') {
+          if (chartRef.current) {
+            chartRef.current.timeScale().fitContent();
+          }
         }
       }, 100);
     }
@@ -837,11 +827,12 @@ export default function PriceChart({
         horzLines: { visible: showGrid },
       },
       crosshair: {
+        mode: crosshairMode === 'magnet' ? 2 : 1, // Update crosshair mode
         vertLine: { labelVisible: showCrosshairLabels },
         horzLine: { labelVisible: showCrosshairLabels },
       },
     });
-  }, [showGrid, showCrosshairLabels]);
+  }, [showGrid, showCrosshairLabels, crosshairMode]);
 
   return (
     <div className="modern-chart-container" style={{ position: 'relative', height: '100%' }}>

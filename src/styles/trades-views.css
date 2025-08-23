@@ -9,34 +9,25 @@
   margin-bottom: var(--space-3);
 }
 
-/* Holders View Styles - Redesigned as Table */
-.holders-view {
+/* Traders View Styles - Redesigned Table */
+.traders-view {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
-.holders-header {
-  padding: var(--space-3) var(--space-3) var(--space-2);
-}
-
-.holders-count {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.holders-table-header {
+.traders-table-header {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 1.5fr 1fr;
+  grid-template-columns: 2fr 1.5fr 2fr 1.5fr;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   background: var(--bg-elev);
   border-bottom: 1px solid var(--border);
   font-weight: 600;
   font-size: 14px;
-  min-height: 52px; /* Match row height */
-  align-items: center; /* Center content vertically */
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .header-cell {
@@ -52,6 +43,211 @@
   color: var(--brand-primary);
 }
 
+.header-cell.sorted {
+  color: var(--brand-primary);
+}
+
+.traders-table-body {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Trader Row Container */
+.trader-row-container {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.trader-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 2fr 1.5fr;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  align-items: center;
+  min-height: 64px;
+}
+
+.trader-row:hover {
+  background: var(--bg-elev);
+}
+
+/* Trader Cells */
+.trader-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.address-cell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.trader-type-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--text-secondary);
+}
+
+.trader-type-icon.contract {
+  color: var(--brand-secondary);
+}
+
+.trader-address {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.expand-icon {
+  margin-left: auto;
+  color: var(--text-secondary);
+}
+
+/* Cell Content */
+.cell-main {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.cell-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Bought-Sold Grid */
+.bought-sold-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.grid-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.grid-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.grid-amount {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.grid-usd {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.grid-section.bought .grid-label {
+  color: var(--buy-primary);
+}
+
+.grid-section.sold .grid-label {
+  color: var(--sell-primary);
+}
+
+/* Expanded Trader Details */
+.trader-expanded {
+  background: var(--bg-elev);
+  border-top: 1px solid var(--border);
+  padding: var(--space-4);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.expanded-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.expanded-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.trader-summary {
+  display: flex;
+  gap: var(--space-4);
+  font-size: 14px;
+}
+
+.trader-summary span {
+  color: var(--text-secondary);
+}
+
+/* Mini Trades Table */
+.trades-mini-table {
+  margin-top: var(--space-3);
+}
+
+.mini-table-header {
+  display: grid;
+  grid-template-columns: 1fr 0.8fr 1.2fr 1fr 1fr;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.mini-table-body {
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.mini-trade-row {
+  display: grid;
+  grid-template-columns: 1fr 0.8fr 1.2fr 1fr 1fr;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 12px;
+}
+
+.mini-cell {
+  display: flex;
+  align-items: center;
+  color: var(--text);
+}
+
+.side-cell {
+  gap: var(--space-1);
+}
+
+.side-cell.buy {
+  color: var(--buy-primary);
+}
+
+.side-cell.sell {
+  color: var(--sell-primary);
+}
+
+.side-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* Legacy holders styles - can be cleaned up later */
 .holders-list {
   flex: 1;
   background: var(--bg-primary);
@@ -59,7 +255,6 @@
 
 .holder-row-container {
   border-bottom: 1px solid var(--border);
-  position: relative; /* Establish stacking context */
 }
 
 .holder-row {
@@ -69,7 +264,6 @@
   padding: var(--space-3);
   align-items: center;
   transition: background-color 0.2s ease;
-  min-height: 52px; /* Ensure consistent row height */
 }
 
 .holder-row:hover {
@@ -123,10 +317,6 @@
   padding: var(--space-4);
   background: var(--bg-secondary);
   border-top: 1px solid var(--border);
-  position: relative; /* Ensure proper stacking context */
-  z-index: 10; /* Place above other rows */
-  border-left: 2px solid var(--brand-primary);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .expanded-grid {
@@ -758,79 +948,19 @@
   margin-bottom: var(--space-3);
 }
 
-/* Buy/Sell Grid Cell Styles */
-.buysell-cell {
-  padding: var(--space-1) !important;
-}
-
-.buysell-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-1);
-  font-size: 12px;
-}
-
-.buysell-item {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: var(--space-1);
-  border-radius: 4px;
-  background: var(--bg-tertiary);
-}
-
-.buysell-item.buy {
-  border-left: 2px solid var(--buy-primary);
-}
-
-.buysell-item.sell {
-  border-left: 2px solid var(--sell-primary);
-}
-
-.buysell-label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.buysell-amount {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text);
-}
-
-.buysell-value {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.buy .buysell-label,
-.buy .buysell-amount,
-.buy .buysell-value {
-  color: var(--buy-primary);
-}
-
-.sell .buysell-label,
-.sell .buysell-amount,
-.sell .buysell-value {
-  color: var(--sell-primary);
-}
-
-/* Responsive improvements */
+/* Responsive design */
 @media (max-width: 768px) {
-  .holder-row {
-    grid-template-columns: 1fr;
-    gap: var(--space-3);
+  .holder-metrics {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: var(--space-2);
   }
   
-  .holders-table-header {
+  .metrics-grid {
     grid-template-columns: 1fr;
-    gap: var(--space-3);
   }
   
-  .buysell-grid {
-    grid-template-columns: 1fr;
+  .distribution-bar {
+    grid-template-columns: 60px 1fr 35px;
+    gap: var(--space-1);
   }
 }

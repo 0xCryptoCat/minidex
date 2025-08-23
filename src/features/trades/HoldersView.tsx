@@ -3,33 +3,37 @@ import { VariableSizeList as List } from 'react-window';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
 import LaunchIcon from '@mui/icons-material/Launch';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import { formatUsd, formatShortAddr, formatCompact } from '../../lib/format';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import { formatUsd, formatShortAddr, formatCompact, formatAmount } from '../../lib/format';
 import { addressUrl } from '../../lib/explorer';
 import CopyButton from '../../components/CopyButton';
 import ChartLoader from '../../components/ChartLoader';
 import { trades } from '../../lib/api';
 import type { Trade } from '../../lib/types';
 
-interface HolderData {
+interface TraderData {
   address: string;
   isContract: boolean;
-  balance: number;
-  balanceUsd: number;
-  volume: number;
-  volumeUsd: number;
-  pnl: number;
-  pnlUsd: number;
+  balance: number; // Current token balance
+  balanceUsd: number; // Current USD value of holdings
+  boughtAmount: number; // Total tokens bought
+  boughtUsd: number; // Total USD spent buying
+  soldAmount: number; // Total tokens sold
+  soldUsd: number; // Total USD received selling
+  realizedPnlUsd: number; // Realized P&L from completed trades
+  unrealizedPnlUsd: number; // Unrealized P&L from current holdings
+  totalPnlUsd: number; // Total P&L (realized + unrealized)
+  totalVolumeUsd: number; // Total USD volume traded
   transactions: number;
   firstSeen: number;
   lastSeen: number;
-  avgTradeSize: number;
-  largestTrade: number;
   winRate: number;
+  trades: Trade[]; // Store trades for dropdown
 }
 
 interface Props {
@@ -38,11 +42,13 @@ interface Props {
   poolAddress: string;
   tokenAddress: string;
   baseSymbol?: string;
+  currentPrice?: number; // Current token price for unrealized PnL calculation
 }
 
 type SortKey = 'balance' | 'volume' | 'pnl' | 'transactions' | 'address';
 
-const ROW_HEIGHT = 52;
+const BASE_ROW_HEIGHT = 64;
+const EXPANDED_ROW_HEIGHT = 300;
 
 export default function HoldersView({
   pairId,
@@ -50,49 +56,29 @@ export default function HoldersView({
   poolAddress,
   tokenAddress,
   baseSymbol = 'TOKEN',
+  currentPrice = 0,
 }: Props) {
-  const [holders, setHolders] = useState<HolderData[]>([]);
+  const [traders, setTraders] = useState<TraderData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('balance');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
-
-    trades({ pairId, chain, poolAddress, tokenAddress })
-      .then(({ data }) => {
-        if (cancelled) return;
-        
-        const holdersData = deriveHoldersFromTrades(data.trades || []);
-        setHolders(holdersData);
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError('Failed to load trader data');
-        setIsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [pairId, chain, poolAddress, tokenAddress]);
-
-  // Function to derive holder data from trades
-  const deriveHoldersFromTrades = (tradesData: Trade[]): HolderData[] => {
+  // Function to derive trader data from trades
+  const deriveTradersFromTrades = (tradesData: Trade[]): TraderData[] => {
     if (!tradesData || tradesData.length === 0) return [];
+
+    // Get current price from most recent trade if not provided
+    const latestPrice = currentPrice || (tradesData.length > 0 ? tradesData[0].price : 0);
 
     const walletMap = new Map<string, {
       trades: Trade[];
       balance: number;
-      totalBought: number;
-      totalSold: number;
-      totalVolume: number;
-      totalVolumeUsd: number;
+      boughtAmount: number;
+      boughtUsd: number;
+      soldAmount: number;
+      soldUsd: number;
       transactions: number;
       firstSeen: number;
       lastSeen: number;
@@ -108,10 +94,10 @@ export default function HoldersView({
         walletMap.set(wallet, {
           trades: [],
           balance: 0,
-          totalBought: 0,
-          totalSold: 0,
-          totalVolume: 0,
-          totalVolumeUsd: 0,
+          boughtAmount: 0,
+          boughtUsd: 0,
+          soldAmount: 0,
+          soldUsd: 0,
           transactions: 0,
           firstSeen: trade.ts,
           lastSeen: trade.ts,
@@ -126,52 +112,94 @@ export default function HoldersView({
       walletData.lastSeen = Math.max(walletData.lastSeen, trade.ts);
 
       const tokenAmount = trade.amountBase || 0;
-      const usdAmount = trade.amountQuote || (trade.price * tokenAmount);
+      const tradeUsdValue = trade.amountQuote || (trade.price * tokenAmount);
 
       if (trade.side === 'buy') {
-        walletData.totalBought += tokenAmount;
+        walletData.boughtAmount += tokenAmount;
+        walletData.boughtUsd += tradeUsdValue;
         walletData.balance += tokenAmount;
       } else {
-        walletData.totalSold += tokenAmount;
+        walletData.soldAmount += tokenAmount;
+        walletData.soldUsd += tradeUsdValue;
         walletData.balance -= tokenAmount;
       }
-
-      walletData.totalVolume += tokenAmount;
-      walletData.totalVolumeUsd += usdAmount;
     });
 
-    // Convert to HolderData array
+    // Convert to TraderData array with proper P&L calculations
     return Array.from(walletMap.entries()).map(([wallet, data]) => {
-      const averagePrice = data.totalVolumeUsd / data.totalVolume || 0;
-      const balanceUsd = Math.abs(data.balance) * averagePrice;
-      const pnl = data.balance > 0 ? data.balance * averagePrice - (data.totalBought * averagePrice) : 0;
-      const avgTradeSize = data.totalVolume / data.transactions;
-      const largestTrade = Math.max(...data.trades.map(t => t.amountBase || 0));
-      const winningTrades = data.trades.filter(t => {
-        // Simple win rate calculation based on if they bought low and sold high
-        const avgPrice = data.totalVolumeUsd / data.totalVolume;
-        return t.side === 'buy' ? t.price < avgPrice : t.price > avgPrice;
+      const balance = data.balance; // Can be negative if net seller
+      const balanceUsd = Math.abs(balance) * latestPrice;
+      
+      // Realized P&L: USD received from sales minus proportional cost basis of sold tokens
+      const avgBuyPrice = data.boughtUsd / Math.max(data.boughtAmount, 1);
+      const costOfSold = data.soldAmount * avgBuyPrice;
+      const realizedPnlUsd = data.soldUsd - costOfSold;
+      
+      // Unrealized P&L: Current value of holdings minus remaining cost basis
+      const costOfHeld = Math.max(0, balance) * avgBuyPrice;
+      const unrealizedPnlUsd = Math.max(0, balance) * latestPrice - costOfHeld;
+      
+      const totalPnlUsd = realizedPnlUsd + unrealizedPnlUsd;
+      const totalVolumeUsd = data.boughtUsd + data.soldUsd;
+      
+      // Win rate: percentage of profitable trades
+      const profitableTrades = data.trades.filter(trade => {
+        if (trade.side === 'buy') {
+          // For buys, check if they bought below average sell price
+          const avgSellPrice = data.soldUsd / Math.max(data.soldAmount, 1);
+          return trade.price < avgSellPrice;
+        } else {
+          // For sells, check if they sold above average buy price
+          return trade.price > avgBuyPrice;
+        }
       }).length;
-      const winRate = (winningTrades / data.transactions) * 100;
+      const winRate = (profitableTrades / Math.max(data.transactions, 1)) * 100;
 
       return {
         address: wallet,
         isContract: data.isContract,
-        balance: Math.abs(data.balance),
+        balance: Math.abs(balance),
         balanceUsd,
-        volume: data.totalVolume,
-        volumeUsd: data.totalVolumeUsd,
-        pnl: data.balance,
-        pnlUsd: pnl,
+        boughtAmount: data.boughtAmount,
+        boughtUsd: data.boughtUsd,
+        soldAmount: data.soldAmount,
+        soldUsd: data.soldUsd,
+        realizedPnlUsd,
+        unrealizedPnlUsd,
+        totalPnlUsd,
+        totalVolumeUsd,
         transactions: data.transactions,
         firstSeen: data.firstSeen * 1000,
         lastSeen: data.lastSeen * 1000,
-        avgTradeSize,
-        largestTrade,
         winRate,
+        trades: data.trades.sort((a, b) => b.ts - a.ts), // Sort trades by newest first
       };
-    }).filter(holder => holder.transactions > 0);
+    }).filter(trader => trader.transactions > 0);
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+
+    trades({ pairId, chain, poolAddress, tokenAddress })
+      .then(({ data }) => {
+        if (cancelled) return;
+        
+        const tradersData = deriveTradersFromTrades(data.trades || []);
+        setTraders(tradersData);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError('Failed to load trader data');
+        setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pairId, chain, poolAddress, tokenAddress]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -183,7 +211,7 @@ export default function HoldersView({
   };
 
   const sorted = useMemo(() => {
-    return [...holders].sort((a, b) => {
+    return [...traders].sort((a, b) => {
       let aVal: any, bVal: any;
       
       switch (sortKey) {
@@ -192,12 +220,12 @@ export default function HoldersView({
           bVal = b.balanceUsd;
           break;
         case 'volume':
-          aVal = a.volumeUsd;
-          bVal = b.volumeUsd;
+          aVal = a.totalVolumeUsd;
+          bVal = b.totalVolumeUsd;
           break;
         case 'pnl':
-          aVal = a.pnlUsd;
-          bVal = b.pnlUsd;
+          aVal = a.totalPnlUsd;
+          bVal = b.totalPnlUsd;
           break;
         case 'transactions':
           aVal = a.transactions;
@@ -217,128 +245,123 @@ export default function HoldersView({
       
       return sortDir === 'desc' ? bVal - aVal : aVal - bVal;
     });
-  }, [holders, sortKey, sortDir]);
+  }, [traders, sortKey, sortDir]);
 
-  const Row = ({ index, style }: { index: number; style: any }) => {
-    const holder = sorted[index];
-    if (!holder) return null;
+  // Helper function to get row height
+  const getRowHeight = (index: number) => {
+    const trader = sorted[index];
+    return expandedRow === trader?.address ? EXPANDED_ROW_HEIGHT : BASE_ROW_HEIGHT;
+  };
 
-    const holderId = holder.address;
-    const isExpanded = expandedRow === holderId;
-    const explorerUrl = addressUrl(chain, holder.address as `0x${string}`);
-    const pnlColor = holder.pnlUsd >= 0 ? 'var(--buy-primary)' : 'var(--sell-primary)';
-    const timeAgo = Math.floor((Date.now() - holder.lastSeen) / (1000 * 60 * 60));
+  const TraderRow = ({ index, style }: { index: number; style: any }) => {
+    const trader = sorted[index];
+    if (!trader) return null;
+
+    const traderId = trader.address;
+    const isExpanded = expandedRow === traderId;
+    const explorerUrl = addressUrl(chain, trader.address as `0x${string}`);
+    const pnlColor = trader.totalPnlUsd >= 0 ? 'var(--buy-primary)' : 'var(--sell-primary)';
 
     return (
-      <div style={style} className="holder-row-container">
+      <div style={style} className="trader-row-container">
         {/* Main Row */}
         <div 
-          className="holder-row"
-          onClick={() => setExpandedRow(isExpanded ? null : holderId)}
-          style={{ cursor: 'pointer' }}
+          className="trader-row"
+          onClick={() => setExpandedRow(isExpanded ? null : traderId)}
         >
-          {/* Type & Address */}
-          <div className="holder-cell address-cell">
-            {holder.isContract ? (
-              <BusinessCenterIcon className="holder-type-icon contract" />
+          {/* Address */}
+          <div className="trader-cell address-cell">
+            {trader.isContract ? (
+              <BusinessCenterIcon className="trader-type-icon contract" />
             ) : (
-              <AccountBalanceWalletIcon className="holder-type-icon wallet" />
+              <AccountBalanceWalletIcon className="trader-type-icon wallet" />
             )}
-            <span className="holder-address">{formatShortAddr(holder.address)}</span>
-            {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            <span className="trader-address">{formatShortAddr(trader.address)}</span>
+            <div className="expand-icon">
+              {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            </div>
           </div>
 
-          {/* Holdings */}
-          <div className="holder-cell holdings-cell">
-            <span className="cell-value">{formatUsd(holder.balanceUsd)}</span>
-            <span className="cell-secondary">{formatCompact(holder.balance)} {baseSymbol}</span>
+          {/* Holdings (Balance & USD Value) */}
+          <div className="trader-cell holdings-cell">
+            <div className="cell-main">{formatUsd(trader.balanceUsd)}</div>
+            <div className="cell-sub">{formatCompact(trader.balance)} {baseSymbol}</div>
           </div>
 
-          {/* Volume */}
-          <div className="holder-cell volume-cell">
-            <span className="cell-value">{formatUsd(holder.volumeUsd)}</span>
-            <span className="cell-secondary">{holder.transactions} txs</span>
+          {/* Bought-Sold (2x2 Grid) */}
+          <div className="trader-cell bought-sold-cell">
+            <div className="bought-sold-grid">
+              <div className="grid-section bought">
+                <div className="grid-label">Bought</div>
+                <div className="grid-amount">{formatCompact(trader.boughtAmount)}</div>
+                <div className="grid-usd">{formatUsd(trader.boughtUsd)}</div>
+              </div>
+              <div className="grid-section sold">
+                <div className="grid-label">Sold</div>
+                <div className="grid-amount">{formatCompact(trader.soldAmount)}</div>
+                <div className="grid-usd">{formatUsd(trader.soldUsd)}</div>
+              </div>
+            </div>
           </div>
 
-          {/* P&L */}
-          <div className="holder-cell pnl-cell">
-            <span className="cell-value" style={{ color: pnlColor }}>
-              {holder.pnlUsd >= 0 ? '+' : ''}{formatUsd(holder.pnlUsd)}
-            </span>
-            <span className="cell-secondary">{holder.winRate.toFixed(1)}% win</span>
+          {/* P&L (Realized + Unrealized) */}
+          <div className="trader-cell pnl-cell">
+            <div className="cell-main" style={{ color: pnlColor }}>
+              {trader.totalPnlUsd >= 0 ? '+' : ''}{formatUsd(trader.totalPnlUsd)}
+            </div>
+            <div className="cell-sub">{trader.winRate.toFixed(1)}% win rate</div>
           </div>
         </div>
 
-        {/* Expanded Details */}
+        {/* Expanded Trades Table */}
         {isExpanded && (
-          <div className="holder-expanded">
-            <div className="expanded-grid">
-              <div className="expanded-section">
-                <div className="section-title">Wallet Info</div>
-                <div className="detail-row">
-                  <span className="detail-label">Type:</span>
-                  <span className="detail-value">{holder.isContract ? 'Contract' : 'Wallet'}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Address:</span>
-                  <div className="detail-address">
-                    <span className="detail-value">{holder.address}</span>
-                    <CopyButton text={holder.address} />
-                    {explorerUrl && (
-                      <a href={explorerUrl} target="_blank" rel="noreferrer" className="explorer-link">
-                        <LaunchIcon fontSize="small" />
-                      </a>
-                    )}
+          <div className="trader-expanded">
+            <div className="expanded-header">
+              <h4>Recent Trades ({trader.trades.length})</h4>
+              <div className="trader-summary">
+                <span>Realized: <span style={{ color: trader.realizedPnlUsd >= 0 ? 'var(--buy-primary)' : 'var(--sell-primary)' }}>
+                  {formatUsd(trader.realizedPnlUsd)}
+                </span></span>
+                <span>Unrealized: <span style={{ color: trader.unrealizedPnlUsd >= 0 ? 'var(--buy-primary)' : 'var(--sell-primary)' }}>
+                  {formatUsd(trader.unrealizedPnlUsd)}
+                </span></span>
+              </div>
+            </div>
+            
+            <div className="trades-mini-table">
+              <div className="mini-table-header">
+                <div className="mini-cell">Time</div>
+                <div className="mini-cell">Side</div>
+                <div className="mini-cell">Amount</div>
+                <div className="mini-cell">Price</div>
+                <div className="mini-cell">Total</div>
+              </div>
+              
+              <div className="mini-table-body">
+                {trader.trades.slice(0, 10).map((trade, idx) => (
+                  <div key={idx} className="mini-trade-row">
+                    <div className="mini-cell time-cell">
+                      {new Date(trade.ts * 1000).toLocaleDateString()}
+                    </div>
+                    <div className={`mini-cell side-cell ${trade.side}`}>
+                      {trade.side === 'buy' ? (
+                        <TrendingUpIcon className="side-icon buy" />
+                      ) : (
+                        <TrendingDownIcon className="side-icon sell" />
+                      )}
+                      {trade.side}
+                    </div>
+                    <div className="mini-cell amount-cell">
+                      {formatAmount(trade.amountBase || 0)} {baseSymbol}
+                    </div>
+                    <div className="mini-cell price-cell">
+                      {formatUsd(trade.price)}
+                    </div>
+                    <div className="mini-cell total-cell">
+                      {formatUsd(trade.amountQuote || (trade.price * (trade.amountBase || 0)))}
+                    </div>
                   </div>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">First seen:</span>
-                  <span className="detail-value">{Math.floor((Date.now() - holder.firstSeen) / (1000 * 60 * 60 * 24))} days ago</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Last trade:</span>
-                  <span className="detail-value">{timeAgo < 24 ? `${timeAgo}h ago` : `${Math.floor(timeAgo/24)}d ago`}</span>
-                </div>
-              </div>
-
-              <div className="expanded-section">
-                <div className="section-title">Trading Stats</div>
-                <div className="detail-row">
-                  <span className="detail-label">Avg trade size:</span>
-                  <span className="detail-value">{formatUsd(holder.avgTradeSize)}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Largest trade:</span>
-                  <span className="detail-value">{formatUsd(holder.largestTrade)}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Win rate:</span>
-                  <span className="detail-value" style={{ color: holder.winRate > 50 ? 'var(--buy-primary)' : 'var(--sell-primary)' }}>
-                    {holder.winRate.toFixed(1)}%
-                  </span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Total P&L:</span>
-                  <span className="detail-value" style={{ color: pnlColor }}>
-                    {holder.pnlUsd >= 0 ? '+' : ''}{formatUsd(holder.pnlUsd)} ({holder.pnlUsd >= 0 ? '+' : ''}{formatCompact(holder.pnl)} {baseSymbol})
-                  </span>
-                </div>
-              </div>
-
-              <div className="expanded-section">
-                <div className="section-title">Portfolio Share</div>
-                <div className="portfolio-bar">
-                  <div 
-                    className="portfolio-fill"
-                    style={{ 
-                      width: `${Math.min(100, (holder.balanceUsd / Math.max(...holders.map(h => h.balanceUsd))) * 100)}%`,
-                      background: 'var(--brand-primary)'
-                    }}
-                  />
-                </div>
-                <div className="portfolio-percent">
-                  {((holder.balanceUsd / holders.reduce((sum, h) => sum + h.balanceUsd, 0)) * 100).toFixed(2)}% of tracked holdings
-                </div>
+                ))}
               </div>
             </div>
           </div>
@@ -348,67 +371,68 @@ export default function HoldersView({
   };
 
   if (isLoading) {
-    return <ChartLoader message="Loading holders data..." />;
-  }
-
-  if (error) {
     return (
-      <div className="holders-error">
-        <div className="error-message">{error}</div>
+      <div className="trades-view">
+        <div className="trades-loader">
+          <ChartLoader />
+          <div>Loading top traders...</div>
+        </div>
       </div>
     );
   }
 
-  if (holders.length === 0) {
+  if (error) {
     return (
-      <div className="holders-empty">
-        <div className="empty-message">No holders data available</div>
+      <div className="trades-view">
+        <div className="trades-error">{error}</div>
+      </div>
+    );
+  }
+
+  if (traders.length === 0) {
+    return (
+      <div className="trades-view">
+        <div className="trades-no-data">No trader data available</div>
       </div>
     );
   }
 
   return (
-    <div className="holders-view">
-      {/* Header */}
-      <div className="holders-header">
-        <div className="holders-count">Top Holders ({holders.length})</div>
-      </div>
-
+    <div className="traders-view">
       {/* Table Header */}
-      <div className="holders-table-header">
+      <div className="traders-table-header">
         <div 
-          className="header-cell address-header"
+          className={`header-cell address-header ${sortKey === 'address' ? 'sorted' : ''}`}
           onClick={() => handleSort('address')}
         >
-          <AccountBalanceWalletIcon />
-          <span>Address</span>
+          <span>Trader</span>
           {sortKey === 'address' && (
             sortDir === 'asc' ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />
           )}
         </div>
         
         <div 
-          className="header-cell holdings-header"
+          className={`header-cell holdings-header ${sortKey === 'balance' ? 'sorted' : ''}`}
           onClick={() => handleSort('balance')}
         >
-          <span>Current Holdings</span>
+          <span>Holdings</span>
           {sortKey === 'balance' && (
             sortDir === 'asc' ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />
           )}
         </div>
         
         <div 
-          className="header-cell volume-header"
+          className={`header-cell volume-header ${sortKey === 'volume' ? 'sorted' : ''}`}
           onClick={() => handleSort('volume')}
         >
-          <span>Total Volume</span>
+          <span>Bought - Sold</span>
           {sortKey === 'volume' && (
             sortDir === 'asc' ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />
           )}
         </div>
         
         <div 
-          className="header-cell pnl-header"
+          className={`header-cell pnl-header ${sortKey === 'pnl' ? 'sorted' : ''}`}
           onClick={() => handleSort('pnl')}
         >
           <span>P&L</span>
@@ -417,21 +441,19 @@ export default function HoldersView({
           )}
         </div>
       </div>
-      
-      {/* Holders List */}
-      <List
-        height={400}
-        width="100%"
-        itemCount={sorted.length}
-        itemSize={(index: number) => {
-          const holder = sorted[index];
-          const holderId = holder.address;
-          return expandedRow === holderId ? ROW_HEIGHT + 200 : ROW_HEIGHT;
-        }}
-        className="holders-list"
-      >
-        {Row}
-      </List>
+
+      {/* Virtual List */}
+      <div className="traders-table-body">
+        <List
+          height={400}
+          width="100%"
+          itemCount={sorted.length}
+          itemSize={getRowHeight}
+          overscanCount={5}
+        >
+          {TraderRow}
+        </List>
+      </div>
     </div>
   );
 }

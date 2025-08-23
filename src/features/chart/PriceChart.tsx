@@ -345,15 +345,15 @@ export default function PriceChart({
         visible: false,
       },
       handleScroll: {
-        mouseWheel: true, // Allow mouse wheel for horizontal scrolling
-        pressedMouseMove: true, // Allow drag scrolling
+        mouseWheel: false, // Disable zoom on scroll
+        pressedMouseMove: true, // Enable drag scrolling
         horzTouchDrag: true,
-        vertTouchDrag: false, // Disable vertical touch drag to avoid conflicts
+        vertTouchDrag: true,
       },
       handleScale: {
         axisPressedMouseMove: false, // Disable scaling via axis drag
         axisDoubleClickReset: true,
-        mouseWheel: false, // Disable mouse wheel zoom completely
+        mouseWheel: false, // Disable mouse wheel zoom
         pinch: true, // Keep pinch zoom for mobile
       },
       kineticScroll: {

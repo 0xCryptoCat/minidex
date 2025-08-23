@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -7,9 +7,11 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import LaunchIcon from '@mui/icons-material/Launch';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { formatUsd, formatShortAddr } from '../../lib/format';
+import { formatUsd, formatShortAddr, formatCompact } from '../../lib/format';
 import { addressUrl } from '../../lib/explorer';
 import CopyButton from '../../components/CopyButton';
+import { trades } from '../../lib/api';
+import type { Trade } from '../../lib/types';
 import '../../styles/detail.css'; // Import for kpi-item styles
 
 interface MetricSection {
@@ -18,6 +20,20 @@ interface MetricSection {
   icon: React.ReactNode;
   content: React.ReactNode;
   isExpanded?: boolean;
+}
+
+interface MetricsData {
+  totalVolume24h: number;
+  totalTrades24h: number;
+  uniqueWallets24h: number;
+  avgTradeSize: number;
+  whaleWallets: WhaleWallet[];
+  buyPressure: number;
+  sellPressure: number;
+  priceChange24h: number;
+  volumeChange24h: number;
+  largestTrade24h: number;
+  topWalletsByVolume: WhaleWallet[];
 }
 
 interface WhaleWallet {
@@ -43,6 +59,142 @@ export default function MetricsView({
   tokenAddress,
 }: Props) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['key-metrics']));
+  const [metricsData, setMetricsData] = useState<MetricsData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Function to derive metrics from trades data
+  const deriveMetricsFromTrades = (tradesData: Trade[]): MetricsData => {
+    if (!tradesData || tradesData.length === 0) {
+      return {
+        totalVolume24h: 0,
+        totalTrades24h: 0,
+        uniqueWallets24h: 0,
+        avgTradeSize: 0,
+        whaleWallets: [],
+        buyPressure: 0,
+        sellPressure: 0,
+        priceChange24h: 0,
+        volumeChange24h: 0,
+        largestTrade24h: 0,
+        topWalletsByVolume: [],
+      };
+    }
+
+    const now = Date.now() / 1000; // Current timestamp in seconds
+    const twentyFourHoursAgo = now - 86400; // 24 hours ago
+
+    // Filter trades from last 24 hours
+    const trades24h = tradesData.filter(trade => trade.ts >= twentyFourHoursAgo);
+    
+    // Calculate basic metrics
+    const totalTrades24h = trades24h.length;
+    const uniqueWallets24h = new Set(trades24h.map(t => t.wallet).filter(Boolean)).size;
+    
+    let totalVolume24h = 0;
+    let buyVolume = 0;
+    let sellVolume = 0;
+    let largestTrade24h = 0;
+
+    trades24h.forEach(trade => {
+      const volume = trade.amountQuote || (trade.price * (trade.amountBase || 0));
+      totalVolume24h += volume;
+      
+      if (trade.side === 'buy') {
+        buyVolume += volume;
+      } else {
+        sellVolume += volume;
+      }
+
+      largestTrade24h = Math.max(largestTrade24h, volume);
+    });
+
+    const avgTradeSize = totalVolume24h / Math.max(totalTrades24h, 1);
+    const buyPressure = (buyVolume / Math.max(totalVolume24h, 1)) * 100;
+    const sellPressure = (sellVolume / Math.max(totalVolume24h, 1)) * 100;
+
+    // Calculate price change (first vs last trade in 24h)
+    const priceChange24h = trades24h.length >= 2 
+      ? ((trades24h[0].price - trades24h[trades24h.length - 1].price) / trades24h[trades24h.length - 1].price) * 100
+      : 0;
+
+    // Group trades by wallet to find whale wallets
+    const walletMap = new Map<string, {
+      totalVolume: number;
+      tradeCount: number;
+      largestTrade: number;
+      lastTradeTime: number;
+    }>();
+
+    trades24h.forEach(trade => {
+      if (!trade.wallet) return;
+      
+      const volume = trade.amountQuote || (trade.price * (trade.amountBase || 0));
+      
+      if (!walletMap.has(trade.wallet)) {
+        walletMap.set(trade.wallet, {
+          totalVolume: 0,
+          tradeCount: 0,
+          largestTrade: 0,
+          lastTradeTime: trade.ts,
+        });
+      }
+
+      const walletData = walletMap.get(trade.wallet)!;
+      walletData.totalVolume += volume;
+      walletData.tradeCount++;
+      walletData.largestTrade = Math.max(walletData.largestTrade, volume);
+      walletData.lastTradeTime = Math.max(walletData.lastTradeTime, trade.ts);
+    });
+
+    // Create whale wallets array (top traders by volume)
+    const whaleWallets: WhaleWallet[] = Array.from(walletMap.entries())
+      .map(([address, data]) => ({
+        address,
+        largestTrade: data.largestTrade,
+        totalVolume: data.totalVolume,
+        tradeCount: data.tradeCount,
+        avgTradeSize: data.totalVolume / data.tradeCount,
+        lastTradeTime: data.lastTradeTime * 1000, // Convert to milliseconds
+      }))
+      .sort((a, b) => b.totalVolume - a.totalVolume)
+      .slice(0, 10); // Top 10 whales
+
+    return {
+      totalVolume24h,
+      totalTrades24h,
+      uniqueWallets24h,
+      avgTradeSize,
+      whaleWallets: whaleWallets.slice(0, 3), // Top 3 for display
+      buyPressure,
+      sellPressure,
+      priceChange24h,
+      volumeChange24h: 0, // Would need historical data to calculate
+      largestTrade24h,
+      topWalletsByVolume: whaleWallets,
+    };
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+
+    trades({ pairId, chain, poolAddress, tokenAddress })
+      .then(({ data }) => {
+        if (cancelled) return;
+        
+        const metrics = deriveMetricsFromTrades(data.trades || []);
+        setMetricsData(metrics);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pairId, chain, poolAddress, tokenAddress]);
 
   const toggleSection = (sectionId: string) => {
     const newExpanded = new Set(expandedSections);
@@ -54,33 +206,26 @@ export default function MetricsView({
     setExpandedSections(newExpanded);
   };
 
-  // Mock whale data (replace with real data)
-  const whaleWallets: WhaleWallet[] = [
-    {
-      address: '0x1234567890123456789012345678901234567890',
-      largestTrade: 125000,
-      totalVolume: 450000,
-      tradeCount: 8,
-      avgTradeSize: 56250,
-      lastTradeTime: Date.now() - 3600000,
-    },
-    {
-      address: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
-      largestTrade: 89000,
-      totalVolume: 234000,
-      tradeCount: 5,
-      avgTradeSize: 46800,
-      lastTradeTime: Date.now() - 7200000,
-    },
-    {
-      address: '0x9876543210987654321098765432109876543210',
-      largestTrade: 67000,
-      totalVolume: 187000,
-      tradeCount: 12,
-      avgTradeSize: 15583,
-      lastTradeTime: Date.now() - 1800000,
-    },
-  ];
+  if (isLoading) {
+    return (
+      <div className="trades-view">
+        <div className="trades-loader">
+          <div>Loading metrics...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!metricsData) {
+    return (
+      <div className="trades-view">
+        <div className="trades-no-data">No metrics data available</div>
+      </div>
+    );
+  }
+
+  // Replace mock whale data with real data
+  const whaleWallets = metricsData.whaleWallets;
 
   const sections: MetricSection[] = [
     {
@@ -91,33 +236,37 @@ export default function MetricsView({
         <div className="detail-kpis">
           <div className="kpi-item">
             <span className="kpi-label">24h Volume</span>
-            <span className="kpi-value pos">$1.2M</span>
-            <span className="kpi-change pos">+15.3%</span>
+            <span className="kpi-value pos">{formatUsd(metricsData.totalVolume24h)}</span>
+            <span className="kpi-change pos">
+              {metricsData.volumeChange24h > 0 ? '+' : ''}{metricsData.volumeChange24h.toFixed(1)}%
+            </span>
           </div>
           <div className="kpi-item">
             <span className="kpi-label">24h Trades</span>
-            <span className="kpi-value">2,847</span>
-            <span className="kpi-change pos">+8.7%</span>
+            <span className="kpi-value">{formatCompact(metricsData.totalTrades24h)}</span>
+            <span className="kpi-change pos">-</span>
           </div>
           <div className="kpi-item">
-            <span className="kpi-label">Unique Traders</span>
-            <span className="kpi-value">423</span>
-            <span className="kpi-change neg">-2.1%</span>
-          </div>
-          <div className="kpi-item">
-            <span className="kpi-label">Price Impact</span>
-            <span className="kpi-value">0.08%</span>
-            <span className="kpi-change pos">-0.02%</span>
-          </div>
-          <div className="kpi-item">
-            <span className="kpi-label">Buy/Sell Ratio</span>
-            <span className="kpi-value">1.34</span>
-            <span className="kpi-change pos">Bullish</span>
+            <span className="kpi-label">Unique Wallets</span>
+            <span className="kpi-value">{formatCompact(metricsData.uniqueWallets24h)}</span>
+            <span className="kpi-change pos">-</span>
           </div>
           <div className="kpi-item">
             <span className="kpi-label">Avg Trade Size</span>
-            <span className="kpi-value">$421</span>
-            <span className="kpi-change pos">+12.4%</span>
+            <span className="kpi-value">{formatUsd(metricsData.avgTradeSize)}</span>
+            <span className="kpi-change pos">-</span>
+          </div>
+          <div className="kpi-item">
+            <span className="kpi-label">Buy Pressure</span>
+            <span className="kpi-value">{metricsData.buyPressure.toFixed(1)}%</span>
+            <span className={`kpi-change ${metricsData.buyPressure > 50 ? 'pos' : 'neg'}`}>
+              vs {metricsData.sellPressure.toFixed(1)}% sell
+            </span>
+          </div>
+          <div className="kpi-item">
+            <span className="kpi-label">Largest Trade</span>
+            <span className="kpi-value">{formatUsd(metricsData.largestTrade24h)}</span>
+            <span className="kpi-change">24h</span>
           </div>
         </div>
       ),
@@ -178,24 +327,26 @@ export default function MetricsView({
       content: (
         <div className="detail-kpis">
           <div className="kpi-item">
-            <span className="kpi-label">Peak Hour</span>
-            <span className="kpi-value">14:00 UTC</span>
-            <span className="kpi-change">$234K volume</span>
+            <span className="kpi-label">Total Volume</span>
+            <span className="kpi-value">{formatUsd(metricsData.totalVolume24h)}</span>
+            <span className="kpi-change">24h period</span>
           </div>
           <div className="kpi-item">
-            <span className="kpi-label">Quiet Hour</span>
-            <span className="kpi-value">05:00 UTC</span>
-            <span className="kpi-change">$12K volume</span>
+            <span className="kpi-label">Trading Hours</span>
+            <span className="kpi-value">24/7</span>
+            <span className="kpi-change">continuous</span>
           </div>
           <div className="kpi-item">
-            <span className="kpi-label">Weekend Activity</span>
-            <span className="kpi-value neg">-23%</span>
-            <span className="kpi-change">vs weekdays</span>
+            <span className="kpi-label">Activity Level</span>
+            <span className="kpi-value pos">Active</span>
+            <span className="kpi-change">{metricsData.totalTrades24h} trades</span>
           </div>
           <div className="kpi-item">
-            <span className="kpi-label">Response Time</span>
-            <span className="kpi-value">12.3s</span>
-            <span className="kpi-change">avg execution</span>
+            <span className="kpi-label">Market Trend</span>
+            <span className={`kpi-value ${metricsData.buyPressure > 50 ? 'pos' : 'neg'}`}>
+              {metricsData.buyPressure > 50 ? 'Bullish' : 'Bearish'}
+            </span>
+            <span className="kpi-change">{metricsData.buyPressure.toFixed(0)}% buy pressure</span>
           </div>
         </div>
       ),
@@ -208,56 +359,23 @@ export default function MetricsView({
         <div className="detail-kpis">
           <div className="kpi-item">
             <span className="kpi-label">New Wallets</span>
-            <span className="kpi-value">45</span>
+            <span className="kpi-value">{metricsData.uniqueWallets24h}</span>
             <span className="kpi-change">last 24h</span>
           </div>
           <div className="kpi-item">
-            <span className="kpi-label">Repeat Traders</span>
-            <span className="kpi-value pos">67%</span>
-            <span className="kpi-change">return rate</span>
+            <span className="kpi-label">Total Traders</span>
+            <span className="kpi-value pos">{metricsData.uniqueWallets24h}</span>
+            <span className="kpi-change">unique wallets</span>
           </div>
           <div className="kpi-item">
-            <span className="kpi-label">Bot Detection</span>
-            <span className="kpi-value">12%</span>
-            <span className="kpi-change">estimated</span>
+            <span className="kpi-label">Avg Trades/Wallet</span>
+            <span className="kpi-value">{(metricsData.totalTrades24h / Math.max(metricsData.uniqueWallets24h, 1)).toFixed(1)}</span>
+            <span className="kpi-change">per trader</span>
           </div>
           <div className="kpi-item">
-            <span className="kpi-label">Whale Trades</span>
-            <span className="kpi-value">8 trades</span>
-            <span className="kpi-change">&gt;$10K size</span>
-          </div>
-          <div className="kpi-item kpi-wide">
-            <span className="kpi-label">Trade Size Distribution</span>
-            <div className="size-distribution">
-              <div className="size-bar">
-                <span className="size-label">$0-100</span>
-                <div className="size-progress">
-                  <div className="size-fill" style={{ width: '60%' }}></div>
-                </div>
-                <span className="size-percent">60%</span>
-              </div>
-              <div className="size-bar">
-                <span className="size-label">$100-1K</span>
-                <div className="size-progress">
-                  <div className="size-fill" style={{ width: '25%' }}></div>
-                </div>
-                <span className="size-percent">25%</span>
-              </div>
-              <div className="size-bar">
-                <span className="size-label">$1K-10K</span>
-                <div className="size-progress">
-                  <div className="size-fill" style={{ width: '12%' }}></div>
-                </div>
-                <span className="size-percent">12%</span>
-              </div>
-              <div className="size-bar">
-                <span className="size-label">$10K+</span>
-                <div className="size-progress">
-                  <div className="size-fill" style={{ width: '3%' }}></div>
-                </div>
-                <span className="size-percent">3%</span>
-              </div>
-            </div>
+            <span className="kpi-label">Whale Traders</span>
+            <span className="kpi-value">{metricsData.whaleWallets.length} wallets</span>
+            <span className="kpi-change">&gt;$1K volume</span>
           </div>
         </div>
       ),

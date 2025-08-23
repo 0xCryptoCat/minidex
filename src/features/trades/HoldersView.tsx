@@ -12,6 +12,8 @@ import { formatUsd, formatShortAddr, formatCompact } from '../../lib/format';
 import { addressUrl } from '../../lib/explorer';
 import CopyButton from '../../components/CopyButton';
 import ChartLoader from '../../components/ChartLoader';
+import { trades } from '../../lib/api';
+import type { Trade } from '../../lib/types';
 
 interface HolderData {
   address: string;
@@ -56,95 +58,119 @@ export default function HoldersView({
   const [sortKey, setSortKey] = useState<SortKey>('balance');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
-  useEffect(() => {
-    // Mock data with more holders to test
-    const mockHolders: HolderData[] = [
-      {
-        address: '0x1234567890123456789012345678901234567890',
-        isContract: false,
-        balance: 1250000,
-        balanceUsd: 15750,
-        volume: 500000,
-        volumeUsd: 6300,
-        pnl: 250000,
-        pnlUsd: 3150,
-        transactions: 23,
-        firstSeen: Date.now() - 86400000 * 7,
-        lastSeen: Date.now() - 3600000,
-        avgTradeSize: 273.9,
-        largestTrade: 2500,
-        winRate: 65.2,
-      },
-      {
-        address: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
-        isContract: true,
-        balance: 890000,
-        balanceUsd: 11230,
-        volume: 1200000,
-        volumeUsd: 15120,
-        pnl: -50000,
-        pnlUsd: -630,
-        transactions: 45,
-        firstSeen: Date.now() - 86400000 * 14,
-        lastSeen: Date.now() - 7200000,
-        avgTradeSize: 336.0,
-        largestTrade: 5000,
-        winRate: 42.2,
-      },
-      {
-        address: '0x9876543210987654321098765432109876543210',
-        isContract: false,
-        balance: 675000,
-        balanceUsd: 8512,
-        volume: 320000,
-        volumeUsd: 4032,
-        pnl: 125000,
-        pnlUsd: 1575,
-        transactions: 18,
-        firstSeen: Date.now() - 86400000 * 3,
-        lastSeen: Date.now() - 1800000,
-        avgTradeSize: 224.0,
-        largestTrade: 1200,
-        winRate: 72.2,
-      },
-      {
-        address: '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
-        isContract: false,
-        balance: 450000,
-        balanceUsd: 5675,
-        volume: 780000,
-        volumeUsd: 9840,
-        pnl: 75000,
-        pnlUsd: 945,
-        transactions: 67,
-        firstSeen: Date.now() - 86400000 * 21,
-        lastSeen: Date.now() - 900000,
-        avgTradeSize: 146.9,
-        largestTrade: 800,
-        winRate: 58.2,
-      },
-      {
-        address: '0xcafebabecafebabecafebabecafebabecafebabe',
-        isContract: true,
-        balance: 320000,
-        balanceUsd: 4032,
-        volume: 650000,
-        volumeUsd: 8190,
-        pnl: -25000,
-        pnlUsd: -315,
-        transactions: 34,
-        firstSeen: Date.now() - 86400000 * 10,
-        lastSeen: Date.now() - 5400000,
-        avgTradeSize: 240.9,
-        largestTrade: 1500,
-        winRate: 47.1,
-      },
-    ];
+  // Function to derive holder data from trades
+  const deriveHoldersFromTrades = (tradesData: Trade[]): HolderData[] => {
+    if (!tradesData || tradesData.length === 0) return [];
 
-    setTimeout(() => {
-      setHolders(mockHolders);
-      setIsLoading(false);
-    }, 1000);
+    const walletMap = new Map<string, {
+      trades: Trade[];
+      balance: number;
+      totalBought: number;
+      totalSold: number;
+      totalVolume: number;
+      totalVolumeUsd: number;
+      transactions: number;
+      firstSeen: number;
+      lastSeen: number;
+      isContract: boolean;
+    }>();
+
+    // Aggregate trades by wallet
+    tradesData.forEach(trade => {
+      if (!trade.wallet) return;
+
+      const wallet = trade.wallet;
+      if (!walletMap.has(wallet)) {
+        walletMap.set(wallet, {
+          trades: [],
+          balance: 0,
+          totalBought: 0,
+          totalSold: 0,
+          totalVolume: 0,
+          totalVolumeUsd: 0,
+          transactions: 0,
+          firstSeen: trade.ts,
+          lastSeen: trade.ts,
+          isContract: wallet.length > 42 || wallet.includes('contract'), // Simple heuristic
+        });
+      }
+
+      const walletData = walletMap.get(wallet)!;
+      walletData.trades.push(trade);
+      walletData.transactions++;
+      walletData.firstSeen = Math.min(walletData.firstSeen, trade.ts);
+      walletData.lastSeen = Math.max(walletData.lastSeen, trade.ts);
+
+      const tokenAmount = trade.amountBase || 0;
+      const usdAmount = trade.amountQuote || (trade.price * tokenAmount);
+
+      if (trade.side === 'buy') {
+        walletData.totalBought += tokenAmount;
+        walletData.balance += tokenAmount;
+      } else {
+        walletData.totalSold += tokenAmount;
+        walletData.balance -= tokenAmount;
+      }
+
+      walletData.totalVolume += tokenAmount;
+      walletData.totalVolumeUsd += usdAmount;
+    });
+
+    // Convert to HolderData array
+    return Array.from(walletMap.entries()).map(([wallet, data]) => {
+      const averagePrice = data.totalVolumeUsd / data.totalVolume || 0;
+      const balanceUsd = Math.abs(data.balance) * averagePrice;
+      const pnl = data.balance > 0 ? data.balance * averagePrice - (data.totalBought * averagePrice) : 0;
+      const avgTradeSize = data.totalVolume / data.transactions;
+      const largestTrade = Math.max(...data.trades.map(t => t.amountBase || 0));
+      const winningTrades = data.trades.filter(t => {
+        // Simple win rate calculation based on if they bought low and sold high
+        const avgPrice = data.totalVolumeUsd / data.totalVolume;
+        return t.side === 'buy' ? t.price < avgPrice : t.price > avgPrice;
+      }).length;
+      const winRate = (winningTrades / data.transactions) * 100;
+
+      return {
+        address: wallet,
+        isContract: data.isContract,
+        balance: Math.abs(data.balance),
+        balanceUsd,
+        volume: data.totalVolume,
+        volumeUsd: data.totalVolumeUsd,
+        pnl: data.balance,
+        pnlUsd: pnl,
+        transactions: data.transactions,
+        firstSeen: data.firstSeen * 1000, // Convert to milliseconds
+        lastSeen: data.lastSeen * 1000,
+        avgTradeSize,
+        largestTrade,
+        winRate,
+      };
+    }).filter(holder => holder.transactions > 0); // Filter out empty holders
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+
+    trades({ pairId, chain, poolAddress, tokenAddress })
+      .then(({ data }) => {
+        if (cancelled) return;
+        
+        const holdersData = deriveHoldersFromTrades(data.trades || []);
+        setHolders(holdersData);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError('Failed to load holder data');
+        setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [pairId, chain, poolAddress, tokenAddress]);
 
   const handleSort = (key: SortKey) => {

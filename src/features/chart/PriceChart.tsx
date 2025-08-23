@@ -319,7 +319,7 @@ export default function PriceChart({
         timeVisible: true,
         secondsVisible: false,
         borderColor: 'rgba(255, 255, 255, 0.2)',
-        rightOffset: 80, // Increased for more whitespace scrolling
+        rightOffset: 50, // Increased for more whitespace scrolling
         barSpacing: 6,
         fixLeftEdge: false,
         fixRightEdge: false,
@@ -346,14 +346,14 @@ export default function PriceChart({
       },
       handleScroll: {
         mouseWheel: true,
-        pressedMouseMove: true, // Allow panning by clicking and dragging
+        pressedMouseMove: true, // Allow drag scrolling
         horzTouchDrag: true,
-        vertTouchDrag: false, // Disable vertical touch drag to prevent conflicts
+        vertTouchDrag: true,
       },
       handleScale: {
-        axisPressedMouseMove: false, // Disable scaling via axis drag
+        axisPressedMouseMove: true, // Disable scaling via axis drag
         axisDoubleClickReset: true,
-        mouseWheel: false, // Disable mouse wheel zoom to prevent conflicts
+        mouseWheel: true, // Disable mouse wheel zoom to prevent conflicts
         pinch: true, // Keep pinch zoom for mobile
       },
       kineticScroll: {

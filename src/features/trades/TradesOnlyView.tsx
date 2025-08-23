@@ -27,7 +27,11 @@ import {
 import { addressUrl, txUrl } from '../../lib/explorer';
 import ChartLoader from '../../components/ChartLoader';
 import CopyButton from '../../components/CopyButton';
+import TripleToggle from '../../components/TripleToggle';
+import HoldersView from './HoldersView';
+import MetricsView from './MetricsView';
 import '../../styles/trades.css';
+import '../../styles/trades-views.css';
 
 const ROW_HEIGHT = 52;
 
@@ -48,6 +52,8 @@ type SortKey =
   | 'tokens'
   | 'wallet';
 
+type ViewMode = 'trades' | 'holders' | 'metrics';
+
 interface ColumnConfig {
   key: SortKey;
   header: string;
@@ -65,6 +71,7 @@ export default function TradesOnlyView({
   baseSymbol,
   quoteSymbol,
 }: Props) {
+  const [viewMode, setViewMode] = useState<ViewMode>('trades');
   const [rows, setRows] = useState<Trade[]>([]);
   const [noTrades, setNoTrades] = useState(false);
   const [meta, setMeta] = useState<FetchMeta | null>(null);
@@ -699,217 +706,250 @@ export default function TradesOnlyView({
   }
 
   return (
-    <div 
-      className="trades-scroll" 
-      ref={containerRef}
-      style={{
-        // Force visibility
-        minHeight: '500px',
-        backgroundColor: 'var(--bg)' ,
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <div 
-        className="trades-table"
-        style={{
-          // Force table visibility
-          backgroundColor: 'var(--bg)',
-          width: '100%',
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
+    <div className="trades-only-view">
+      {/* Triple Toggle */}
+      <TripleToggle
+        selected={viewMode}
+        onChange={setViewMode}
+        className="trades-toggle"
+      />
+
+      {/* Conditional Rendering Based on View Mode */}
+      {viewMode === 'trades' && (
         <div 
-          className="trades-header"
+          className="trades-scroll" 
+          ref={containerRef}
           style={{
-            // Force header visibility
-            border: '3px solid var(--bg-elev)',
-            color: 'var(--text)',
-            padding: '8px 10px',
-            fontWeight: 'bold',
-            fontSize: '16px',
-            display: 'grid',
-            gridTemplateColumns: '0.5fr 1.25fr 2.5fr 1fr',
-            gap: '8px',
-            height: '40px',
+            // Force visibility
+            minHeight: '500px',
+            backgroundColor: 'var(--bg)' ,
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
-          {/* Time Column */}
-          <div
-            className="tr-cell"
-            onClick={() => handleSort('time')}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              fontWeight: 'bold',
-            }}
-          >
-            <HistoryIcon style={{ fontSize: 16, color: 'var(--text)' }} />
-            {sortKey === 'time' && (
-              sortDir === 'asc' ? 
-                <KeyboardArrowUpIcon style={{ fontSize: 14 }} /> : 
-                <KeyboardArrowDownIcon style={{ fontSize: 14 }} />
-            )}
-          </div>
-
-          {/* Price/Total Column with dual sorting */}
-          <div
-            className="tr-cell"
-            style={{ 
-              display: 'flex', 
-              justifyContent: 'space-around',
-              alignItems: 'center', 
-              fontWeight: 'bold',
-            }}
-          >
-            <div
-              onClick={() => {
-                setPriceColumnMode('total');
-                handleSort('price');
-              }}
-              style={{
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                opacity: priceColumnMode === 'total' ? 1 : 0.5,
-              }}
-            >
-              <FunctionsIcon style={{ fontSize: 16, color: 'var(--text)' }} />
-              {sortKey === 'price' && priceColumnMode === 'total' && (
-                sortDir === 'asc' ? 
-                  <KeyboardArrowUpIcon style={{ fontSize: 14 }} /> : 
-                  <KeyboardArrowDownIcon style={{ fontSize: 14 }} />
-              )}
-            </div>
-            <div style={{ width: '4px' }} />
-            <div
-              onClick={() => {
-                setPriceColumnMode('price');
-                handleSort('price');
-              }}
-              style={{
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                opacity: priceColumnMode === 'price' ? 1 : 0.6,
-              }}
-            >
-              <AttachMoneyIcon style={{ fontSize: 16, color: 'var(--text)' }} />
-              {sortKey === 'price' && priceColumnMode === 'price' && (
-                sortDir === 'asc' ? 
-                  <KeyboardArrowUpIcon style={{ fontSize: 14 }} /> : 
-                  <KeyboardArrowDownIcon style={{ fontSize: 14 }} />
-              )}
-            </div>
-          </div>
-
-          {/* Tokens Column */}
-          <div
-            className="tr-cell"
-            onClick={() => handleSort('tokens')}
-            style={{ 
+          <div 
+            className="trades-table"
+            style={{
+              // Force table visibility
+              backgroundColor: 'var(--bg)',
+              width: '100%',
+              flex: 1,
               display: 'flex',
-              justifyContent: 'center', 
-              alignItems: 'center', 
-              fontWeight: 'bold',
+              flexDirection: 'column',
             }}
           >
-            <CurrencyExchangeIcon style={{ fontSize: 16, color: 'var(--text)' }} />
-            {sortKey === 'tokens' && (
-              sortDir === 'asc' ? 
-                <KeyboardArrowUpIcon style={{ fontSize: 14 }} /> : 
-                <KeyboardArrowDownIcon style={{ fontSize: 14 }} />
-            )}
-          </div>
-
-          {/* Maker Column */}
-          <div
-            className="tr-cell"
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              fontWeight: 'bold',
-              cursor: 'default', // No pointer cursor since it's not clickable
-            }}
-          >
-            <AccountBalanceWalletIcon style={{ fontSize: 16, color: 'var(--text)' }} />
-            {/* No sorting arrows for maker column */}
-          </div>
-        </div>
-
-        {/* Trades List Container */}
-        <div className="trades-list-container" style={{ backgroundColor: 'var(--bg-elev)' }}>
-          {/* Enhanced Telegram webapp compatibility - always use fallback in Telegram */}
-          {(window as any).Telegram?.WebApp ? (
             <div 
-              className="trades-list-fallback"
-              style={{ 
-                height: Math.max(400, containerHeight - 60),
-                overflow: 'auto',
-                maxHeight: 'calc(100vh - 200px)', // Better viewport handling
-                WebkitOverflowScrolling: 'touch', // iOS smooth scrolling
+              className="trades-header"
+              style={{
+                // Force header visibility
+                border: '3px solid var(--bg-elev)',
+                color: 'var(--text)',
+                padding: '8px 10px',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                display: 'grid',
+                gridTemplateColumns: '0.5fr 1.25fr 2.5fr 1fr',
+                gap: '8px',
+                height: '40px',
               }}
             >
-              {(window as any).Telegram?.WebApp && (
-                <div style={{ 
-                  padding: 'var(--space-2)', 
-                  background: 'var(--bg-elev-2)', 
-                  fontSize: '12px',
-                  color: 'var(--text-muted)',
-                  borderRadius: 'var(--radius-small)',
-                  margin: 'var(--space-2) 0'
-                }}>
-                  🔄 Telegram webapp detected - using optimized rendering
+              {/* Time Column */}
+              <div
+                className="tr-cell"
+                onClick={() => handleSort('time')}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  fontWeight: 'bold',
+                }}
+              >
+                <HistoryIcon style={{ fontSize: 16, color: 'var(--text)' }} />
+                {sortKey === 'time' && (
+                  sortDir === 'asc' ? 
+                    <KeyboardArrowUpIcon style={{ fontSize: 14 }} /> : 
+                    <KeyboardArrowDownIcon style={{ fontSize: 14 }} />
+                )}
+              </div>
+
+              {/* Price/Total Column with dual sorting */}
+              <div
+                className="tr-cell"
+                style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-around',
+                  alignItems: 'center', 
+                  fontWeight: 'bold',
+                }}
+              >
+                <div
+                  onClick={() => {
+                    setPriceColumnMode('total');
+                    handleSort('price');
+                  }}
+                  style={{
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    opacity: priceColumnMode === 'total' ? 1 : 0.5,
+                  }}
+                >
+                  <FunctionsIcon style={{ fontSize: 16, color: 'var(--text)' }} />
+                  {sortKey === 'price' && priceColumnMode === 'total' && (
+                    sortDir === 'asc' ? 
+                      <KeyboardArrowUpIcon style={{ fontSize: 14 }} /> : 
+                      <KeyboardArrowDownIcon style={{ fontSize: 14 }} />
+                  )}
                 </div>
-              )}
-              {sorted.map((trade, index) => {
-                const tradeId = `${trade.ts}-${trade.txHash}`;
-                const isExpanded = expandedRow === tradeId;
-                const baseHeight = ROW_HEIGHT;
-                const stats = trade.wallet ? getTraderStats(trade.wallet) : null;
-                const expandedHeight = isExpanded ? 220 : 0; // Fixed height for the new 3-section layout
-                
-                return (
-                  <div
-                    key={tradeId}
-                    style={{ 
-                      height: baseHeight + expandedHeight,
-                      width: '100%',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {Row({ index, style: { height: baseHeight + expandedHeight, width: '100%' } })}
-                  </div>
-                );
-              })}
+                <div style={{ width: '4px' }} />
+                <div
+                  onClick={() => {
+                    setPriceColumnMode('price');
+                    handleSort('price');
+                  }}
+                  style={{
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    opacity: priceColumnMode === 'price' ? 1 : 0.6,
+                  }}
+                >
+                  <AttachMoneyIcon style={{ fontSize: 16, color: 'var(--text)' }} />
+                  {sortKey === 'price' && priceColumnMode === 'price' && (
+                    sortDir === 'asc' ? 
+                      <KeyboardArrowUpIcon style={{ fontSize: 14 }} /> : 
+                      <KeyboardArrowDownIcon style={{ fontSize: 14 }} />
+                  )}
+                </div>
+              </div>
+
+              {/* Tokens Column */}
+              <div
+                className="tr-cell"
+                onClick={() => handleSort('tokens')}
+                style={{ 
+                  display: 'flex',
+                  justifyContent: 'center', 
+                  alignItems: 'center', 
+                  fontWeight: 'bold',
+                }}
+              >
+                <CurrencyExchangeIcon style={{ fontSize: 16, color: 'var(--text)' }} />
+                {sortKey === 'tokens' && (
+                  sortDir === 'asc' ? 
+                    <KeyboardArrowUpIcon style={{ fontSize: 14 }} /> : 
+                    <KeyboardArrowDownIcon style={{ fontSize: 14 }} />
+                )}
+              </div>
+
+              {/* Maker Column */}
+              <div
+                className="tr-cell"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  fontWeight: 'bold',
+                  cursor: 'default', // No pointer cursor since it's not clickable
+                }}
+              >
+                <AccountBalanceWalletIcon style={{ fontSize: 16, color: 'var(--text)' }} />
+                {/* No sorting arrows for maker column */}
+              </div>
             </div>
-          ) : (
-            <List
-              height={Math.max(300, containerHeight - 60)}
-              itemCount={sorted.length}
-              itemSize={(index: number) => {
-                const t = sorted[index];
-                const tradeId = `${t.ts}-${t.txHash}`;
-                if (expandedRow === tradeId) {
-                  const baseHeight = 100;
-                  const stats = t.wallet ? getTraderStats(t.wallet) : null;
-                  const statsHeight = stats && stats.tradeCount > 1 ? 80 : 0;
-                  return ROW_HEIGHT + baseHeight + statsHeight;
-                }
-                return ROW_HEIGHT;
-              }}
-              width="100%"
-            >
-              {Row}
-            </List>
-          )}
+
+            {/* Trades List Container */}
+            <div className="trades-list-container" style={{ backgroundColor: 'var(--bg-elev)' }}>
+              {/* Enhanced Telegram webapp compatibility - always use fallback in Telegram */}
+              {(window as any).Telegram?.WebApp ? (
+                <div 
+                  className="trades-list-fallback"
+                  style={{ 
+                    height: Math.max(400, containerHeight - 60),
+                    overflow: 'auto',
+                    maxHeight: 'calc(100vh - 200px)', // Better viewport handling
+                    WebkitOverflowScrolling: 'touch', // iOS smooth scrolling
+                  }}
+                >
+                  {(window as any).Telegram?.WebApp && (
+                    <div style={{ 
+                      padding: 'var(--space-2)', 
+                      background: 'var(--bg-elev-2)', 
+                      fontSize: '12px',
+                      color: 'var(--text-muted)',
+                      borderRadius: 'var(--radius-small)',
+                      margin: 'var(--space-2) 0'
+                    }}>
+                      🔄 Telegram webapp detected - using optimized rendering
+                    </div>
+                  )}
+                  {sorted.map((trade, index) => {
+                    const tradeId = `${trade.ts}-${trade.txHash}`;
+                    const isExpanded = expandedRow === tradeId;
+                    const baseHeight = ROW_HEIGHT;
+                    const stats = trade.wallet ? getTraderStats(trade.wallet) : null;
+                    const expandedHeight = isExpanded ? 220 : 0; // Fixed height for the new 3-section layout
+                    
+                    return (
+                      <div
+                        key={tradeId}
+                        style={{ 
+                          height: baseHeight + expandedHeight,
+                          width: '100%',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {Row({ index, style: { height: baseHeight + expandedHeight, width: '100%' } })}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <List
+                  height={Math.max(300, containerHeight - 60)}
+                  itemCount={sorted.length}
+                  itemSize={(index: number) => {
+                    const t = sorted[index];
+                    const tradeId = `${t.ts}-${t.txHash}`;
+                    if (expandedRow === tradeId) {
+                      const baseHeight = 100;
+                      const stats = t.wallet ? getTraderStats(t.wallet) : null;
+                      const statsHeight = stats && stats.tradeCount > 1 ? 80 : 0;
+                      return ROW_HEIGHT + baseHeight + statsHeight;
+                    }
+                    return ROW_HEIGHT;
+                  }}
+                  width="100%"
+                >
+                  {Row}
+                </List>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Holders View */}
+      {viewMode === 'holders' && (
+        <HoldersView
+          pairId={pairId}
+          chain={chain}
+          poolAddress={poolAddress}
+          tokenAddress={tokenAddress}
+          baseSymbol={baseSymbol}
+        />
+      )}
+
+      {/* Metrics View */}
+      {viewMode === 'metrics' && (
+        <MetricsView
+          pairId={pairId}
+          chain={chain}
+          poolAddress={poolAddress}
+          tokenAddress={tokenAddress}
+        />
+      )}
     </div>
   );
 }

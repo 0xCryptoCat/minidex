@@ -1,0 +1,364 @@
+/* Holders View Styles */
+.holders-view {
+  padding: var(--space-3);
+}
+
+.holders-header {
+  margin-bottom: var(--space-4);
+}
+
+.holders-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: var(--space-1);
+}
+
+.holders-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.holders-list {
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.holder-row {
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-3);
+  transition: background-color 0.2s ease;
+}
+
+.holder-row:hover {
+  background: var(--bg-secondary);
+}
+
+.holder-row:last-child {
+  border-bottom: none;
+}
+
+.holder-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.holder-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.holder-address {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.holder-icon {
+  color: var(--text-muted);
+}
+
+.holder-icon.contract {
+  color: var(--warning);
+}
+
+.holder-icon.wallet {
+  color: var(--brand-primary);
+}
+
+.address-text {
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.explorer-link {
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.explorer-link:hover {
+  color: var(--brand-primary);
+}
+
+.holder-type {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.holder-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-3);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.metric-usd {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.holder-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.progress-bar {
+  height: 4px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: var(--radius-full);
+}
+
+.progress-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.holders-error,
+.holders-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  color: var(--text-muted);
+}
+
+/* Metrics View Styles */
+.metrics-view {
+  padding: var(--space-3);
+}
+
+.metrics-header {
+  margin-bottom: var(--space-4);
+}
+
+.metrics-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: var(--space-1);
+}
+
+.metrics-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.metrics-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.metric-section {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.metric-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid var(--border);
+}
+
+.metric-section-header:hover {
+  background: var(--bg-secondary);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.section-icon {
+  color: var(--brand-primary);
+  display: flex;
+  align-items: center;
+}
+
+.section-toggle {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.metric-section-content {
+  padding: var(--space-3);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
+}
+
+.metric-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.metric-card.wide {
+  grid-column: 1 / -1;
+}
+
+.metric-card .metric-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-1);
+}
+
+.metric-card .metric-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: var(--space-1);
+}
+
+.metric-card .metric-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.metric-change {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.metric-change.positive {
+  color: var(--buy-primary);
+}
+
+.metric-change.negative {
+  color: var(--sell-primary);
+}
+
+/* Distribution Chart */
+.distribution-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.distribution-bar {
+  display: grid;
+  grid-template-columns: 80px 1fr 40px;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bar-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.bar-container {
+  height: 20px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-small);
+  overflow: hidden;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary));
+  transition: width 0.3s ease;
+}
+
+.bar-value {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Trades Only View Container */
+.trades-only-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.trades-toggle {
+  margin-bottom: var(--space-3);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .holder-metrics {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: var(--space-2);
+  }
+  
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .distribution-bar {
+    grid-template-columns: 60px 1fr 35px;
+    gap: var(--space-1);
+  }
+}

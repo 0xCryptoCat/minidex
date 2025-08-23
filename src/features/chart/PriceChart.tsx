@@ -319,7 +319,7 @@ export default function PriceChart({
         timeVisible: true,
         secondsVisible: false,
         borderColor: 'rgba(255, 255, 255, 0.2)',
-        rightOffset: 12,
+        rightOffset: 80, // Increased for more whitespace scrolling
         barSpacing: 6,
         fixLeftEdge: false,
         fixRightEdge: false,
@@ -328,7 +328,8 @@ export default function PriceChart({
         allowShiftVisibleRangeOnWhitespaceReplacement: true,
         allowBoldLabels: false,
         uniformDistribution: false,
-        // Remove tickMarkFormatter to enable proper whitespace scrolling
+        visible: true,
+        minimumHeight: 50,
       },
       rightPriceScale: {
         borderColor: 'rgba(255, 255, 255, 0.2)',

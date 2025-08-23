@@ -662,6 +662,7 @@ body.keyboard-open {
   justify-content: center;
   background: var(--bg);
   border-radius: var(--radius);
+  min-height: 400px; /* Ensure minimum height for better visibility */
 }
 
 .chart-loader-content {
@@ -669,6 +670,7 @@ body.keyboard-open {
   flex-direction: column;
   align-items: center;
   gap: var(--space-4);
+  padding: var(--space-6);
 }
 
 .chart-loader-animation {

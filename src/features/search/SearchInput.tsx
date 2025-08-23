@@ -57,6 +57,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
           setResults(searchResults);
           
           // Only show error if this was a forced search (Enter pressed) and no results
+          // color errors red and small font size
           if (searchResults.length === 0 && q.length > 0 && force) {
             setHasError(true);
             setErrorMessage(isAddress(q) ? 'Token address not found' : 'No tokens found matching your search');
@@ -252,11 +253,6 @@ export default function SearchInput({ autoFocus, large }: Props) {
         >
           <PasteIcon fontSize="inherit" />
         </button>
-        <div className="search-status-indicator">
-          {hasError && !isLoading && (
-            <span style={{ color: '#ef4444', fontSize: '16px' }}>⚠️</span>
-          )}
-        </div>
       </div>
       
       {hasError && errorMessage && (

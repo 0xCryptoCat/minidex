@@ -69,26 +69,39 @@ export default function ChartOnlyView({
       return;
     }
     
-    const allTimeframes: Timeframe[] = ['1m', '5m', '15m', '1h', '4h', '1d'];
+    // Complete list of all possible timeframes
+    const allTimeframes: Timeframe[] = ['1m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '12h', '1d'];
     const order: Timeframe[] =
-      provider === 'cg' ? ['1m', '5m'] : provider === 'gt' ? ['5m', '15m', '1h'] : allTimeframes;
+      provider === 'cg' ? ['1m', '5m', '15m', '30m', '1h'] : 
+      provider === 'gt' ? ['5m', '15m', '30m', '1h', '4h', '1d'] : 
+      allTimeframes;
       
     (async () => {
       setTfLoading(true);
       setTfError(false);
-      const availableTfList: Timeframe[] = [];
+      const availableTfSet = new Set<Timeframe>(); // Use Set to avoid duplicates
       
       // Test all timeframes to see which are available
       for (const t of allTimeframes) {
         try {
           const res = await ohlc({ pairId, chain, poolAddress, tf: t });
-          if (res.data.candles.length > 0 || res.data.effectiveTf) {
-            availableTfList.push(res.data.effectiveTf || t);
+          if (res.data.candles.length > 0) {
+            // Add both the requested timeframe and the effective timeframe
+            availableTfSet.add(t);
+            if (res.data.effectiveTf && res.data.effectiveTf !== t) {
+              availableTfSet.add(res.data.effectiveTf);
+            }
           }
         } catch {
           /* ignore and try next */
         }
       }
+      
+      // Convert set to sorted array
+      const availableTfList = Array.from(availableTfSet).sort((a, b) => {
+        const order = ['1m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '12h', '1d'];
+        return order.indexOf(a) - order.indexOf(b);
+      });
       
       setAvailableTfs(availableTfList);
       
@@ -167,35 +180,6 @@ export default function ChartOnlyView({
         borderRadius: 'var(--radius)',
       
       }}>
-        {/* Timeframe Selector Row */}
-        <div style={{ 
-          display: 'flex', 
-          gap: 'var(--space-1)', 
-          marginBottom: 'var(--space-2)',
-          flexWrap: 'wrap',
-          alignItems: 'center'
-        }}>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginRight: 'var(--space-1)' }}>TF:</span>
-          {availableTfs.map((t) => (
-            <button
-              key={t}
-              onClick={() => handleTfChange(t)}
-              style={{
-                background: tf === t ? 'var(--brand-primary)' : 'transparent',
-                border: `1px solid ${tf === t ? 'var(--brand-primary)' : 'var(--border)'}`,
-                color: tf === t ? 'white' : 'var(--text)',
-                padding: '4px 8px',
-                borderRadius: 'var(--radius-small)',
-                fontSize: '12px',
-                cursor: 'pointer',
-                transition: 'all var(--transition-fast)',
-              }}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-        
         {/* Chart Controls Grid */}
         <div style={{ 
           display: 'grid',
@@ -313,59 +297,16 @@ export default function ChartOnlyView({
             {crosshairMode === 'normal' ? <BorderInnerIcon sx={{ fontSize: 16 }} /> : <AutoFixHighIcon sx={{ fontSize: 16 }} />}
           </button>
         </div>
-        
-        {/* Display Mode Toggle */}
-        <div style={{ 
-          display: 'flex', 
-          gap: 'var(--space-1)', 
-          marginTop: 'var(--space-2)',
-          alignItems: 'center'
-        }}>
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginRight: 'var(--space-1)' }}>Display:</span>
-          <button
-            onClick={() => setDisplayMode('price')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: displayMode === 'price' ? 'var(--brand-primary)' : 'var(--text-muted)',
-              padding: '4px 8px',
-              borderRadius: 'var(--radius-small)',
-              fontSize: '12px',
-              cursor: 'pointer',
-              fontWeight: displayMode === 'price' ? 600 : 400,
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            Price
-          </button>
-          <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>/</span>
-          <button
-            onClick={() => setDisplayMode('marketcap')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: displayMode === 'marketcap' ? 'var(--brand-primary)' : 'var(--text-muted)',
-              padding: '4px 8px',
-              borderRadius: 'var(--radius-small)',
-              fontSize: '12px',
-              cursor: 'pointer',
-              fontWeight: displayMode === 'marketcap' ? 600 : 400,
-              transition: 'all var(--transition-fast)',
-            }}
-          >
-            MCap
-          </button>
-        </div>
       </div>
 
       {/* OHLCV Data Section */}
-      <div className="section ohlcv-section" style={{ 
+      {/* <div className="section ohlcv-section" style={{ 
         margin: '0 16px 10px',
         padding: 'var(--space-2)',
         background: 'var(--bg-elev)',
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius)',
-      }}>
+        }}>
         <div id="ohlcv-display" style={{ 
           fontSize: '12px',
           fontFamily: 'monospace',
@@ -373,29 +314,105 @@ export default function ChartOnlyView({
           minHeight: '20px',
           display: 'flex',
           alignItems: 'center'
-        }}>
-          {/* This will be populated by the chart component */}
+          }}>
+          {/ This will be populated by the chart component /}
           <span style={{ color: 'var(--text-muted)' }}>Hover over chart for OHLCV data</span>
         </div>
       </div>
 
-      {showMarkers && noTrades && (
-        <div className="no-trades-notice">
-          <div>No trades available</div>
-          {meta && formatFetchMeta(meta) && (
-            <div className="meta-info">{formatFetchMeta(meta)}</div>
-          )}
+        {showMarkers && noTrades && (
+          <div className="no-trades-notice">
+            <div>No trades available</div>
+            {meta && formatFetchMeta(meta) && (
+              <div className="meta-info">{formatFetchMeta(meta)}</div>
+            )}
+          </div>
+        )} */}
+        
+      <div>
+        {/* Chart Container - full width, no margins, no background */}
+        <div style={{ 
+          flex: 1, 
+          position: 'relative',
+          width: '100%',
+          margin: '0',
+          padding: '0'
+        }}>
+          {/* Timeframe Selector Row */}
+          <div style={{ 
+            display: 'flex', 
+            gap: 'var(--space-1)', 
+            marginBottom: 'var(--space-2)',
+            flexWrap: 'wrap',
+            alignItems: 'center'
+            }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginRight: 'var(--space-1)' }}>TF:</span>
+            <select
+              value={tf || ''}
+              onChange={(e) => handleTfChange(e.target.value as Timeframe)}
+              style={{
+                background: 'var(--bg-elev)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
+                padding: '4px 8px',
+                borderRadius: 'var(--radius-small)',
+                fontSize: '12px',
+                cursor: 'pointer',
+                minWidth: '60px',
+                outline: 'none',
+              }}
+            >
+              {availableTfs.map((t) => (
+                <option key={t} value={t} style={{ background: 'var(--bg-elev)', color: 'var(--text)' }}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Display Mode Toggle */}
+          <div style={{ 
+            display: 'flex', 
+            gap: 'var(--space-1)', 
+            marginTop: 'var(--space-2)',
+            alignItems: 'center'
+            }}>
+            <button
+              onClick={() => setDisplayMode('price')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: displayMode === 'price' ? 'var(--brand-primary)' : 'var(--text-muted)',
+                padding: '4px 8px',
+                borderRadius: 'var(--radius-small)',
+                fontSize: '12px',
+                cursor: 'pointer',
+                fontWeight: displayMode === 'price' ? 600 : 400,
+                transition: 'all var(--transition-fast)',
+              }}
+            >
+              Price
+            </button>
+            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>/</span>
+            <button
+              onClick={() => setDisplayMode('marketcap')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: displayMode === 'marketcap' ? 'var(--brand-primary)' : 'var(--text-muted)',
+                padding: '4px 8px',
+                borderRadius: 'var(--radius-small)',
+                fontSize: '12px',
+                cursor: 'pointer',
+                fontWeight: displayMode === 'marketcap' ? 600 : 400,
+                transition: 'all var(--transition-fast)',
+              }}>
+              MCap
+            </button>
+          </div>
         </div>
-      )}
 
-      {/* Chart Container - full width, no margins, no background */}
-      <div style={{ 
-        flex: 1, 
-        position: 'relative',
-        width: '100%',
-        margin: '0',
-        padding: '0'
-      }}>
+        {/* Chart Component */}
         <PriceChart
           pairId={pairId}
           tf={tf}

@@ -323,7 +323,7 @@ export default function SearchInput({ autoFocus, large }: Props) {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
-                  <div className="token-icon-container" style={{ borderRadius: '10px' }}>
+                  <div className="token-icon-container">
                     {r.icon ? (
                       <img 
                         src={r.icon ? r.icon : 'https://placehold.co/36x36/black/gray/?text=?'} 
@@ -390,8 +390,8 @@ export default function SearchInput({ autoFocus, large }: Props) {
                               alt={dex}
                               title={dex}
                               style={{ 
-                                width: 14, 
-                                height: 14, 
+                                width: 16, 
+                                height: 16, 
                                 borderRadius: '50%', 
                                 border: '1px solid var(--border)',
                                 marginLeft: i > 0 ? '-4px' : '0',
@@ -422,13 +422,13 @@ export default function SearchInput({ autoFocus, large }: Props) {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px'
-                      }}>
+                        }}>
                         <span>{r.pools.length} pool{r.pools.length !== 1 ? 's' : ''}</span>
                         {r.liqUsd && (
-                          <span>• TVL: {formatUsd(r.liqUsd, { compact: true })}</span>
+                          <span>TVL: {formatUsd(r.liqUsd, { compact: true })}</span>
                         )}
                         {r.vol24hUsd && (
-                          <span>• Vol: {formatUsd(r.vol24hUsd, { compact: true })}</span>
+                          <span>Vol: {formatUsd(r.vol24hUsd, { compact: true })}</span>
                         )}
                       </div>
                     )}

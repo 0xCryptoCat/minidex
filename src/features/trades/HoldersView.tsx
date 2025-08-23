@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { VariableSizeList as List } from 'react-window';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
 import LaunchIcon from '@mui/icons-material/Launch';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { formatUsd, formatShortAddr, formatCompact } from '../../lib/format';
 import { addressUrl } from '../../lib/explorer';
 import CopyButton from '../../components/CopyButton';
@@ -21,6 +25,9 @@ interface HolderData {
   transactions: number;
   firstSeen: number;
   lastSeen: number;
+  avgTradeSize: number;
+  largestTrade: number;
+  winRate: number;
 }
 
 interface Props {
@@ -31,7 +38,9 @@ interface Props {
   baseSymbol?: string;
 }
 
-const ROW_HEIGHT = 72;
+type SortKey = 'balance' | 'volume' | 'pnl' | 'transactions' | 'address';
+
+const ROW_HEIGHT = 52;
 
 export default function HoldersView({
   pairId,
@@ -43,10 +52,12 @@ export default function HoldersView({
   const [holders, setHolders] = useState<HolderData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>('balance');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
-    // TODO: Implement actual holders data fetching
-    // For now, show mock data
+    // Mock data with more holders to test
     const mockHolders: HolderData[] = [
       {
         address: '0x1234567890123456789012345678901234567890',
@@ -60,6 +71,9 @@ export default function HoldersView({
         transactions: 23,
         firstSeen: Date.now() - 86400000 * 7,
         lastSeen: Date.now() - 3600000,
+        avgTradeSize: 273.9,
+        largestTrade: 2500,
+        winRate: 65.2,
       },
       {
         address: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
@@ -73,8 +87,58 @@ export default function HoldersView({
         transactions: 45,
         firstSeen: Date.now() - 86400000 * 14,
         lastSeen: Date.now() - 7200000,
+        avgTradeSize: 336.0,
+        largestTrade: 5000,
+        winRate: 42.2,
       },
-      // Add more mock data...
+      {
+        address: '0x9876543210987654321098765432109876543210',
+        isContract: false,
+        balance: 675000,
+        balanceUsd: 8512,
+        volume: 320000,
+        volumeUsd: 4032,
+        pnl: 125000,
+        pnlUsd: 1575,
+        transactions: 18,
+        firstSeen: Date.now() - 86400000 * 3,
+        lastSeen: Date.now() - 1800000,
+        avgTradeSize: 224.0,
+        largestTrade: 1200,
+        winRate: 72.2,
+      },
+      {
+        address: '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
+        isContract: false,
+        balance: 450000,
+        balanceUsd: 5675,
+        volume: 780000,
+        volumeUsd: 9840,
+        pnl: 75000,
+        pnlUsd: 945,
+        transactions: 67,
+        firstSeen: Date.now() - 86400000 * 21,
+        lastSeen: Date.now() - 900000,
+        avgTradeSize: 146.9,
+        largestTrade: 800,
+        winRate: 58.2,
+      },
+      {
+        address: '0xcafebabecafebabecafebabecafebabecafebabe',
+        isContract: true,
+        balance: 320000,
+        balanceUsd: 4032,
+        volume: 650000,
+        volumeUsd: 8190,
+        pnl: -25000,
+        pnlUsd: -315,
+        transactions: 34,
+        firstSeen: Date.now() - 86400000 * 10,
+        lastSeen: Date.now() - 5400000,
+        avgTradeSize: 240.9,
+        largestTrade: 1500,
+        winRate: 47.1,
+      },
     ];
 
     setTimeout(() => {
@@ -83,84 +147,176 @@ export default function HoldersView({
     }, 1000);
   }, [pairId, chain, poolAddress, tokenAddress]);
 
-  const renderHolderRow = ({ index, style }: { index: number; style: any }) => {
-    const holder = holders[index];
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  };
+
+  const sorted = useMemo(() => {
+    return [...holders].sort((a, b) => {
+      let aVal: any, bVal: any;
+      
+      switch (sortKey) {
+        case 'balance':
+          aVal = a.balanceUsd;
+          bVal = b.balanceUsd;
+          break;
+        case 'volume':
+          aVal = a.volumeUsd;
+          bVal = b.volumeUsd;
+          break;
+        case 'pnl':
+          aVal = a.pnlUsd;
+          bVal = b.pnlUsd;
+          break;
+        case 'transactions':
+          aVal = a.transactions;
+          bVal = b.transactions;
+          break;
+        case 'address':
+          aVal = a.address;
+          bVal = b.address;
+          break;
+        default:
+          return 0;
+      }
+      
+      if (typeof aVal === 'string') {
+        return sortDir === 'desc' ? bVal.localeCompare(aVal) : aVal.localeCompare(bVal);
+      }
+      
+      return sortDir === 'desc' ? bVal - aVal : aVal - bVal;
+    });
+  }, [holders, sortKey, sortDir]);
+
+  const Row = ({ index, style }: { index: number; style: any }) => {
+    const holder = sorted[index];
     if (!holder) return null;
 
+    const holderId = holder.address;
+    const isExpanded = expandedRow === holderId;
     const explorerUrl = addressUrl(chain, holder.address as `0x${string}`);
     const pnlColor = holder.pnlUsd >= 0 ? 'var(--buy-primary)' : 'var(--sell-primary)';
+    const timeAgo = Math.floor((Date.now() - holder.lastSeen) / (1000 * 60 * 60));
 
     return (
-      <div style={style} className="holder-row">
-        <div className="holder-main">
-          <div className="holder-info">
-            <div className="holder-address">
-              {holder.isContract ? (
-                <BusinessCenterIcon className="holder-icon contract" />
-              ) : (
-                <AccountBalanceWalletIcon className="holder-icon wallet" />
-              )}
-              <span className="address-text">{formatShortAddr(holder.address)}</span>
-              <CopyButton text={holder.address} />
-              {explorerUrl && (
-                <a
-                  href={explorerUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="explorer-link"
-                >
-                  <LaunchIcon fontSize="small" />
-                </a>
-              )}
-            </div>
-            <div className="holder-type">
-              {holder.isContract ? 'Contract' : 'Wallet'} • {holder.transactions} txs
-            </div>
+      <div style={style} className="holder-row-container">
+        {/* Main Row */}
+        <div 
+          className="holder-row"
+          onClick={() => setExpandedRow(isExpanded ? null : holderId)}
+          style={{ cursor: 'pointer' }}
+        >
+          {/* Type & Address */}
+          <div className="holder-cell address-cell">
+            {holder.isContract ? (
+              <BusinessCenterIcon className="holder-type-icon contract" />
+            ) : (
+              <AccountBalanceWalletIcon className="holder-type-icon wallet" />
+            )}
+            <span className="holder-address">{formatShortAddr(holder.address)}</span>
+            {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           </div>
 
-          <div className="holder-metrics">
-            <div className="metric">
-              <div className="metric-label">Holdings</div>
-              <div className="metric-value">
-                {formatCompact(holder.balance)} {baseSymbol}
-              </div>
-              <div className="metric-usd">{formatUsd(holder.balanceUsd)}</div>
-            </div>
-
-            <div className="metric">
-              <div className="metric-label">Volume</div>
-              <div className="metric-value">
-                {formatCompact(holder.volume)} {baseSymbol}
-              </div>
-              <div className="metric-usd">{formatUsd(holder.volumeUsd)}</div>
-            </div>
-
-            <div className="metric">
-              <div className="metric-label">P&L</div>
-              <div className="metric-value" style={{ color: pnlColor }}>
-                {holder.pnlUsd >= 0 ? '+' : ''}{formatCompact(holder.pnl)} {baseSymbol}
-              </div>
-              <div className="metric-usd" style={{ color: pnlColor }}>
-                {holder.pnlUsd >= 0 ? '+' : ''}{formatUsd(holder.pnlUsd)}
-              </div>
-            </div>
+          {/* Holdings */}
+          <div className="holder-cell holdings-cell">
+            <span className="cell-value">{formatUsd(holder.balanceUsd)}</span>
+            <span className="cell-secondary">{formatCompact(holder.balance)} {baseSymbol}</span>
           </div>
 
-          <div className="holder-progress">
-            <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{
-                  width: `${Math.min(100, (holder.balanceUsd / Math.max(...holders.map(h => h.balanceUsd))) * 100)}%`,
-                  background: holder.balanceUsd > 0 ? 'var(--brand-primary)' : 'var(--text-muted)',
-                }}
-              />
-            </div>
-            <div className="progress-label">
-              {((holder.balanceUsd / holders.reduce((sum, h) => sum + h.balanceUsd, 0)) * 100).toFixed(1)}% of total
-            </div>
+          {/* Volume */}
+          <div className="holder-cell volume-cell">
+            <span className="cell-value">{formatUsd(holder.volumeUsd)}</span>
+            <span className="cell-secondary">{holder.transactions} txs</span>
+          </div>
+
+          {/* P&L */}
+          <div className="holder-cell pnl-cell">
+            <span className="cell-value" style={{ color: pnlColor }}>
+              {holder.pnlUsd >= 0 ? '+' : ''}{formatUsd(holder.pnlUsd)}
+            </span>
+            <span className="cell-secondary">{holder.winRate.toFixed(1)}% win</span>
           </div>
         </div>
+
+        {/* Expanded Details */}
+        {isExpanded && (
+          <div className="holder-expanded">
+            <div className="expanded-grid">
+              <div className="expanded-section">
+                <div className="section-title">Wallet Info</div>
+                <div className="detail-row">
+                  <span className="detail-label">Type:</span>
+                  <span className="detail-value">{holder.isContract ? 'Contract' : 'Wallet'}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Address:</span>
+                  <div className="detail-address">
+                    <span className="detail-value">{holder.address}</span>
+                    <CopyButton text={holder.address} />
+                    {explorerUrl && (
+                      <a href={explorerUrl} target="_blank" rel="noreferrer" className="explorer-link">
+                        <LaunchIcon fontSize="small" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">First seen:</span>
+                  <span className="detail-value">{Math.floor((Date.now() - holder.firstSeen) / (1000 * 60 * 60 * 24))} days ago</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Last trade:</span>
+                  <span className="detail-value">{timeAgo < 24 ? `${timeAgo}h ago` : `${Math.floor(timeAgo/24)}d ago`}</span>
+                </div>
+              </div>
+
+              <div className="expanded-section">
+                <div className="section-title">Trading Stats</div>
+                <div className="detail-row">
+                  <span className="detail-label">Avg trade size:</span>
+                  <span className="detail-value">{formatUsd(holder.avgTradeSize)}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Largest trade:</span>
+                  <span className="detail-value">{formatUsd(holder.largestTrade)}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Win rate:</span>
+                  <span className="detail-value" style={{ color: holder.winRate > 50 ? 'var(--buy-primary)' : 'var(--sell-primary)' }}>
+                    {holder.winRate.toFixed(1)}%
+                  </span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Total P&L:</span>
+                  <span className="detail-value" style={{ color: pnlColor }}>
+                    {holder.pnlUsd >= 0 ? '+' : ''}{formatUsd(holder.pnlUsd)} ({holder.pnlUsd >= 0 ? '+' : ''}{formatCompact(holder.pnl)} {baseSymbol})
+                  </span>
+                </div>
+              </div>
+
+              <div className="expanded-section">
+                <div className="section-title">Portfolio Share</div>
+                <div className="portfolio-bar">
+                  <div 
+                    className="portfolio-fill"
+                    style={{ 
+                      width: `${Math.min(100, (holder.balanceUsd / Math.max(...holders.map(h => h.balanceUsd))) * 100)}%`,
+                      background: 'var(--brand-primary)'
+                    }}
+                  />
+                </div>
+                <div className="portfolio-percent">
+                  {((holder.balanceUsd / holders.reduce((sum, h) => sum + h.balanceUsd, 0)) * 100).toFixed(2)}% of tracked holdings
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -187,21 +343,68 @@ export default function HoldersView({
 
   return (
     <div className="holders-view">
+      {/* Header */}
       <div className="holders-header">
-        <div className="holders-title">Top Holders ({holders.length})</div>
-        <div className="holders-subtitle">
-          Showing wallets and contracts with significant holdings
+        <div className="holders-count">Top Holders ({holders.length})</div>
+      </div>
+
+      {/* Table Header */}
+      <div className="holders-table-header">
+        <div 
+          className="header-cell address-header"
+          onClick={() => handleSort('address')}
+        >
+          <AccountBalanceWalletIcon />
+          <span>Address</span>
+          {sortKey === 'address' && (
+            sortDir === 'asc' ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />
+          )}
+        </div>
+        
+        <div 
+          className="header-cell holdings-header"
+          onClick={() => handleSort('balance')}
+        >
+          <span>Holdings</span>
+          {sortKey === 'balance' && (
+            sortDir === 'asc' ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />
+          )}
+        </div>
+        
+        <div 
+          className="header-cell volume-header"
+          onClick={() => handleSort('volume')}
+        >
+          <span>Volume</span>
+          {sortKey === 'volume' && (
+            sortDir === 'asc' ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />
+          )}
+        </div>
+        
+        <div 
+          className="header-cell pnl-header"
+          onClick={() => handleSort('pnl')}
+        >
+          <span>P&L</span>
+          {sortKey === 'pnl' && (
+            sortDir === 'asc' ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />
+          )}
         </div>
       </div>
       
+      {/* Holders List */}
       <List
         height={400}
         width="100%"
-        itemCount={holders.length}
-        itemSize={() => ROW_HEIGHT}
+        itemCount={sorted.length}
+        itemSize={(index: number) => {
+          const holder = sorted[index];
+          const holderId = holder.address;
+          return expandedRow === holderId ? ROW_HEIGHT + 200 : ROW_HEIGHT;
+        }}
         className="holders-list"
       >
-        {renderHolderRow}
+        {Row}
       </List>
     </div>
   );

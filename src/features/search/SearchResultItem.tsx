@@ -85,6 +85,7 @@ export default function SearchResultItem({ result }: Props) {
             src={icon ? icon : 'https://placehold.co/36x36/black/gray/?text=?'} 
             alt={`${symbol}`} 
             className="token-icon"
+            style={{ width: '36px', height: '36px', borderRadius: '10px' }}
             onError={(e) => {
               e.currentTarget.style.display = 'none';
               const fallback = e.currentTarget.nextElementSibling as HTMLElement;
@@ -106,7 +107,7 @@ export default function SearchResultItem({ result }: Props) {
           <img 
             src={`https://placehold.co/36x36/black/gray?text=${symbol?.[0]?.toUpperCase() || 'T'}`}
             alt={`${symbol} placeholder`}
-            style={{ width: '36px', height: '36px', borderRadius: '50%' }}
+            style={{ width: '36px', height: '36px', borderRadius: '10px' }}
           />
         </div>
         {!icon && (
@@ -114,7 +115,7 @@ export default function SearchResultItem({ result }: Props) {
             src={`https://placehold.co/36x36/black/gray?text=${symbol?.[0]?.toUpperCase() || 'T'}`}
             alt={`${symbol} placeholder`}
             className="token-icon"
-            style={{ width: '36px', height: '36px', borderRadius: '50%' }}
+            style={{ width: '36px', height: '36px', borderRadius: '10px' }}
           />
         )}
       </td>

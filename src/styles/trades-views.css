@@ -1,6 +1,412 @@
-/* Holders View Styles */
+/* Trades Only View Container */
+.trades-only-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.trades-toggle {
+  margin-bottom: var(--space-3);
+}
+
+/* Holders View Styles - Redesigned as Table */
 .holders-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.holders-header {
+  padding: var(--space-3) var(--space-3) var(--space-2);
+}
+
+.holders-count {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.holders-table-header {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1fr;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.header-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+  color: var(--text);
+  transition: color 0.2s ease;
+}
+
+.header-cell:hover {
+  color: var(--brand-primary);
+}
+
+.holders-list {
+  flex: 1;
+  background: var(--bg-primary);
+}
+
+.holder-row-container {
+  border-bottom: 1px solid var(--border);
+}
+
+.holder-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1fr;
+  gap: var(--space-2);
   padding: var(--space-3);
+  align-items: center;
+  transition: background-color 0.2s ease;
+}
+
+.holder-row:hover {
+  background: var(--bg-secondary);
+}
+
+.holder-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.address-cell {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.holder-type-icon {
+  color: var(--text-muted);
+  font-size: 18px;
+}
+
+.holder-type-icon.contract {
+  color: var(--warning);
+}
+
+.holder-type-icon.wallet {
+  color: var(--brand-primary);
+}
+
+.holder-address {
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.cell-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.cell-secondary {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Expanded Details */
+.holder-expanded {
+  padding: var(--space-4);
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+}
+
+.expanded-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-4);
+}
+
+.expanded-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: var(--space-1);
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-1) 0;
+}
+
+.detail-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.detail-value {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.detail-address {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 11px;
+}
+
+.explorer-link {
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.explorer-link:hover {
+  color: var(--brand-primary);
+}
+
+.portfolio-bar {
+  height: 8px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin: var(--space-1) 0;
+}
+
+.portfolio-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: var(--radius-full);
+}
+
+.portfolio-percent {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.holders-error,
+.holders-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  color: var(--text-muted);
+}
+
+/* Metrics View Styles - Compact Grid like DetailView */
+.metrics-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.metrics-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.metric-section {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.metric-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.metric-section-header:hover {
+  background: var(--bg-secondary);
+}
+
+.section-icon {
+  color: var(--brand-primary);
+  display: flex;
+  align-items: center;
+}
+
+.section-toggle {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.metric-section-content {
+  padding: var(--space-3);
+  border-top: 1px solid var(--border);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Use detail KPIs grid style for compact metrics */
+.whale-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.whale-item {
+  background: var(--bg-elev);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  transition: transform 0.2s ease;
+}
+
+.whale-item:hover {
+  transform: translateY(-1px);
+}
+
+.whale-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.whale-address {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.whale-rank {
+  background: var(--brand-primary);
+  color: var(--text-inverse);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-small);
+}
+
+.address-text {
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.whale-largest {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.whale-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+}
+
+.whale-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Trade size distribution */
+.size-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.size-bar {
+  display: grid;
+  grid-template-columns: 60px 1fr 40px;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.size-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.size-progress {
+  height: 16px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-small);
+  overflow: hidden;
+}
+
+.size-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary));
+  transition: width 0.3s ease;
+}
+
+.size-percent {
+  font-size: 11px;
+  color: var(--text);
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .holders-table-header,
+  .holder-row {
+    grid-template-columns: 1.5fr 1fr 1fr 0.8fr;
+    gap: var(--space-1);
+    padding: var(--space-2);
+  }
+  
+  .expanded-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .whale-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .size-bar {
+    grid-template-columns: 50px 1fr 35px;
+    gap: var(--space-1);
+  }
 }
 
 .holders-header {

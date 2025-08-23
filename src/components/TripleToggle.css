@@ -1,31 +1,24 @@
 /* Triple Toggle Component */
 .triple-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--space-3);
+  margin: 0 0 10px;
 }
 
 .toggle-track {
   position: relative;
   display: flex;
-  background: var(--bg-secondary);
-  border-radius: var(--radius-full);
+  background: var(--bg-elev);
+  border-radius: 16px;
   padding: 2px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border);
+  border: 1px solid var(--bg-elev-2);
 }
 
 .toggle-slider {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: calc(33.333% - 2px);
+  width: calc(33.333%);
   height: calc(100% - 4px);
-  background: var(--brand-primary);
-  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--telegram-blue) 0%, var(--brand-secondary) 100%);
+  border-radius: 13px;
   transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .toggle-option {
@@ -60,7 +53,6 @@
 /* Responsive design */
 @media (max-width: 768px) {
   .toggle-option {
-    padding: 6px 12px;
     font-size: 13px;
     min-width: 70px;
   }

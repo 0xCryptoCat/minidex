@@ -349,7 +349,8 @@ export default function ChartOnlyView({
         <div style={{ 
           display: 'flex', 
           flexDirection: 'row',
-          position: 'relative',
+          position: 'absolute',
+          zIndex: 999,
           width: '100%',
           margin: '0',
           padding: '0'

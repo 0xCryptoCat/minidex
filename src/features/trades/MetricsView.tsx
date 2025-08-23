@@ -4,7 +4,13 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import BarChartIcon from '@mui/icons-material/BarChart';
-import PieChartIcon from '@mui/icons-material/PieChart';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import LaunchIcon from '@mui/icons-material/Launch';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { formatUsd, formatShortAddr } from '../../lib/format';
+import { addressUrl } from '../../lib/explorer';
+import CopyButton from '../../components/CopyButton';
+import '../../styles/detail.css'; // Import for kpi-item styles
 
 interface MetricSection {
   id: string;
@@ -12,6 +18,15 @@ interface MetricSection {
   icon: React.ReactNode;
   content: React.ReactNode;
   isExpanded?: boolean;
+}
+
+interface WhaleWallet {
+  address: string;
+  largestTrade: number;
+  totalVolume: number;
+  tradeCount: number;
+  avgTradeSize: number;
+  lastTradeTime: number;
 }
 
 interface Props {
@@ -27,7 +42,7 @@ export default function MetricsView({
   poolAddress,
   tokenAddress,
 }: Props) {
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['trading-metrics']));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['key-metrics']));
 
   const toggleSection = (sectionId: string) => {
     const newExpanded = new Set(expandedSections);
@@ -39,142 +54,210 @@ export default function MetricsView({
     setExpandedSections(newExpanded);
   };
 
+  // Mock whale data (replace with real data)
+  const whaleWallets: WhaleWallet[] = [
+    {
+      address: '0x1234567890123456789012345678901234567890',
+      largestTrade: 125000,
+      totalVolume: 450000,
+      tradeCount: 8,
+      avgTradeSize: 56250,
+      lastTradeTime: Date.now() - 3600000,
+    },
+    {
+      address: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+      largestTrade: 89000,
+      totalVolume: 234000,
+      tradeCount: 5,
+      avgTradeSize: 46800,
+      lastTradeTime: Date.now() - 7200000,
+    },
+    {
+      address: '0x9876543210987654321098765432109876543210',
+      largestTrade: 67000,
+      totalVolume: 187000,
+      tradeCount: 12,
+      avgTradeSize: 15583,
+      lastTradeTime: Date.now() - 1800000,
+    },
+  ];
+
   const sections: MetricSection[] = [
     {
-      id: 'trading-metrics',
-      title: 'Trading Metrics',
+      id: 'key-metrics',
+      title: 'Key Metrics',
       icon: <TrendingUpIcon />,
       content: (
-        <div className="metrics-grid">
-          <div className="metric-card">
-            <div className="metric-label">24h Volume</div>
-            <div className="metric-value">$1.2M</div>
-            <div className="metric-change positive">+15.3%</div>
+        <div className="detail-kpis">
+          <div className="kpi-item">
+            <span className="kpi-label">24h Volume</span>
+            <span className="kpi-value pos">$1.2M</span>
+            <span className="kpi-change pos">+15.3%</span>
           </div>
-          <div className="metric-card">
-            <div className="metric-label">24h Transactions</div>
-            <div className="metric-value">2,847</div>
-            <div className="metric-change positive">+8.7%</div>
+          <div className="kpi-item">
+            <span className="kpi-label">24h Trades</span>
+            <span className="kpi-value">2,847</span>
+            <span className="kpi-change pos">+8.7%</span>
           </div>
-          <div className="metric-card">
-            <div className="metric-label">Unique Traders</div>
-            <div className="metric-value">423</div>
-            <div className="metric-change negative">-2.1%</div>
+          <div className="kpi-item">
+            <span className="kpi-label">Unique Traders</span>
+            <span className="kpi-value">423</span>
+            <span className="kpi-change neg">-2.1%</span>
           </div>
-          <div className="metric-card">
-            <div className="metric-label">Avg Trade Size</div>
-            <div className="metric-value">$421</div>
-            <div className="metric-change positive">+12.4%</div>
+          <div className="kpi-item">
+            <span className="kpi-label">Price Impact</span>
+            <span className="kpi-value">0.08%</span>
+            <span className="kpi-change pos">-0.02%</span>
           </div>
-          <div className="metric-card">
-            <div className="metric-label">Buy/Sell Ratio</div>
-            <div className="metric-value">1.34</div>
-            <div className="metric-change positive">+0.12</div>
+          <div className="kpi-item">
+            <span className="kpi-label">Buy/Sell Ratio</span>
+            <span className="kpi-value">1.34</span>
+            <span className="kpi-change pos">Bullish</span>
           </div>
-          <div className="metric-card">
-            <div className="metric-label">Price Impact</div>
-            <div className="metric-value">0.08%</div>
-            <div className="metric-change positive">-0.02%</div>
+          <div className="kpi-item">
+            <span className="kpi-label">Avg Trade Size</span>
+            <span className="kpi-value">$421</span>
+            <span className="kpi-change pos">+12.4%</span>
           </div>
         </div>
       ),
     },
     {
-      id: 'time-analysis',
-      title: 'Time Analysis',
+      id: 'whale-activity',
+      title: 'Whale Activity',
+      icon: <AccountBalanceWalletIcon />,
+      content: (
+        <div className="whale-list">
+          {whaleWallets.map((whale, index) => {
+            const explorerUrl = addressUrl(chain, whale.address as `0x${string}`);
+            const timeAgo = Math.floor((Date.now() - whale.lastTradeTime) / (1000 * 60));
+            
+            return (
+              <div key={whale.address} className="whale-item">
+                <div className="whale-header">
+                  <div className="whale-address">
+                    <span className="whale-rank">#{index + 1}</span>
+                    <span className="address-text">{formatShortAddr(whale.address)}</span>
+                    <CopyButton text={whale.address} />
+                    {explorerUrl && (
+                      <a href={explorerUrl} target="_blank" rel="noreferrer" className="explorer-link">
+                        <LaunchIcon fontSize="small" />
+                      </a>
+                    )}
+                  </div>
+                  <div className="whale-largest">{formatUsd(whale.largestTrade)}</div>
+                </div>
+                <div className="whale-stats">
+                  <div className="whale-stat">
+                    <span className="stat-label">Total Volume</span>
+                    <span className="stat-value">{formatUsd(whale.totalVolume)}</span>
+                  </div>
+                  <div className="whale-stat">
+                    <span className="stat-label">Trades</span>
+                    <span className="stat-value">{whale.tradeCount}</span>
+                  </div>
+                  <div className="whale-stat">
+                    <span className="stat-label">Avg Size</span>
+                    <span className="stat-value">{formatUsd(whale.avgTradeSize)}</span>
+                  </div>
+                  <div className="whale-stat">
+                    <span className="stat-label">Last Trade</span>
+                    <span className="stat-value">{timeAgo < 60 ? `${timeAgo}m` : `${Math.floor(timeAgo/60)}h`} ago</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ),
+    },
+    {
+      id: 'time-patterns',
+      title: 'Time Patterns',
       icon: <AccessTimeIcon />,
       content: (
-        <div className="metrics-grid">
-          <div className="metric-card">
-            <div className="metric-label">Peak Hour</div>
-            <div className="metric-value">14:00 UTC</div>
-            <div className="metric-subtitle">Highest volume</div>
+        <div className="detail-kpis">
+          <div className="kpi-item">
+            <span className="kpi-label">Peak Hour</span>
+            <span className="kpi-value">14:00 UTC</span>
+            <span className="kpi-change">$234K volume</span>
           </div>
-          <div className="metric-card">
-            <div className="metric-label">Quiet Hour</div>
-            <div className="metric-value">05:00 UTC</div>
-            <div className="metric-subtitle">Lowest volume</div>
+          <div className="kpi-item">
+            <span className="kpi-label">Quiet Hour</span>
+            <span className="kpi-value">05:00 UTC</span>
+            <span className="kpi-change">$12K volume</span>
           </div>
-          <div className="metric-card">
-            <div className="metric-label">Avg Response Time</div>
-            <div className="metric-value">12.3s</div>
-            <div className="metric-subtitle">Trade execution</div>
+          <div className="kpi-item">
+            <span className="kpi-label">Weekend Activity</span>
+            <span className="kpi-value neg">-23%</span>
+            <span className="kpi-change">vs weekdays</span>
           </div>
-          <div className="metric-card">
-            <div className="metric-label">Weekend Activity</div>
-            <div className="metric-value">-23%</div>
-            <div className="metric-subtitle">vs weekdays</div>
+          <div className="kpi-item">
+            <span className="kpi-label">Response Time</span>
+            <span className="kpi-value">12.3s</span>
+            <span className="kpi-change">avg execution</span>
           </div>
         </div>
       ),
     },
     {
-      id: 'distribution',
-      title: 'Trade Distribution',
+      id: 'trader-behavior',
+      title: 'Trader Behavior',
       icon: <BarChartIcon />,
       content: (
-        <div className="metrics-grid">
-          <div className="metric-card wide">
-            <div className="metric-label">Trade Size Distribution</div>
-            <div className="distribution-chart">
-              <div className="distribution-bar">
-                <div className="bar-label">$0-100</div>
-                <div className="bar-container">
-                  <div className="bar-fill" style={{ width: '60%' }}></div>
+        <div className="detail-kpis">
+          <div className="kpi-item">
+            <span className="kpi-label">New Wallets</span>
+            <span className="kpi-value">45</span>
+            <span className="kpi-change">last 24h</span>
+          </div>
+          <div className="kpi-item">
+            <span className="kpi-label">Repeat Traders</span>
+            <span className="kpi-value pos">67%</span>
+            <span className="kpi-change">return rate</span>
+          </div>
+          <div className="kpi-item">
+            <span className="kpi-label">Bot Detection</span>
+            <span className="kpi-value">12%</span>
+            <span className="kpi-change">estimated</span>
+          </div>
+          <div className="kpi-item">
+            <span className="kpi-label">Whale Trades</span>
+            <span className="kpi-value">8 trades</span>
+            <span className="kpi-change">&gt;$10K size</span>
+          </div>
+          <div className="kpi-item kpi-wide">
+            <span className="kpi-label">Trade Size Distribution</span>
+            <div className="size-distribution">
+              <div className="size-bar">
+                <span className="size-label">$0-100</span>
+                <div className="size-progress">
+                  <div className="size-fill" style={{ width: '60%' }}></div>
                 </div>
-                <div className="bar-value">60%</div>
+                <span className="size-percent">60%</span>
               </div>
-              <div className="distribution-bar">
-                <div className="bar-label">$100-1K</div>
-                <div className="bar-container">
-                  <div className="bar-fill" style={{ width: '25%' }}></div>
+              <div className="size-bar">
+                <span className="size-label">$100-1K</span>
+                <div className="size-progress">
+                  <div className="size-fill" style={{ width: '25%' }}></div>
                 </div>
-                <div className="bar-value">25%</div>
+                <span className="size-percent">25%</span>
               </div>
-              <div className="distribution-bar">
-                <div className="bar-label">$1K-10K</div>
-                <div className="bar-container">
-                  <div className="bar-fill" style={{ width: '12%' }}></div>
+              <div className="size-bar">
+                <span className="size-label">$1K-10K</span>
+                <div className="size-progress">
+                  <div className="size-fill" style={{ width: '12%' }}></div>
                 </div>
-                <div className="bar-value">12%</div>
+                <span className="size-percent">12%</span>
               </div>
-              <div className="distribution-bar">
-                <div className="bar-label">$10K+</div>
-                <div className="bar-container">
-                  <div className="bar-fill" style={{ width: '3%' }}></div>
+              <div className="size-bar">
+                <span className="size-label">$10K+</span>
+                <div className="size-progress">
+                  <div className="size-fill" style={{ width: '3%' }}></div>
                 </div>
-                <div className="bar-value">3%</div>
+                <span className="size-percent">3%</span>
               </div>
             </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      id: 'wallet-analysis',
-      title: 'Wallet Analysis',
-      icon: <PieChartIcon />,
-      content: (
-        <div className="metrics-grid">
-          <div className="metric-card">
-            <div className="metric-label">New Wallets</div>
-            <div className="metric-value">45</div>
-            <div className="metric-subtitle">Last 24h</div>
-          </div>
-          <div className="metric-card">
-            <div className="metric-label">Whale Activity</div>
-            <div className="metric-value">8 trades</div>
-            <div className="metric-subtitle">&gt;$10K trades</div>
-          </div>
-          <div className="metric-card">
-            <div className="metric-label">Bot Detection</div>
-            <div className="metric-value">12%</div>
-            <div className="metric-subtitle">Estimated bots</div>
-          </div>
-          <div className="metric-card">
-            <div className="metric-label">Repeat Traders</div>
-            <div className="metric-value">67%</div>
-            <div className="metric-subtitle">Return rate</div>
           </div>
         </div>
       ),
@@ -183,13 +266,6 @@ export default function MetricsView({
 
   return (
     <div className="metrics-view">
-      <div className="metrics-header">
-        <div className="metrics-title">Trading Analytics</div>
-        <div className="metrics-subtitle">
-          Comprehensive trading metrics and patterns analysis
-        </div>
-      </div>
-
       <div className="metrics-sections">
         {sections.map((section) => (
           <div key={section.id} className="metric-section">

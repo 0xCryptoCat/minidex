@@ -379,25 +379,30 @@ export default function PriceChart({
       priceScaleId: 'right',
     });
     
-    chart.priceScale('right').applyOptions({
-      autoScale: false,
-    });
-    
     // Add baseline series for line chart mode (area line with dual-color fill)
     const baselineSeries = chart.addBaselineSeries({
       baseValue: { type: 'price', price: 0 }, // will be updated dynamically
-      topLineColor: '#34c759',
-      bottomLineColor: '#e13232',
+      topLineColor: '#34c759', // --buy-primary
+      bottomLineColor: '#e13232', // --sell-primary
       topFillColor1: 'rgba(52,199,89,0.75)',
       topFillColor2: 'rgba(52,199,89,0.00)',
       bottomFillColor1: 'rgba(225,50,50,0.00)',
       bottomFillColor2: 'rgba(225,50,50,0.75)',
-      lastValueVisible: false,
+      lastValueVisible: true,
       priceLineVisible: false,
       priceFormat: { type: 'price', minMove: 0.00000001, precision: 8 },
     });
     baselineSeries.applyOptions({ visible: chartType === 'line' }); // show based on chart type
-    
+
+    // Disable auto scaling on the price scale to allow free scrolling
+    baselineSeries.applyOptions({
+      priceScaleId: 'right',
+    });
+
+    chart.priceScale('right').applyOptions({
+      autoScale: true,
+    });
+
     // Add volume histogram series with theme colors
     const volumeSeries = chart.addHistogramSeries({
       priceScaleId: '',

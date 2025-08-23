@@ -58,6 +58,30 @@ export default function HoldersView({
   const [sortKey, setSortKey] = useState<SortKey>('balance');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
 
+  useEffect(() => {
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+
+    trades({ pairId, chain, poolAddress, tokenAddress })
+      .then(({ data }) => {
+        if (cancelled) return;
+        
+        const holdersData = deriveHoldersFromTrades(data.trades || []);
+        setHolders(holdersData);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError('Failed to load trader data');
+        setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pairId, chain, poolAddress, tokenAddress]);
+
   // Function to derive holder data from trades
   const deriveHoldersFromTrades = (tradesData: Trade[]): HolderData[] => {
     if (!tradesData || tradesData.length === 0) return [];
@@ -91,7 +115,7 @@ export default function HoldersView({
           transactions: 0,
           firstSeen: trade.ts,
           lastSeen: trade.ts,
-          isContract: wallet.length > 42 || wallet.includes('contract'), // Simple heuristic
+          isContract: wallet.length > 42 || wallet.includes('contract'),
         });
       }
 
@@ -140,38 +164,14 @@ export default function HoldersView({
         pnl: data.balance,
         pnlUsd: pnl,
         transactions: data.transactions,
-        firstSeen: data.firstSeen * 1000, // Convert to milliseconds
+        firstSeen: data.firstSeen * 1000,
         lastSeen: data.lastSeen * 1000,
         avgTradeSize,
         largestTrade,
         winRate,
       };
-    }).filter(holder => holder.transactions > 0); // Filter out empty holders
+    }).filter(holder => holder.transactions > 0);
   };
-
-  useEffect(() => {
-    let cancelled = false;
-    setIsLoading(true);
-    setError(null);
-
-    trades({ pairId, chain, poolAddress, tokenAddress })
-      .then(({ data }) => {
-        if (cancelled) return;
-        
-        const holdersData = deriveHoldersFromTrades(data.trades || []);
-        setHolders(holdersData);
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError('Failed to load holder data');
-        setIsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [pairId, chain, poolAddress, tokenAddress]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -391,7 +391,7 @@ export default function HoldersView({
           className="header-cell holdings-header"
           onClick={() => handleSort('balance')}
         >
-          <span>Holdings</span>
+          <span>Current Holdings</span>
           {sortKey === 'balance' && (
             sortDir === 'asc' ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />
           )}
@@ -401,7 +401,7 @@ export default function HoldersView({
           className="header-cell volume-header"
           onClick={() => handleSort('volume')}
         >
-          <span>Volume</span>
+          <span>Total Volume</span>
           {sortKey === 'volume' && (
             sortDir === 'asc' ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />
           )}

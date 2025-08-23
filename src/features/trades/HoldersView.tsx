@@ -271,19 +271,21 @@ export default function HoldersView({
         >
           {/* Address */}
           <div className="trader-cell address-cell">
-            {trader.isContract ? (
-              <BusinessCenterIcon className="trader-type-icon contract" />
-            ) : (
-              <AccountBalanceWalletIcon className="trader-type-icon wallet" />
-            )}
-            <span className="trader-address">{formatShortAddr(trader.address)}</span>
-            <div className="expand-icon">
-              {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+              {trader.isContract ? (
+                <BusinessCenterIcon className="trader-type-icon contract" style={{ width: '16px', height: '16px' }} />
+              ) : (
+                <AccountBalanceWalletIcon className="trader-type-icon wallet" style={{ width: '16px', height: '16px' }} />
+              )}
+                <span className="trader-address">{formatShortAddr(trader.address)}</span>
             </div>
+            {/* <div className="expand-icon">
+              {isExpanded ? <ExpandLessIcon style={{ width: '14px', height: '14px' }} /> : <ExpandMoreIcon style={{ width: '14px', height: '14px' }} />}
+            </div> */}
           </div>
 
           {/* Holdings (Balance & USD Value) */}
-          <div className="trader-cell holdings-cell">
+          <div className="holdings-cell">
             <div className="cell-main">{formatUsd(trader.balanceUsd)}</div>
             <div className="cell-sub">{formatCompact(trader.balance)} {baseSymbol}</div>
           </div>
@@ -292,12 +294,10 @@ export default function HoldersView({
           <div className="trader-cell bought-sold-cell">
             <div className="bought-sold-grid">
               <div className="grid-section bought">
-                <div className="grid-label">Bought</div>
                 <div className="grid-amount">{formatCompact(trader.boughtAmount)}</div>
                 <div className="grid-usd">{formatUsd(trader.boughtUsd)}</div>
               </div>
               <div className="grid-section sold">
-                <div className="grid-label">Sold</div>
                 <div className="grid-amount">{formatCompact(trader.soldAmount)}</div>
                 <div className="grid-usd">{formatUsd(trader.soldUsd)}</div>
               </div>
@@ -330,18 +330,20 @@ export default function HoldersView({
             
             <div className="trades-mini-table">
               <div className="mini-table-header">
-                <div className="mini-cell">Time</div>
-                <div className="mini-cell">Side</div>
-                <div className="mini-cell">Amount</div>
-                <div className="mini-cell">Price</div>
-                <div className="mini-cell">Total</div>
+                <div>Time</div>
+                <div>Side</div>
+                <div>Amount</div>
+                <div>Price</div>
+                <div>Total</div>
               </div>
               
               <div className="mini-table-body">
                 {trader.trades.slice(0, 10).map((trade, idx) => (
                   <div key={idx} className="mini-trade-row">
                     <div className="mini-cell time-cell">
-                      {new Date(trade.ts * 1000).toLocaleDateString()}
+                      <time dateTime={new Date(trade.ts * 1000).toISOString()}>
+                        {new Date(trade.ts * 1000).toLocaleString()}
+                      </time>
                     </div>
                     <div className={`mini-cell side-cell ${trade.side}`}>
                       {trade.side === 'buy' ? (
@@ -349,9 +351,8 @@ export default function HoldersView({
                       ) : (
                         <TrendingDownIcon className="side-icon sell" />
                       )}
-                      {trade.side}
                     </div>
-                    <div className="mini-cell amount-cell">
+                    <div className="mini-cell amount-cell" style={{ alignItems: 'flex-end' }}>
                       {formatAmount(trade.amountBase || 0)} {baseSymbol}
                     </div>
                     <div className="mini-cell price-cell">
@@ -405,7 +406,7 @@ export default function HoldersView({
           className={`header-cell address-header ${sortKey === 'address' ? 'sorted' : ''}`}
           onClick={() => handleSort('address')}
         >
-          <span>Trader</span>
+          <span>Maker</span>
           {sortKey === 'address' && (
             sortDir === 'asc' ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />
           )}
@@ -425,7 +426,7 @@ export default function HoldersView({
           className={`header-cell volume-header ${sortKey === 'volume' ? 'sorted' : ''}`}
           onClick={() => handleSort('volume')}
         >
-          <span>Bought - Sold</span>
+          <span>Tradings</span>
           {sortKey === 'volume' && (
             sortDir === 'asc' ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />
           )}
@@ -435,7 +436,7 @@ export default function HoldersView({
           className={`header-cell pnl-header ${sortKey === 'pnl' ? 'sorted' : ''}`}
           onClick={() => handleSort('pnl')}
         >
-          <span>P&L</span>
+          <span>rPnL</span>
           {sortKey === 'pnl' && (
             sortDir === 'asc' ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />
           )}

@@ -33,18 +33,16 @@
 .header-cell {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-1);
   cursor: pointer;
   color: var(--text);
   transition: color 0.2s ease;
+  font-size: 12px;
 }
 
 .header-cell:hover {
-  color: var(--brand-primary);
-}
-
-.header-cell.sorted {
-  color: var(--brand-primary);
+  color: var(--bg-elev-2);
 }
 
 .traders-table-body {
@@ -55,17 +53,17 @@
 /* Trader Row Container */
 .trader-row-container {
   border-bottom: 1px solid var(--border-subtle);
+
 }
 
 .trader-row {
   display: grid;
   grid-template-columns: 2fr 1.5fr 2fr 1.5fr;
   gap: var(--space-2);
-  padding: var(--space-3);
   cursor: pointer;
   transition: background-color 0.2s ease;
   align-items: center;
-  min-height: 64px;
+  padding: 10px;
 }
 
 .trader-row:hover {
@@ -77,6 +75,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  justify-content: center;
 }
 
 .address-cell {
@@ -87,8 +86,8 @@
 }
 
 .trader-type-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   color: var(--text-secondary);
 }
 
@@ -100,6 +99,7 @@
   font-family: var(--font-mono);
   font-size: 14px;
   color: var(--text);
+  white-space: nowrap;
 }
 
 .expand-icon {
@@ -115,7 +115,7 @@
 }
 
 .cell-sub {
-  font-size: 12px;
+  font-size: 10px;
   color: var(--text-secondary);
 }
 
@@ -161,25 +161,27 @@
 
 /* Expanded Trader Details */
 .trader-expanded {
-  background: var(--bg-elev);
-  border-top: 1px solid var(--border);
-  padding: var(--space-4);
+  background: var(--bg);
+  border-bottom: 2px solid var(--border);
+  padding: 5px;
   max-height: 280px;
   overflow-y: auto;
+  position: relative;
+  z-index: 1;
 }
 
 .expanded-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-3);
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--border-subtle);
+  border: 1px solid var(--border);
+  padding: 10px 5px 10px 5px;
+  border-radius: 16px;
 }
 
-.expanded-header h4 {
+.expanded-header span {
   margin: 0;
-  font-size: 16px;
+  font-size: 14px;
   color: var(--text);
 }
 
@@ -206,8 +208,9 @@
   border-bottom: 1px solid var(--border-subtle);
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   text-transform: uppercase;
+  justify-items: center;
 }
 
 .mini-table-body {
@@ -222,12 +225,19 @@
   padding: var(--space-2) 0;
   border-bottom: 1px solid var(--border-subtle);
   font-size: 12px;
+  align-items: center;
 }
 
 .mini-cell {
   display: flex;
   align-items: center;
+  justify-content: center;
   color: var(--text);
+}
+
+.amount-cell {
+  display: flex;
+  flex-direction: row;
 }
 
 .side-cell {
@@ -284,7 +294,7 @@
 
 .holder-type-icon {
   color: var(--text-muted);
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .holder-type-icon.contract {
@@ -604,6 +614,12 @@
     grid-template-columns: 50px 1fr 35px;
     gap: var(--space-1);
   }
+}
+
+.holdings-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .holders-header {

@@ -435,7 +435,7 @@ html, body {
 
 /* Prevent zoom on iOS when focusing inputs */
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
-  select,
+  /* select, - Removed to allow custom timeframe selector styling */
   textarea,
   input[type="text"],
   input[type="password"],

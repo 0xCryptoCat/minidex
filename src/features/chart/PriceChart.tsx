@@ -47,6 +47,9 @@ interface Props {
   crosshairMode?: 'normal' | 'magnet';
   showGrid?: boolean;
   showCrosshairLabels?: boolean;
+  // Callbacks for chart data
+  onVolumeChange?: (volume: number) => void;
+  onBaselinePercentChange?: (percent: number) => void;
 }
 
 export default function PriceChart({
@@ -67,6 +70,8 @@ export default function PriceChart({
   crosshairMode = 'normal',
   showGrid = true,
   showCrosshairLabels = true,
+  onVolumeChange,
+  onBaselinePercentChange,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -445,6 +450,62 @@ export default function PriceChart({
       } else {
         const arr = markersMapRef.current.get(t as number);
         setHoveredMarkers(arr || null);
+      }
+
+      // Calculate and emit baseline percentage and volume for parent component
+      const candleData = candlesDataRef.current;
+      const volumeData = volumeDataRef.current;
+      
+      if (t == null) {
+        // No crosshair: use last bar data
+        const lastCandle = candleData[candleData.length - 1];
+        const lastVolume = volumeData[volumeData.length - 1];
+        
+        if (lastCandle && onBaselinePercentChange) {
+          // Get current baseline from chart
+          const range = chartRef.current?.timeScale().getVisibleRange();
+          if (range && range.from !== undefined) {
+            let idx = lowerBoundByTime(candleData, Math.floor(range.from as number));
+            if (idx >= candleData.length) idx = candleData.length - 1;
+            if (idx < 0) idx = 0;
+            const firstVisible = candleData[idx];
+            if (firstVisible) {
+              const basePrice = firstVisible.open;
+              const currentPrice = lastCandle.close;
+              const percent = ((currentPrice - basePrice) / basePrice) * 100;
+              onBaselinePercentChange(percent);
+            }
+          }
+        }
+        
+        if (lastVolume && onVolumeChange) {
+          onVolumeChange(lastVolume.value);
+        }
+      } else {
+        // Use crosshair bar data
+        const bar = candleData.find(b => b.time === t);
+        const volBar = volumeData.find(v => v.time === t);
+        
+        if (bar && onBaselinePercentChange) {
+          // Get current baseline from chart
+          const range = chartRef.current?.timeScale().getVisibleRange();
+          if (range && range.from !== undefined) {
+            let idx = lowerBoundByTime(candleData, Math.floor(range.from as number));
+            if (idx >= candleData.length) idx = candleData.length - 1;
+            if (idx < 0) idx = 0;
+            const firstVisible = candleData[idx];
+            if (firstVisible) {
+              const basePrice = firstVisible.open;
+              const currentPrice = bar.close;
+              const percent = ((currentPrice - basePrice) / basePrice) * 100;
+              onBaselinePercentChange(percent);
+            }
+          }
+        }
+        
+        if (volBar && onVolumeChange) {
+          onVolumeChange(volBar.value);
+        }
       }
 
       // Update OHLCV display in external element

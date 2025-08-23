@@ -271,13 +271,14 @@ export default function HoldersView({
         >
           {/* Address */}
           <div className="trader-cell address-cell">
-            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-              {trader.isContract ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              {/* {trader.isContract ? (
                 <BusinessCenterIcon className="trader-type-icon contract" style={{ width: '16px', height: '16px' }} />
               ) : (
                 <AccountBalanceWalletIcon className="trader-type-icon wallet" style={{ width: '16px', height: '16px' }} />
-              )}
+              )} */}
                 <span className="trader-address">{formatShortAddr(trader.address)}</span>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{trader.transactions} txs</span>
             </div>
             {/* <div className="expand-icon">
               {isExpanded ? <ExpandLessIcon style={{ width: '14px', height: '14px' }} /> : <ExpandMoreIcon style={{ width: '14px', height: '14px' }} />}
@@ -287,7 +288,7 @@ export default function HoldersView({
           {/* Holdings (Balance & USD Value) */}
           <div className="holdings-cell">
             <div className="cell-main">{formatUsd(trader.balanceUsd)}</div>
-            <div className="cell-sub">{formatCompact(trader.balance)} {baseSymbol}</div>
+            <div className="cell-sub">{formatCompact(trader.balance)} ({((trader.balance / Math.max(traders.reduce((sum, t) => sum + t.balance, 0), 1)) * 100).toFixed(2)}%)</div>
           </div>
 
           {/* Bought-Sold (2x2 Grid) */}
@@ -309,7 +310,7 @@ export default function HoldersView({
             <div className="cell-main" style={{ color: pnlColor }}>
               {trader.totalPnlUsd >= 0 ? '+' : ''}{formatUsd(trader.totalPnlUsd)}
             </div>
-            <div className="cell-sub">{trader.winRate.toFixed(1)}% win rate</div>
+            <div className="cell-sub">{trader.winRate.toFixed(1)}% wr</div>
           </div>
         </div>
 

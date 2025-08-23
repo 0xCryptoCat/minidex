@@ -62,6 +62,10 @@ export default function ChartOnlyView({
   const loggedRef = useRef(false);
   const DEBUG = (import.meta as any).env?.DEBUG === 'true';
 
+  // Chart data state for displaying values
+  const [currentVolume, setCurrentVolume] = useState<number>(0);
+  const [baselinePercent, setBaselinePercent] = useState<number>(0);
+
   useEffect(() => {
     const cached = getCachedTf(pairId, provider);
     if (cached) {
@@ -372,11 +376,9 @@ export default function ChartOnlyView({
                 background: 'var(--bg)',
                 border: '1px solid var(--border)',
                 color: 'var(--text)',
-                padding: '4px 8px',
                 borderRadius: 'var(--radius-small)',
                 fontSize: '12px',
                 cursor: 'pointer',
-                minWidth: '60px',
                 outline: 'none',
               }}
             >
@@ -426,6 +428,26 @@ export default function ChartOnlyView({
               MCap
             </button>
           </div>
+          {/* Add a value display here - when in line mode display the percent change between the base line price and the current price (use green or red based on the number) - in candlestick mode display volume value of the crosshair (or the latest) */}
+          <div style={{ 
+            marginLeft: 'auto',
+            padding: '0 16px',
+            fontSize: '12px',
+            color: chartType === 'line' 
+              ? (baselinePercent >= 0 ? '#34c759' : '#e13232')
+              : 'var(--text-muted)',
+            textAlign: 'right',
+            }}>
+            {chartType === 'line' ? (
+              <span>
+                {baselinePercent >= 0 ? '+' : ''}{baselinePercent.toFixed(2)}%
+              </span>
+            ) : (
+              <span>
+                Vol: <span style={{ color: (currentVolume >= 0 ? '#34c759' : '#e13232') }} >${currentVolume.toLocaleString()}</span>
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Chart Component */}
@@ -447,6 +469,8 @@ export default function ChartOnlyView({
           crosshairMode={crosshairMode}
           showGrid={showGrid}
           showCrosshairLabels={showCrosshairLabels}
+          onVolumeChange={setCurrentVolume}
+          onBaselinePercentChange={setBaselinePercent}
         />
       </div>
       

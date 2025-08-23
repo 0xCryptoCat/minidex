@@ -18,7 +18,7 @@
 
 .traders-table-header {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 2fr 1.5fr;
+  grid-template-columns: 1fr 2fr 2fr 1.5fr;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   background: var(--bg-elev);
@@ -58,12 +58,13 @@
 
 .trader-row {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 2fr 1.5fr;
+  grid-template-columns: 1fr 2fr 2fr 1.5fr;
   gap: var(--space-2);
   cursor: pointer;
   transition: background-color 0.2s ease;
   align-items: center;
   padding: 10px;
+  justify-items: center;
 }
 
 .trader-row:hover {
@@ -97,7 +98,7 @@
 
 .trader-address {
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 12px;
   color: var(--text);
   white-space: nowrap;
 }
@@ -110,7 +111,7 @@
 /* Cell Content */
 .cell-main {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 12px;
   color: var(--text);
 }
 
@@ -141,7 +142,7 @@
 }
 
 .grid-amount {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text);
 }

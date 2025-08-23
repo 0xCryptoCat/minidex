@@ -129,14 +129,14 @@ export default function PriceChart({
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
-    maximumFractionDigits: 5,
+    maximumFractionDigits: 2, // Reduced from 5 to 2 for cleaner display
   });
 
   // Custom price formatter that handles both price and market cap modes
   const customPriceFormatter = (price: number): string => {
     if (displayMode === 'marketcap') {
-      // For market cap, use formatPrice logic
-      return formatPrice(price);
+      // For market cap, use formatPrice logic with dollar sign
+      return `$${formatPrice(price)}`;
     } else {
       // For price mode, use USD formatting but with custom logic for small values
       if (price >= 0.01) {
@@ -321,10 +321,10 @@ export default function PriceChart({
         borderColor: 'rgba(255, 255, 255, 0.2)',
         rightOffset: 12,
         barSpacing: 6,
-        fixLeftEdge: true,
-        fixRightEdge: true,
+        fixLeftEdge: false,
+        fixRightEdge: false,
         lockVisibleTimeRangeOnResize: false,
-        shiftVisibleRangeOnNewBar: true,
+        shiftVisibleRangeOnNewBar: false,
         allowShiftVisibleRangeOnWhitespaceReplacement: true,
         allowBoldLabels: false,
         uniformDistribution: false,
@@ -369,8 +369,8 @@ export default function PriceChart({
       borderDownColor: '#e13232',
       wickUpColor: '#34c759',
       wickDownColor: '#e13232',
-      lastValueVisible: true,
-      priceLineVisible: true,
+      lastValueVisible: false,
+      priceLineVisible: false,
       priceFormat: { type: 'price', minMove: 0.00000001, precision: 8 },
     });
     
@@ -383,7 +383,7 @@ export default function PriceChart({
       topFillColor2: 'rgba(52,199,89,0.00)',
       bottomFillColor1: 'rgba(225,50,50,0.00)',
       bottomFillColor2: 'rgba(225,50,50,0.75)',
-      lastValueVisible: true,
+      lastValueVisible: false,
       priceLineVisible: false,
       priceFormat: { type: 'price', minMove: 0.00000001, precision: 8 },
     });
@@ -816,6 +816,26 @@ export default function PriceChart({
       }, 100);
     }
   }, [chartType, showVolume, hasData]);
+
+  // Effect to handle display mode changes (price vs market cap) and trigger auto-scaling
+  useEffect(() => {
+    if (!chartRef.current || !hasData) return;
+    
+    // Update the price formatter in chart options
+    chartRef.current.applyOptions({
+      localization: { 
+        priceFormatter: customPriceFormatter 
+      },
+    });
+    
+    // Force auto-scale when switching between price and market cap modes
+    // since they have vastly different scales
+    setTimeout(() => {
+      if (chartRef.current) {
+        chartRef.current.timeScale().fitContent();
+      }
+    }, 50);
+  }, [displayMode, hasData]);
 
   // Effect to handle grid and crosshair visibility changes
   useEffect(() => {

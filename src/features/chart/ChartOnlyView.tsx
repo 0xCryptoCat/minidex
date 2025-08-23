@@ -345,15 +345,15 @@ export default function ChartOnlyView({
           </div>
         )} */}
         
-      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', margin: '0 16px' }}>
-        {/* Chart Container - full width, no margins, no background */}
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
         <div style={{ 
-          flex: 1, 
+          display: 'flex', 
+          flexDirection: 'row',
           position: 'relative',
           width: '100%',
           margin: '0',
           padding: '0'
-        }}>
+         }}>
           {/* Timeframe Selector Row */}
           <div style={{ 
             display: 'flex', 

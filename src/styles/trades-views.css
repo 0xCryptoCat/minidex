@@ -152,8 +152,16 @@
   color: var(--text-secondary);
 }
 
+.grid-section.bought {
+  color: var(--buy-primary);
+}
+
 .grid-section.bought .grid-label {
   color: var(--buy-primary);
+}
+
+.grid-section.sold {
+  color: var(--sell-primary);
 }
 
 .grid-section.sold .grid-label {
@@ -173,7 +181,7 @@
 
 .expanded-header {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
   border: 1px solid var(--border);
   padding: 10px 5px 10px 5px;

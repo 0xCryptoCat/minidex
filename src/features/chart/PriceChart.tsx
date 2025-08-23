@@ -96,6 +96,8 @@ export default function PriceChart({
   const sampleCandlesLoggedRef = useRef(false);
   const rangeRafRef = useRef<number | null>(null);
   const baselineRafRef = useRef<number | null>(null);
+  const lastBaselineIndexRef = useRef<number>(-1); // Track last baseline index to prevent rapid toggling
+  const isLoadingHistoryRef = useRef<boolean>(false); // Prevent overlapping history loads
   const DEBUG = (import.meta as any).env?.DEBUG === 'true';
 
 
@@ -177,6 +179,7 @@ export default function PriceChart({
 
   // Function to update baseline base price whenever visible range changes
   // Fix: Remove chartType dependency and always recompute baseline
+  // Add debouncing to prevent rapid scale changes
   const recomputeBaselineFromFirstVisible = () => {
     if (baselineRafRef.current) return; // Prevent multiple RAF calls
     baselineRafRef.current = requestAnimationFrame(() => {
@@ -194,8 +197,17 @@ export default function PriceChart({
       if (idx >= data.length) idx = data.length - 1;
       if (idx < 0) idx = 0;
       
+      // Debouncing: Only update if the baseline index has changed significantly
+      // This prevents rapid toggling when a candle is partially visible
+      if (Math.abs(idx - lastBaselineIndexRef.current) < 1) {
+        return; // Skip update if index hasn't changed by a full candle
+      }
+      
       const firstVisible = data[idx];
       if (!firstVisible) return;
+      
+      // Update the last baseline index
+      lastBaselineIndexRef.current = idx;
       
       // Use the open price of the first visible bar as baseline (exact match to JS prototype)
       const basePrice = firstVisible.open;
@@ -355,7 +367,7 @@ export default function PriceChart({
         visible: false,
       },
       handleScroll: {
-        mouseWheel: false, // Disable zoom on scroll
+        mouseWheel: true, // Enable horizontal scrolling with mouse wheel
         pressedMouseMove: true, // Enable drag scrolling
         horzTouchDrag: true,
         vertTouchDrag: true,
@@ -386,7 +398,9 @@ export default function PriceChart({
     });
     
     // Add baseline series for line chart mode (area line with dual-color fill)
+    // Use dedicated price scale to prevent scale conflicts with candlestick series
     const baselineSeries = chart.addBaselineSeries({
+      priceScaleId: 'baseline', // Use dedicated scale to prevent conflicts
       baseValue: { type: 'price', price: 0 }, // will be updated dynamically
       topLineColor: '#34c759', // --buy-primary
       bottomLineColor: '#e13232', // --sell-primary
@@ -412,6 +426,18 @@ export default function PriceChart({
     volumeSeries.priceScale().applyOptions({
       scaleMargins: { top: 0.8, bottom: 0 },
       borderColor: 'rgba(255, 255, 255, 0.1)',
+    });
+    
+    // Configure the dedicated baseline price scale to prevent scale conflicts
+    const baselinePriceScale = chart.priceScale('baseline');
+    baselinePriceScale.applyOptions({
+      autoScale: true,
+      visible: false, // Don't show a second axis
+      scaleMargins: {
+        top: 0.1,
+        bottom: showVolume ? 0.2 : 0.1,
+      },
+      borderColor: 'rgba(255, 255, 255, 0.2)',
     });
     
     chartRef.current = chart;
@@ -440,6 +466,32 @@ export default function PriceChart({
     }
 
     chart.timeScale().subscribeVisibleTimeRangeChange(recomputeBaselineFromFirstVisible);
+
+    // Add infinite scroll for historical data loading
+    const infiniteScrollHandler = (logicalRange: any) => {
+      if (!logicalRange || isLoadingHistoryRef.current) return;
+      
+      // Load more history when user scrolls close to the left edge
+      const threshold = 20; // bars from the edge to trigger loading
+      if (logicalRange.from <= threshold) {
+        isLoadingHistoryRef.current = true;
+        
+        // TODO: Implement actual historical data loading
+        // For now, we'll just set a timeout to reset the loading flag
+        // In a real implementation, you would:
+        // 1. Calculate the timestamp for older data
+        // 2. Fetch historical candles before the current earliest timestamp
+        // 3. Prepend the data to candlesDataRef.current and volumeDataRef.current
+        // 4. Call setData on the series with the combined data
+        // 5. Preserve the current logical position to avoid jumping
+        
+        setTimeout(() => {
+          isLoadingHistoryRef.current = false;
+        }, 1000);
+      }
+    };
+    
+    chart.timeScale().subscribeVisibleLogicalRangeChange(infiniteScrollHandler);
 
     const crosshairHandler = (param: any) => {
       const t = param?.time;
@@ -611,6 +663,8 @@ export default function PriceChart({
     return () => {
       window.removeEventListener('resize', handleResize);
       chart.unsubscribeCrosshairMove(crosshairHandler);
+      chart.timeScale().unsubscribeVisibleTimeRangeChange(recomputeBaselineFromFirstVisible);
+      chart.timeScale().unsubscribeVisibleLogicalRangeChange(infiniteScrollHandler);
       chart.remove();
     };
   }, [onXDomainChange]);
@@ -745,6 +799,20 @@ export default function PriceChart({
           // Fit content only on first load for better initial view
           if (chartRef.current && transformedData.length > 0 && !hasData) {
             chartRef.current.timeScale().fitContent();
+            
+            // Add some right margin after fitting to allow future scrolling
+            setTimeout(() => {
+              if (chartRef.current) {
+                const range = chartRef.current.timeScale().getVisibleLogicalRange();
+                if (range) {
+                  // Shift view slightly left to reveal some whitespace on the right
+                  chartRef.current.timeScale().setVisibleLogicalRange({
+                    from: Math.max(0, range.from - 5), // Move 5 bars left, but not negative
+                    to: range.to
+                  });
+                }
+              }
+            }, 50);
           }
           
           // Trigger baseline recalculation for all modes (not just line)

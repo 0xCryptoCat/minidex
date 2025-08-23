@@ -9,7 +9,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import { formatUsd, formatShortAddr, formatCompact, formatAmount } from '../../lib/format';
+import { formatShortAddr, formatCompact, formatSmartAmountReact } from '../../lib/format';
 import { addressUrl } from '../../lib/explorer';
 import CopyButton from '../../components/CopyButton';
 import ChartLoader from '../../components/ChartLoader';
@@ -210,6 +210,17 @@ export default function HoldersView({
     }
   };
 
+    function formatUsd(
+    value?: number,
+    opts?: { compact?: boolean; dp?: number }
+    ): string {
+    if (value === undefined || value === null || !Number.isFinite(value)) return '-';
+    const dp = opts?.dp ?? 2;
+    if (Math.abs(value) >= 1000 && opts?.compact !== false)
+        return `$${formatCompact(value)}`;
+    return `$${value.toFixed(dp)}`;
+    }
+
   const sorted = useMemo(() => {
     return [...traders].sort((a, b) => {
       let aVal: any, bVal: any;
@@ -308,7 +319,8 @@ export default function HoldersView({
           {/* P&L (Realized + Unrealized) */}
           <div className="trader-cell pnl-cell">
             <div className="cell-main" style={{ color: pnlColor }}>
-              {trader.totalPnlUsd >= 0 ? '+' : ''}{formatUsd(trader.totalPnlUsd)}
+                {/* if the value that "formatUsd(trader.totalPnlUsd)" returns is negative like "-12.3" the function returns it like "$-12.3" so we need to turn it into "-$12.3" */}
+                {trader.totalPnlUsd < 0 ? `-${formatUsd(Math.abs(trader.totalPnlUsd))}` : `+${formatUsd(trader.totalPnlUsd)}`}
             </div>
             <div className="cell-sub">{trader.winRate.toFixed(1)}% wr</div>
           </div>
@@ -318,7 +330,7 @@ export default function HoldersView({
         {isExpanded && (
           <div className="trader-expanded">
             <div className="expanded-header">
-              <h4>Recent Trades ({trader.trades.length})</h4>
+              <span>Recent Trades ({trader.trades.length})</span>
               <div className="trader-summary">
                 <span>Realized: <span style={{ color: trader.realizedPnlUsd >= 0 ? 'var(--buy-primary)' : 'var(--sell-primary)' }}>
                   {formatUsd(trader.realizedPnlUsd)}
@@ -354,13 +366,13 @@ export default function HoldersView({
                       )}
                     </div>
                     <div className="mini-cell amount-cell" style={{ alignItems: 'flex-end' }}>
-                      {formatAmount(trade.amountBase || 0)} {baseSymbol}
+                      {formatSmartAmountReact(trade.amountBase || 0)} {baseSymbol}
                     </div>
                     <div className="mini-cell price-cell">
-                      {formatUsd(trade.price)}
+                      ${formatSmartAmountReact(trade.price)}
                     </div>
                     <div className="mini-cell total-cell">
-                      {formatUsd(trade.amountQuote || (trade.price * (trade.amountBase || 0)))}
+                      ${formatSmartAmountReact(trade.amountQuote || (trade.price * (trade.amountBase || 0)))}
                     </div>
                   </div>
                 ))}
@@ -437,7 +449,7 @@ export default function HoldersView({
           className={`header-cell pnl-header ${sortKey === 'pnl' ? 'sorted' : ''}`}
           onClick={() => handleSort('pnl')}
         >
-          <span>rPnL</span>
+          <span>PnL</span>
           {sortKey === 'pnl' && (
             sortDir === 'asc' ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />
           )}

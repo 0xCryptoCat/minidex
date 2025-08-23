@@ -430,13 +430,14 @@ export default function ChartOnlyView({
           </div>
           {/* Add a value display here - when in line mode display the percent change between the base line price and the current price (use green or red based on the number) - in candlestick mode display volume value of the crosshair (or the latest) */}
           <div style={{ 
-            marginLeft: 'auto',
             padding: '0 16px',
             fontSize: '12px',
             color: chartType === 'line' 
               ? (baselinePercent >= 0 ? '#34c759' : '#e13232')
               : 'var(--text-muted)',
-            textAlign: 'right',
+            textAlign: 'left',
+            display: 'flex', 
+            alignItems: 'center'
             }}>
             {chartType === 'line' ? (
               <span>

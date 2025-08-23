@@ -6,6 +6,7 @@ import { ohlc } from '../../lib/api';
 import { getCachedTf, setCachedTf } from '../../lib/tf-cache';
 import { getTradesCache } from '../../lib/cache';
 import { formatFetchMeta, type FetchMeta } from '../../lib/format';
+import ChartLoader from '../../components/ChartLoader';
 import { 
   Flag as FlagIcon,
   OutlinedFlag as OutlinedFlagIcon,
@@ -158,7 +159,22 @@ export default function ChartOnlyView({
   }
 
   if (tfLoading) {
-    return <div>Loading…</div>;
+    return (
+      <div style={{ 
+        height: '400px', 
+        width: '100%', 
+        position: 'relative', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: 'var(--bg-elev)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius)',
+        margin: '16px'
+      }}>
+        <ChartLoader message="Loading timeframes..." />
+      </div>
+    );
   }
 
   if (tfError || !tf) {
@@ -341,17 +357,18 @@ export default function ChartOnlyView({
           {/* Timeframe Selector Row */}
           <div style={{ 
             display: 'flex', 
-            gap: 'var(--space-1)', 
-            marginBottom: 'var(--space-2)',
+            flexDirection: 'row',
+            gap: 'var(--space-1)',
+            padding: '0 16px', 
             flexWrap: 'wrap',
-            alignItems: 'center'
+            alignItems: 'center',
+            justifyContent: 'center'
             }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginRight: 'var(--space-1)' }}>TF:</span>
             <select
               value={tf || ''}
               onChange={(e) => handleTfChange(e.target.value as Timeframe)}
               style={{
-                background: 'var(--bg-elev)',
+                background: 'var(--bg)',
                 border: '1px solid var(--border)',
                 color: 'var(--text)',
                 padding: '4px 8px',
@@ -373,8 +390,6 @@ export default function ChartOnlyView({
           {/* Display Mode Toggle */}
           <div style={{ 
             display: 'flex', 
-            gap: 'var(--space-1)', 
-            marginTop: 'var(--space-2)',
             alignItems: 'center'
             }}>
             <button

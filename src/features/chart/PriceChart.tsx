@@ -124,6 +124,30 @@ export default function PriceChart({
     return v.toFixed(4).replace(/\.?0+$/, '');
   };
 
+  // Create USD currency formatter for proper price display
+  const usdFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 5,
+  });
+
+  // Custom price formatter that handles both price and market cap modes
+  const customPriceFormatter = (price: number): string => {
+    if (displayMode === 'marketcap') {
+      // For market cap, use formatPrice logic
+      return formatPrice(price);
+    } else {
+      // For price mode, use USD formatting but with custom logic for small values
+      if (price >= 0.01) {
+        return usdFormatter.format(price);
+      } else {
+        // For very small prices, use custom formatting
+        return `$${formatPrice(price)}`;
+      }
+    }
+  };
+
   // Helper function for USD formatting in OHLCV display
   const formatUSD = (n: number | null): string => {
     if (n == null) return '-';
@@ -267,7 +291,9 @@ export default function PriceChart({
         fontSize: 12,
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       },
-      localization: { priceFormatter: formatPrice },
+      localization: { 
+        priceFormatter: customPriceFormatter 
+      },
       grid: {
         vertLines: { color: 'rgba(255, 255, 255, 0.1)', visible: showGrid },
         horzLines: { color: 'rgba(255, 255, 255, 0.1)', visible: showGrid },
@@ -334,7 +360,7 @@ export default function PriceChart({
       },
     });
     
-    // Add candlestick series with theme colors
+    // Add candlestick series with theme colors and disable autoScale
     const candleSeries = chart.addCandlestickSeries({
       upColor: '#34c759', // --buy-primary
       downColor: '#e13232', // --sell-primary
@@ -342,9 +368,19 @@ export default function PriceChart({
       borderDownColor: '#e13232',
       wickUpColor: '#34c759',
       wickDownColor: '#e13232',
-      lastValueVisible: false,
-      priceLineVisible: false,
+      lastValueVisible: true,
+      priceLineVisible: true,
       priceFormat: { type: 'price', minMove: 0.00000001, precision: 8 },
+      autoscaleInfoProvider: () => null, // Disable auto scaling
+    });
+
+    // Disable auto scaling on the price scale to allow free scrolling
+    candleSeries.applyOptions({
+      priceScaleId: 'right',
+    });
+    
+    chart.priceScale('right').applyOptions({
+      autoScale: false,
     });
     
     // Add baseline series for line chart mode (area line with dual-color fill)
@@ -578,8 +614,18 @@ export default function PriceChart({
         setMeta(meta);
         candles = data.candles;
         
+        if (DEBUG) {
+          console.log(`[PriceChart] Fetched data for tf=${tf}, got tf=${data.tf}, rollupHint=${data.rollupHint}, candles=${candles.length}`);
+        }
+        
         if (data.rollupHint === 'client' && data.tf !== tf) {
+          if (DEBUG) {
+            console.log(`[PriceChart] Rolling up candles from ${data.tf} to ${tf}`);
+          }
           candles = rollupCandles(candles, data.tf, tf);
+          if (DEBUG) {
+            console.log(`[PriceChart] After rollup: ${candles.length} candles`);
+          }
         }
         
         setEffectiveTf(data.effectiveTf);
@@ -637,6 +683,11 @@ export default function PriceChart({
           candleSeriesRef.current?.setData(transformedData);
           baselineSeriesRef.current?.setData(baselineData);
           volumeSeriesRef.current?.setData(v);
+          
+          // Fit content on first load for better initial view
+          if (chartRef.current && transformedData.length > 0) {
+            chartRef.current.timeScale().fitContent();
+          }
           
           // Trigger baseline recalculation for line chart mode
           if (chartType === 'line') {

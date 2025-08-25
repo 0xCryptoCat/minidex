@@ -14,9 +14,12 @@ export function sanitizeTrades(trades: Trade[]): Trade[] {
       t.amountBase !== undefined ? Number(t.amountBase) : undefined;
     const amountQuote =
       t.amountQuote !== undefined ? Number(t.amountQuote) : undefined;
+    const volumeUSD = 
+      t.volumeUSD !== undefined ? Number(t.volumeUSD) : undefined;
     if (!Number.isFinite(ts) || !Number.isFinite(price)) continue;
     if (amountBase !== undefined && !Number.isFinite(amountBase)) continue;
     if (amountQuote !== undefined && !Number.isFinite(amountQuote)) continue;
+    if (volumeUSD !== undefined && !Number.isFinite(volumeUSD)) continue;
     const side = t.side === 'sell' ? 'sell' : 'buy';
     clean.push({
       ts,
@@ -24,6 +27,7 @@ export function sanitizeTrades(trades: Trade[]): Trade[] {
       price,
       amountBase,
       amountQuote,
+      volumeUSD,
       txHash: t.txHash,
       wallet: t.wallet,
     });

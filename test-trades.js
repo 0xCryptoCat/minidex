@@ -1,7 +1,5 @@
- #!/usr/bin/env node
-
 // Simple test script to call trades API with fixtures
-const url = 'http://localhost:5173/.netlify/functions/trades?pairId=test&chain=ethereum&poolAddress=0x1234567890123456789012345678901234567890&limit=10';
+const url = 'http://localhost:8888/.netlify/functions/trades?pairId=test&chain=ethereum&poolAddress=0x1234567890123456789012345678901234567890&limit=10';
 
 console.log('Testing trades API with fixtures...');
 console.log('URL:', url);

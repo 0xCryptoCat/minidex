@@ -5,7 +5,7 @@
       "id": "trade_1",
       "type": "trade",
       "attributes": {
-        "block_timestamp": "2024-04-06T12:00:00Z",
+        "block_timestamp": "2025-08-25T10:00:00Z",
         "kind": "buy",
         "volume_in_usd": "550.0",
         "price_to_in_usd": "1.1",
@@ -22,7 +22,7 @@
       "id": "trade_2", 
       "type": "trade",
       "attributes": {
-        "block_timestamp": "2024-04-06T12:00:20Z",
+        "block_timestamp": "2025-08-25T10:00:20Z",
         "kind": "sell",
         "volume_in_usd": "200.0",
         "price_to_in_usd": "1.0",

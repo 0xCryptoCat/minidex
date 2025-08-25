@@ -6,3 +6,5 @@ dist
 npm-debug.log*
 .lh
 .env.development
+# Local Netlify folder
+.netlify

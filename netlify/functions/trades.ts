@@ -57,8 +57,9 @@ function isValidTokenAddress(addr?: string, chain?: string): boolean {
 }
 
 async function readFixture(path: string): Promise<any> {
-  const url = new URL(path, import.meta.url);
-  const data = await fs.readFile(url, 'utf8');
+  // Use path relative to process.cwd() instead of import.meta.url
+  const fixturePath = path.replace('../../', '');
+  const data = await fs.readFile(fixturePath, 'utf8');
   return JSON.parse(data);
 }
 
@@ -116,10 +117,13 @@ export const handler: Handler = async (event) => {
     }
 
     if (USE_FIXTURES) {
+      log('Using fixtures mode, attempting to read:', GT_FIXTURE);
       try {
         attempted.push('gt');
         const gtData = await readFixture(GT_FIXTURE);
+        log('Fixture data loaded:', gtData ? 'yes' : 'no', 'has data array:', Array.isArray(gtData.data));
         const list = Array.isArray(gtData.data) ? gtData.data : [];
+        log('Processing', list.length, 'trades from fixture');
         const tradesGt = list.map((t: any) => {
           const attrs = t.attributes || {};
           // Debug: Log raw volume_in_usd value

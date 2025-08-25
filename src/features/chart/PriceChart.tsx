@@ -341,17 +341,6 @@ export default function PriceChart({
         timeVisible: true,
         secondsVisible: false,
         borderColor: 'rgba(255, 255, 255, 0.2)',
-        rightOffset: 50, // Increased for more whitespace scrolling
-        barSpacing: 6,
-        fixLeftEdge: false,
-        fixRightEdge: false,
-        lockVisibleTimeRangeOnResize: false,
-        shiftVisibleRangeOnNewBar: false, // Can be enabled for auto-scroll when at right edge
-        allowShiftVisibleRangeOnWhitespaceReplacement: true,
-        allowBoldLabels: false,
-        uniformDistribution: false,
-        visible: true,
-        minimumHeight: 50,
       },
       rightPriceScale: {
         borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -366,22 +355,7 @@ export default function PriceChart({
       leftPriceScale: {
         visible: false,
       },
-      handleScroll: {
-        mouseWheel: true, // Enable horizontal scrolling with mouse wheel
-        pressedMouseMove: true, // Enable drag scrolling
-        horzTouchDrag: true,
-        vertTouchDrag: true,
-      },
-      handleScale: {
-        axisPressedMouseMove: true, // Re-enable axis drag scaling as per prototype
-        axisDoubleClickReset: true,
-        mouseWheel: false, // Disable mouse wheel zoom
-        pinch: true, // Keep pinch zoom for mobile
-      },
-      kineticScroll: {
-        touch: true,
-        mouse: false,
-      },
+
     });
     
     // Add candlestick series with theme colors

@@ -112,8 +112,8 @@ export default function HoldersView({
       walletData.lastSeen = Math.max(walletData.lastSeen, trade.ts);
 
       const tokenAmount = trade.amountBase || 0;
-      // Use amountQuote (USD value at time of trade) instead of calculating from current price
-      const tradeUsdValue = trade.amountQuote || trade.volumeUSD || (trade.price * tokenAmount);
+      // Use only volumeUSD (volume_in_usd from API) - no fallbacks
+      const tradeUsdValue = trade.volumeUSD || 0;
 
       if (trade.side === 'buy') {
         walletData.boughtAmount += tokenAmount;
@@ -373,7 +373,7 @@ export default function HoldersView({
                       ${formatSmartAmountReact(trade.price)}
                     </div>
                     <div className="mini-cell total-cell">
-                      ${formatSmartAmountReact(trade.amountQuote || trade.volumeUSD || (trade.price * (trade.amountBase || 0)))}
+                      ${formatSmartAmountReact(trade.volumeUSD || 0)}
                     </div>
                   </div>
                 ))}

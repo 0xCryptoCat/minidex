@@ -34,9 +34,8 @@ export function liquidityUsd(
   const buckets = new Map<number, number>();
   trades.forEach((tr) => {
     const bucket = Math.floor(tr.ts / bucketSec) * bucketSec;
-    const val =
-      tr.amountQuote ??
-      (tr.amountBase !== undefined ? tr.amountBase * (tr.price || 0) : 0);
+    // Use only volumeUSD (volume_in_usd from API) - no fallbacks
+    const val = tr.volumeUSD || 0;
     buckets.set(bucket, (buckets.get(bucket) || 0) + val);
   });
   const entries = Array.from(buckets.entries()).sort((a, b) => a[0] - b[0]);

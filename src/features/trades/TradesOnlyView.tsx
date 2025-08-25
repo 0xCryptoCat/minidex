@@ -210,20 +210,22 @@ export default function TradesOnlyView({
     const buys = traderTrades.filter(t => t.side === 'buy');
     const sells = traderTrades.filter(t => t.side === 'sell');
     
-    // Use actual trade USD values instead of calculating from current price
-    const buyUsdTotal = buys.reduce((sum, t) => sum + (t.amountQuote || t.volumeUSD || ((t.amountBase || 0) * (t.price || 0))), 0);
-    const sellUsdTotal = sells.reduce((sum, t) => sum + (t.amountQuote || t.volumeUSD || ((t.amountBase || 0) * (t.price || 0))), 0);
-    const pnlUsd = sellUsdTotal - buyUsdTotal;
-    const volumeUsd = buyUsdTotal + sellUsdTotal;
+    // Use only volumeUSD (volume_in_usd from API) - no fallbacks
+    const buyUsdTotal = buys.reduce((sum, t) => sum + (t.volumeUSD || 0), 0);
+    const sellUsdTotal = sells.reduce((sum, t) => sum + (t.volumeUSD || 0), 0);
     
     const buyBaseTotal = buys.reduce((sum, t) => sum + (t.amountBase || 0), 0);
     const sellBaseTotal = sells.reduce((sum, t) => sum + (t.amountBase || 0), 0);
     const stillHeldBase = Math.max(0, buyBaseTotal - sellBaseTotal); // Only positive holdings
     
-    // Get last known price for unrealized PnL calculation
+    // Get current price for unrealized PnL calculation
     const lastTrade = rows[rows.length - 1];
     const currentPrice = lastTrade?.price || 0;
     const unrealizedUsd = stillHeldBase > 0 ? stillHeldBase * currentPrice : 0;
+    
+    // PnL calculation: Current holding value - Buy cost + Sell proceeds
+    const pnlUsd = unrealizedUsd - buyUsdTotal + sellUsdTotal;
+    const volumeUsd = buyUsdTotal + sellUsdTotal;
     
     return {
       buyCount: buys.length,
@@ -236,7 +238,7 @@ export default function TradesOnlyView({
       buyBaseTotal,
       sellBaseTotal,
       stillHeldBase,
-      unrealizedUsd,
+      unrealizedUsd, // Unrealized P&L is the USD value of current holdings
       currentPrice
     };
   };
@@ -298,9 +300,9 @@ export default function TradesOnlyView({
       {
         key: 'price',
         header: 'Price/Total',
-        accessor: (t) => priceColumnMode === 'total' ? (t.amountBase || 0) * (t.price || 0) : t.price,
+        accessor: (t) => priceColumnMode === 'total' ? (t.volumeUSD || 0) : t.price,
         render: (t) => {
-          const total = t.amountQuote || t.volumeUSD || ((t.amountBase || 0) * (t.price || 0));
+          const total = t.volumeUSD || 0; // Use only volumeUSD (volume_in_usd from API), no fallbacks
           const sideColor = t.side === 'buy' ? 'var(--buy-primary)' : 'var(--sell-primary)';
           return (
             <div className="price-total-cell">
@@ -404,8 +406,8 @@ export default function TradesOnlyView({
     
     const traderTrades = rows.filter(t => t.wallet === wallet);
     const tradeCount = traderTrades.length;
-    // Use actual trade USD values
-    const totalVolume = traderTrades.reduce((sum, t) => sum + (t.amountQuote || t.volumeUSD || ((t.amountBase || 0) * (t.price || 0))), 0);
+    // Use only volumeUSD (volume_in_usd from API) - no fallbacks
+    const totalVolume = traderTrades.reduce((sum, t) => sum + (t.volumeUSD || 0), 0);
     const buys = traderTrades.filter(t => t.side === 'buy');
     const sells = traderTrades.filter(t => t.side === 'sell');
     

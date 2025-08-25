@@ -22,6 +22,7 @@
 /* Loading States */
 .detail-top-skeleton {
   padding: 0 16px 10px;
+  height: 300px;
 }
 
 .loading-skeleton {

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1755456083080,
@@ -12,6 +12,10 @@
                 {
                     "date": 1755518756787,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -83,17 +83,44 @@\n   }\n   return deduped;\n }\n \n+function isValidPoolAddress(addr?: string, chain?: string): boolean {\n+  if (!addr) return false;\n+\n+  // EVM chains: 0x followed by 40 hex characters\n+  if (chain && ['ethereum', 'bsc', 'polygon', 'arbitrum', 'optimism', 'avalanche', 'base', 'fantom', 'linea', 'scroll', 'zksync', 'mantle', 'moonbeam', 'moonriver', 'cronos', 'harmony', 'celo', 'aurora', 'metis', 'boba', 'kava', 'gnosis'].includes(chain)) {\n+    return /^0x[a-fA-F0-9]{40}$/.test(addr);\n+  }\n+\n+  // Solana: base58 encoded, typically 32-44 chars\n+  if (chain === 'solana') {\n+    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);\n+  }\n+\n+  // TON: EQxxxx or UQxxxx format\n+  if (chain === 'ton') {\n+    return /^(EQ|UQ)[A-Za-z0-9_-]{46}$/.test(addr);\n+  }\n+\n+  // SUI: 0x followed by 64 hex characters\n+  if (chain === 'sui') {\n+    return /^0x[a-fA-F0-9]{64}$/.test(addr);\n+  }\n+\n+  // For other chains, be more permissive\n+  return addr.length >= 10 && addr.length <= 100;\n+}\n+\n export const handler: Handler = async (event) => {\n   const pairId = event.queryStringParameters?.pairId;\n   const tf = event.queryStringParameters?.tf as Timeframe | undefined;\n   const chain = event.queryStringParameters?.chain;\n   const poolAddress = event.queryStringParameters?.poolAddress;\n   const forceProvider = event.queryStringParameters?.provider as Provider | undefined;\n   const gtSupported = event.queryStringParameters?.gtSupported !== 'false';\n   const gtNetwork = chain ? CHAIN_TO_GT_NETWORK[chain] : undefined;\n-  const validPool = /^0x[0-9a-fA-F]{40}$/.test(poolAddress || '');\n+  const validPool = isValidPoolAddress(poolAddress, chain);\n   const SUPPORTED_CHAINS = Object.keys(CHAIN_TO_GT_NETWORK);\n \n   const headers: Record<string, string> = {\n     'Content-Type': 'application/json',\n"
+                },
+                {
+                    "date": 1756118507451,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -323,8 +323,9 @@\n                   attrs.amount_base ??\n                   attrs.amount_base_token ??\n                   '0'\n               ),\n+              volumeUSD: parseFloat(attrs.volume_in_usd ?? '0'), // Map volume_in_usd from API\n             } as Trade;\n           });\n         }\n       } catch (err) {\n"
                 }
             ],
             "date": 1755456083080,

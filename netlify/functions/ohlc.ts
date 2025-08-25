@@ -324,6 +324,7 @@ export const handler: Handler = async (event) => {
                   attrs.amount_base_token ??
                   '0'
               ),
+              volumeUSD: parseFloat(attrs.volume_in_usd ?? '0'), // Map volume_in_usd from API
             } as Trade;
           });
         }

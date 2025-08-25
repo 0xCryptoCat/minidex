@@ -115,6 +115,7 @@ export default function TradesOnlyView({
               ts: t.ts,
               side: t.side,
               price: t.price,
+              volumeUSD: t.volumeUSD,
               amountBase: t.amountBase,
               amountQuote: t.amountQuote,
             }))

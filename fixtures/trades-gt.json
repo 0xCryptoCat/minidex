@@ -2,8 +2,24 @@
   "_note": "GT trade history sample",
   "pairId": "uniswap_v2_abc_weth",
   "trades": [
-    { "ts": 1712345600, "side": "buy", "price": 1.1, "amountBase": 500, "txHash": "0x111" },
-    { "ts": 1712345620, "side": "sell", "price": 1.0, "amountBase": 200, "txHash": "0x222" }
+    { 
+      "ts": 1712345600, 
+      "side": "buy", 
+      "price": 1.1, 
+      "amountBase": 500, 
+      "volumeUSD": 550.0,
+      "txHash": "0x111",
+      "wallet": "0xabc123def456789012345678901234567890abcd"
+    },
+    { 
+      "ts": 1712345620, 
+      "side": "sell", 
+      "price": 1.0, 
+      "amountBase": 200, 
+      "volumeUSD": 200.0,
+      "txHash": "0x222",
+      "wallet": "0xdef456abc789012345678901234567890abcd123"
+    }
   ],
   "provider": "gt"
 }

@@ -151,6 +151,7 @@ export const handler: Handler = async (event) => {
             const side = String(attrs.kind).toLowerCase() === 'buy' ? 'buy' : 'sell';
             const toAddr = String(attrs.to_token_address || '').toLowerCase();
             const fromAddr = String(attrs.from_token_address || '').toLowerCase();
+            const volumeUSD = Number(attrs.volume_in_usd ?? 0); // Map volume_in_usd from GT API
             let price = 0;
             let amountBase = 0;
             let amountQuote = 0;
@@ -183,6 +184,7 @@ export const handler: Handler = async (event) => {
               price,
               amountBase,
               amountQuote,
+              volumeUSD, // Map volume_in_usd from GT API
               txHash: attrs.tx_hash,
               wallet: attrs.tx_from_address,
             } as Trade;
@@ -307,6 +309,7 @@ export const handler: Handler = async (event) => {
               price,
               amountBase,
               amountQuote,
+              volumeUSD: Number(attrs.volume_in_usd ?? attrs.volumeUSD ?? attrs.volume_usd ?? 0), // Map volume from CG API
               txHash: attrs.tx_hash || attrs.txHash,
               wallet: attrs.tx_from_address || attrs.wallet || attrs.address,
             } as Trade;

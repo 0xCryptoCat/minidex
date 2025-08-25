@@ -9,6 +9,21 @@ interface SecurityGateProps {
 export default function SecurityGate({ children }: SecurityGateProps) {
   const { loading, isValidTelegram, isGroupMember, error, user, groupCheckLoading } = useTelegramAuth();
 
+  // Debug info for development
+  const isDev = import.meta.env.DEV;
+  const allowNonTelegram = import.meta.env.VITE_ALLOW_NON_TELEGRAM;
+  
+  console.log('SecurityGate Debug:', {
+    isDev,
+    allowNonTelegram,
+    loading,
+    isValidTelegram,
+    isGroupMember,
+    error,
+    user,
+    groupCheckLoading
+  });
+
   // Show loading state while checking authentication
   if (loading || groupCheckLoading) {
     return (

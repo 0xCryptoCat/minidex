@@ -67,14 +67,24 @@ class ClientAPIManager {
       // Check if we're in development mode and allow non-Telegram access
       const allowNonTelegram = import.meta.env.VITE_ALLOW_NON_TELEGRAM === 'true';
       
+      console.log('Client API Authentication:', {
+        allowNonTelegram,
+        env: import.meta.env.VITE_ALLOW_NON_TELEGRAM,
+        hasTelegram: !!(window as any).Telegram?.WebApp,
+        hasInitData: !!(window as any).Telegram?.WebApp?.initData,
+      });
+      
       let telegramData = null;
       
       // Try to get Telegram WebApp data
       const telegram = (window as any).Telegram?.WebApp;
       if (telegram?.initData) {
         telegramData = telegram.initData;
+        console.log('Using Telegram init data');
       } else if (!allowNonTelegram) {
         throw new Error('Telegram WebApp not available and non-Telegram access is disabled');
+      } else {
+        console.log('Using development mode (no Telegram data)');
       }
 
       // Request JWT token from our auth endpoint
@@ -93,10 +103,15 @@ class ClientAPIManager {
 
       if (!response.ok) {
         const error = await response.json();
+        console.error('Auth endpoint error:', error);
         throw new Error(error.error || 'Authentication failed');
       }
 
       this.authToken = await response.json();
+      console.log('Authentication successful:', { 
+        token: this.authToken.token ? 'present' : 'missing',
+        rateLimit: this.authToken.rateLimit 
+      });
       return true;
     } catch (error) {
       console.error('Authentication failed:', error);
@@ -298,11 +313,15 @@ class ClientAPIManager {
    * Search tokens across providers with fallback
    */
   async search(query: string, chain?: string): Promise<any> {
+    console.log('Search called with:', { query, chain });
+    
     const providers: (keyof typeof this.configs)[] = ['dexscreener', 'geckoterminal'];
     let lastError: Error | null = null;
 
     for (const provider of providers) {
       try {
+        console.log(`Trying search with provider: ${provider}`);
+        
         if (provider === 'dexscreener') {
           return await this.call('dexscreener', '/latest/dex/search', { q: query });
         } else if (provider === 'geckoterminal') {
@@ -315,6 +334,7 @@ class ClientAPIManager {
       }
     }
 
+    console.error('All search providers failed:', lastError);
     throw lastError || new Error('All search providers failed');
   }
 

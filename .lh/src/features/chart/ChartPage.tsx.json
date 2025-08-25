@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 13,
+            "activePatchIndex": 16,
             "patches": [
                 {
                     "date": 1755347748705,
@@ -60,6 +60,18 @@
                 {
                     "date": 1756121137051,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -10,9 +10,8 @@\n import TradesOnlyView from '../trades/TradesOnlyView';\n import copy from '../../copy/en.json';\n import { useProvider } from '../../lib/provider';\n import { resolvePairSymbols } from '../../lib/pairs';\n-\n import ChartLoader from '../../components/ChartLoader';\n \n // Views for chart page\n type View = 'chart' | 'trades' | 'detail';\n"
+                },
+                {
+                    "date": 1756122233238,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -140,9 +140,9 @@\n     currentPool && token ? resolvePairSymbols(token.symbol, currentPool) : null;\n \n   return (\n     <div className=\"chart-page\">\n-      {loading && <div className=\"loading-state\">{copy.loading}</div>}\n+      {loading && <div className=\"loading-state\"><{copy.loading}></div>}\n \n       {unsupported && (\n         <div className=\"error-state\">Network not supported (yet)</div>\n       )}\n"
+                },
+                {
+                    "date": 1756122243252,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -140,9 +140,9 @@\n     currentPool && token ? resolvePairSymbols(token.symbol, currentPool) : null;\n \n   return (\n     <div className=\"chart-page\">\n-      {loading && <div className=\"loading-state\"><{copy.loading}></div>}\n+      {loading && <div className=\"loading-state\"><ChartLoader></div>}\n \n       {unsupported && (\n         <div className=\"error-state\">Network not supported (yet)</div>\n       )}\n"
+                },
+                {
+                    "date": 1756122247026,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -140,9 +140,9 @@\n     currentPool && token ? resolvePairSymbols(token.symbol, currentPool) : null;\n \n   return (\n     <div className=\"chart-page\">\n-      {loading && <div className=\"loading-state\"><ChartLoader></div>}\n+      {loading && <div className=\"loading-state\"><ChartLoader /></div>}\n \n       {unsupported && (\n         <div className=\"error-state\">Network not supported (yet)</div>\n       )}\n"
                 }
             ],
             "date": 1755347748705,

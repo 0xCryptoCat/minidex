@@ -141,7 +141,7 @@ export default function ChartPage() {
 
   return (
     <div className="chart-page">
-      {loading && <div className="loading-state">{copy.loading}</div>}
+      {loading && <div className="loading-state"><ChartLoader /></div>}
 
       {unsupported && (
         <div className="error-state">Network not supported (yet)</div>

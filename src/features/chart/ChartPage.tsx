@@ -32,6 +32,7 @@ export default function ChartPage() {
   const [error, setError] = useState<string | null>(null);
   const [noData, setNoData] = useState(false);
   const [unsupported, setUnsupported] = useState(false);
+  const [minLoadingTime, setMinLoadingTime] = useState(true); // Ensure minimum loading time
   const { setProvider: setGlobalProvider } = useProvider();
 
   // Fetch security data for market cap calculations and general security info
@@ -60,9 +61,13 @@ export default function ChartPage() {
     setError(null);
     setProvider(null);
     setGlobalProvider('');
+    setMinLoadingTime(true);
+
+    // Ensure minimum loading time of 800ms for better UX
+    const minTimePromise = new Promise(resolve => setTimeout(resolve, 800));
 
     // Fetch pairs data
-    pairs(chain, address)
+    const pairsPromise = pairs(chain, address)
       .then(({ data }) => {
         if (cancelled) return;
         if ('error' in data) {
@@ -96,9 +101,15 @@ export default function ChartPage() {
           setError('network');
           setNoData(true);
         }
-      })
+      });
+
+    // Wait for both minimum time and data loading
+    Promise.all([minTimePromise, pairsPromise])
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setMinLoadingTime(false);
+        }
       });
 
     // Fetch token detail data
@@ -141,10 +152,21 @@ export default function ChartPage() {
 
   return (
     <div className="chart-page">
-      {/* Show loading animation for initial page load */}
-      {loading && (
-        <div className="loading-state">
-          <ChartLoader message="Loading token data..." />
+      {/* Show comprehensive loading animation for initial page load */}
+      {(loading || minLoadingTime) && (
+        <div className="page-loading-state">
+          <div className="loading-content">
+            <ChartLoader message="Loading token data..." />
+            <div className="loading-skeleton">
+              <div className="skeleton-header"></div>
+              <div className="skeleton-chart"></div>
+              <div className="skeleton-tabs">
+                <div className="skeleton-tab"></div>
+                <div className="skeleton-tab"></div>
+                <div className="skeleton-tab"></div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -152,17 +174,17 @@ export default function ChartPage() {
         <div className="error-state">Network not supported (yet)</div>
       )}
 
-      {!loading && error && (
+      {!loading && !minLoadingTime && error && (
         <div className="error-state">
           {error === 'rate_limit' ? copy.error_rate_limit : copy.error_generic}
         </div>
       )}
 
-      {!loading && !error && pools.length === 0 && (
+      {!loading && !minLoadingTime && !error && pools.length === 0 && (
         <div className="no-data-state">{copy.no_pools}</div>
       )}
 
-      {!loading && !error && pools.length > 0 && (
+      {!loading && !minLoadingTime && !error && pools.length > 0 && (
         <div className="chart-content">
           {/* Show DetailTop for all views if we have token detail */}
           {tokenDetail && currentPool && !detailLoading && (

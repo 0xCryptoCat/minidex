@@ -298,15 +298,29 @@ class ClientAPIManager {
     try {
       // Make the direct API call to external service
       // The external service sees the request coming from the user's browser, not our server
+      console.log(`Making API call to: ${url.toString()}`);
       const response = await fetch(url.toString(), requestOptions);
       
       if (!response.ok) {
+        console.error(`API call failed: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
-      return await response.json();
+      const result = await response.json();
+      console.log(`API call successful [${provider}]:`, { 
+        url: url.toString(),
+        resultKeys: Object.keys(result || {}),
+        pairCount: result?.pairs?.length 
+      });
+      return result;
     } catch (error) {
-      console.error(`API call failed [${provider}]:`, error);
+      console.error(`API call failed [${provider}]:`, {
+        url: url.toString(),
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
       throw error;
     }
   }

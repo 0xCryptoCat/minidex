@@ -98,7 +98,13 @@ export function useTelegramAuth(): TelegramAuthState {
           telegram = await waitForTelegram();
         } catch {
           // Not in Telegram environment - check if we're in development
-          const isDev = import.meta.env.DEV || import.meta.env.VITE_ALLOW_NON_TELEGRAM;
+          const isDev = import.meta.env.DEV || import.meta.env.VITE_ALLOW_NON_TELEGRAM === 'true';
+          
+          console.log('Telegram auth check:', {
+            isDev: import.meta.env.DEV,
+            allowNonTelegram: import.meta.env.VITE_ALLOW_NON_TELEGRAM,
+            finalIsDev: isDev
+          });
           
           if (isDev) {
             setState(prev => ({

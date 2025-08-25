@@ -2,7 +2,22 @@
   command = "npm run build"
   publish = "dist"
   functions = "netlify/functions"
+  edge_functions = "netlify/edge-functions"
 
+# Edge Functions Configuration - these take precedence over regular functions
+[[edge_functions]]
+  function = "tweets"
+  path = "/.netlify/functions/tweets"
+
+[[edge_functions]]
+  function = "honeypot" 
+  path = "/.netlify/functions/honeypot"
+
+[[edge_functions]]
+  function = "security"
+  path = "/.netlify/functions/security"
+
+# Redirects (edge functions are processed before these)
 [[redirects]]
   from = "/*"
   to = "/index.html"

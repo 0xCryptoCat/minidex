@@ -3,6 +3,8 @@ import { Suspense, useEffect } from 'react';
 import { routes } from './routes';
 import Header from '../components/Header';
 import BottomTabs from '../components/BottomTabs';
+import SecurityGate from '../components/SecurityGate';
+import TelegramDebug from '../components/TelegramDebug';
 import { ProviderProvider } from '../lib/provider';
 
 function Shell() {
@@ -30,6 +32,7 @@ function Shell() {
         </Suspense>
       </main>
       {showTabs && <BottomTabs />}
+      <TelegramDebug />
     </>
   );
 }
@@ -38,7 +41,9 @@ export default function App() {
   return (
     <ProviderProvider>
       <BrowserRouter>
-        <Shell />
+        <SecurityGate>
+          <Shell />
+        </SecurityGate>
       </BrowserRouter>
     </ProviderProvider>
   );

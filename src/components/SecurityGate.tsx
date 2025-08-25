@@ -57,7 +57,7 @@ export default function SecurityGate({ children }: SecurityGateProps) {
         textAlign: 'center',
       }}>
         <img 
-          src="/logo.svg" 
+          src="/logo_error.svg" 
           alt="SmallDEX" 
           style={{ height: 64, width: 'auto', marginBottom: 'var(--space-4)' }}
         />
@@ -85,9 +85,9 @@ export default function SecurityGate({ children }: SecurityGateProps) {
             margin: '0 0 var(--space-4) 0',
           }}>
             {!isValidTelegram 
-              ? "This application can only be accessed through Telegram."
+              ? "SmallDEX can only be accessed through Telegram."
               : isGroupMember === false
-              ? "You need to join our private Beta Test group to access this application."
+              ? "Please join the private Beta Test group to gain access."
               : error || "Unable to verify access permissions."
             }
           </p>

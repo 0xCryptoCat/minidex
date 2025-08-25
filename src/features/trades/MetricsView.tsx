@@ -96,7 +96,8 @@ export default function MetricsView({
     let largestTrade24h = 0;
 
     trades24h.forEach(trade => {
-      const volume = trade.amountQuote || (trade.price * (trade.amountBase || 0));
+      // Use actual trade USD value instead of calculating from current price
+      const volume = trade.amountQuote || trade.volumeUSD || (trade.price * (trade.amountBase || 0));
       totalVolume24h += volume;
       
       if (trade.side === 'buy') {
@@ -128,7 +129,8 @@ export default function MetricsView({
     trades24h.forEach(trade => {
       if (!trade.wallet) return;
       
-      const volume = trade.amountQuote || (trade.price * (trade.amountBase || 0));
+      // Use actual trade USD value
+      const volume = trade.amountQuote || trade.volumeUSD || (trade.price * (trade.amountBase || 0));
       
       if (!walletMap.has(trade.wallet)) {
         walletMap.set(trade.wallet, {

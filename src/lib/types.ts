@@ -139,7 +139,8 @@ export interface Trade {
   side: TradeSide;
   price: number;            // price in USD (token-centric)
   amountBase?: number;      // filled amount of token of interest
-  amountQuote?: number;     // filled amount of counter token
+  amountQuote?: number;     // filled amount of counter token (USD value of the trade)
+  volumeUSD?: number;       // USD volume of the trade (same as amountQuote)
   txHash?: TxHash;
   wallet?: Address;
   blockNumber?: number;

@@ -210,14 +210,15 @@ export default function TradesOnlyView({
     const buys = traderTrades.filter(t => t.side === 'buy');
     const sells = traderTrades.filter(t => t.side === 'sell');
     
-    const buyUsdTotal = buys.reduce((sum, t) => sum + ((t.amountBase || 0) * (t.price || 0)), 0);
-    const sellUsdTotal = sells.reduce((sum, t) => sum + ((t.amountBase || 0) * (t.price || 0)), 0);
+    // Use actual trade USD values instead of calculating from current price
+    const buyUsdTotal = buys.reduce((sum, t) => sum + (t.amountQuote || t.volumeUSD || ((t.amountBase || 0) * (t.price || 0))), 0);
+    const sellUsdTotal = sells.reduce((sum, t) => sum + (t.amountQuote || t.volumeUSD || ((t.amountBase || 0) * (t.price || 0))), 0);
     const pnlUsd = sellUsdTotal - buyUsdTotal;
     const volumeUsd = buyUsdTotal + sellUsdTotal;
     
     const buyBaseTotal = buys.reduce((sum, t) => sum + (t.amountBase || 0), 0);
     const sellBaseTotal = sells.reduce((sum, t) => sum + (t.amountBase || 0), 0);
-    const stillHeldBase = buyBaseTotal - sellBaseTotal;
+    const stillHeldBase = Math.max(0, buyBaseTotal - sellBaseTotal); // Only positive holdings
     
     // Get last known price for unrealized PnL calculation
     const lastTrade = rows[rows.length - 1];
@@ -299,7 +300,7 @@ export default function TradesOnlyView({
         header: 'Price/Total',
         accessor: (t) => priceColumnMode === 'total' ? (t.amountBase || 0) * (t.price || 0) : t.price,
         render: (t) => {
-          const total = (t.amountBase || 0) * (t.price || 0);
+          const total = t.amountQuote || t.volumeUSD || ((t.amountBase || 0) * (t.price || 0));
           const sideColor = t.side === 'buy' ? 'var(--buy-primary)' : 'var(--sell-primary)';
           return (
             <div className="price-total-cell">
@@ -403,7 +404,8 @@ export default function TradesOnlyView({
     
     const traderTrades = rows.filter(t => t.wallet === wallet);
     const tradeCount = traderTrades.length;
-    const totalVolume = traderTrades.reduce((sum, t) => sum + ((t.amountQuote || 0) * (t.price || 0)), 0);
+    // Use actual trade USD values
+    const totalVolume = traderTrades.reduce((sum, t) => sum + (t.amountQuote || t.volumeUSD || ((t.amountBase || 0) * (t.price || 0))), 0);
     const buys = traderTrades.filter(t => t.side === 'buy');
     const sells = traderTrades.filter(t => t.side === 'sell');
     
@@ -683,11 +685,11 @@ export default function TradesOnlyView({
         {meta && formatFetchMeta(meta) && (
           <div className="fetch-meta">{formatFetchMeta(meta)}</div>
         )}
-        {(window as any).Telegram?.WebApp && (
+        {/* {(window as any).Telegram?.WebApp && (
           <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
             Telegram WebApp detected - using fallback rendering
           </div>
-        )}
+        )} */}
       </div>
     );
   }
@@ -872,7 +874,7 @@ export default function TradesOnlyView({
                     WebkitOverflowScrolling: 'touch', // iOS smooth scrolling
                   }}
                 >
-                  {(window as any).Telegram?.WebApp && (
+                  {/* {(window as any).Telegram?.WebApp && (
                     <div style={{ 
                       padding: 'var(--space-2)', 
                       background: 'var(--bg-elev-2)', 
@@ -883,7 +885,7 @@ export default function TradesOnlyView({
                     }}>
                       🔄 Telegram webapp detected - using optimized rendering
                     </div>
-                  )}
+                  )} */}
                   {sorted.map((trade, index) => {
                     const tradeId = `${trade.ts}-${trade.txHash}`;
                     const isExpanded = expandedRow === tradeId;

@@ -112,7 +112,8 @@ export default function HoldersView({
       walletData.lastSeen = Math.max(walletData.lastSeen, trade.ts);
 
       const tokenAmount = trade.amountBase || 0;
-      const tradeUsdValue = trade.amountQuote || (trade.price * tokenAmount);
+      // Use amountQuote (USD value at time of trade) instead of calculating from current price
+      const tradeUsdValue = trade.amountQuote || trade.volumeUSD || (trade.price * tokenAmount);
 
       if (trade.side === 'buy') {
         walletData.boughtAmount += tokenAmount;
@@ -127,8 +128,8 @@ export default function HoldersView({
 
     // Convert to TraderData array with proper P&L calculations
     return Array.from(walletMap.entries()).map(([wallet, data]) => {
-      const balance = data.balance; // Can be negative if net seller
-      const balanceUsd = Math.abs(balance) * latestPrice;
+      const balance = Math.max(0, data.balance); // Only show positive holdings
+      const balanceUsd = balance * latestPrice; // Current USD value of holdings
       
       // Realized P&L: USD received from sales minus proportional cost basis of sold tokens
       const avgBuyPrice = data.boughtUsd / Math.max(data.boughtAmount, 1);
@@ -136,8 +137,8 @@ export default function HoldersView({
       const realizedPnlUsd = data.soldUsd - costOfSold;
       
       // Unrealized P&L: Current value of holdings minus remaining cost basis
-      const costOfHeld = Math.max(0, balance) * avgBuyPrice;
-      const unrealizedPnlUsd = Math.max(0, balance) * latestPrice - costOfHeld;
+      const costOfHeld = balance * avgBuyPrice;
+      const unrealizedPnlUsd = balanceUsd - costOfHeld;
       
       const totalPnlUsd = realizedPnlUsd + unrealizedPnlUsd;
       const totalVolumeUsd = data.boughtUsd + data.soldUsd;
@@ -158,7 +159,7 @@ export default function HoldersView({
       return {
         address: wallet,
         isContract: data.isContract,
-        balance: Math.abs(balance),
+        balance, // Only positive balance (actual holdings)
         balanceUsd,
         boughtAmount: data.boughtAmount,
         boughtUsd: data.boughtUsd,
@@ -306,12 +307,12 @@ export default function HoldersView({
           <div className="trader-cell bought-sold-cell">
             <div className="bought-sold-grid">
               <div className="grid-section bought">
-                <div className="grid-amount">{formatCompact(trader.boughtAmount)}</div>
-                <div className="grid-usd">{formatUsd(trader.boughtUsd)}</div>
+                <div className="grid-amount" style={{ color: 'var(--buy-primary)' }}>{formatCompact(trader.boughtAmount)}</div>
+                <div className="grid-usd" style={{ color: 'var(--buy-primary)' }}>{formatUsd(trader.boughtUsd)}</div>
               </div>
               <div className="grid-section sold">
-                <div className="grid-amount">{formatCompact(trader.soldAmount)}</div>
-                <div className="grid-usd">{formatUsd(trader.soldUsd)}</div>
+                <div className="grid-amount" style={{ color: 'var(--sell-primary)' }}>{formatCompact(trader.soldAmount)}</div>
+                <div className="grid-usd" style={{ color: 'var(--sell-primary)' }}>{formatUsd(trader.soldUsd)}</div>
               </div>
             </div>
           </div>
@@ -372,7 +373,7 @@ export default function HoldersView({
                       ${formatSmartAmountReact(trade.price)}
                     </div>
                     <div className="mini-cell total-cell">
-                      ${formatSmartAmountReact(trade.amountQuote || (trade.price * (trade.amountBase || 0)))}
+                      ${formatSmartAmountReact(trade.amountQuote || trade.volumeUSD || (trade.price * (trade.amountBase || 0)))}
                     </div>
                   </div>
                 ))}

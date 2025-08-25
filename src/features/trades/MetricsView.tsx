@@ -13,6 +13,7 @@ import CopyButton from '../../components/CopyButton';
 import { trades } from '../../lib/api';
 import type { Trade } from '../../lib/types';
 import '../../styles/detail.css'; // Import for kpi-item styles
+import ChartLoader from '../../components/ChartLoader';
 
 interface MetricSection {
   id: string;
@@ -211,9 +212,8 @@ export default function MetricsView({
   if (isLoading) {
     return (
       <div className="trades-view">
-        <div className="trades-loader">
-          <div>Loading metrics...</div>
-        </div>
+        {/* ChartLoading animation */}
+        <ChartLoader />
       </div>
     );
   }

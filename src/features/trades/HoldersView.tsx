@@ -366,8 +366,8 @@ export default function HoldersView({
                         <TrendingDownIcon className="side-icon sell" />
                       )}
                     </div>
-                    <div className="mini-cell amount-cell" style={{ alignItems: 'flex-end' }}>
-                      {formatSmartAmountReact(trade.amountBase || 0)} {baseSymbol}
+                    <div className="mini-cell amount-cell" style={{ alignItems: 'flex-end', color: trade.side === 'buy' ? 'var(--buy-primary)' : 'var(--sell-primary)' }}>
+                      {trade.side ? (trade.side === 'buy' ? '+' : '-') : null}{formatSmartAmountReact(trade.amountBase || 0)} {baseSymbol}
                     </div>
                     <div className="mini-cell price-cell">
                       ${formatSmartAmountReact(trade.price)}

@@ -11,6 +11,7 @@ import TradesOnlyView from '../trades/TradesOnlyView';
 import copy from '../../copy/en.json';
 import { useProvider } from '../../lib/provider';
 import { resolvePairSymbols } from '../../lib/pairs';
+import ChartLoader from '../../components/ChartLoader';
 
 // Views for chart page
 type View = 'chart' | 'trades' | 'detail';
@@ -172,8 +173,7 @@ export default function ChartPage() {
           {/* Show loading skeleton if detail is still loading */}
           {detailLoading && (
             <div className="detail-top-skeleton">
-              <div className="loading-skeleton" style={{ height: 200, marginBottom: '1rem' }} />
-              <div className="loading-skeleton" style={{ height: 100 }} />
+              <ChartLoader />
             </div>
           )}
 

@@ -25,6 +25,7 @@ interface RequestOptions {
   body?: string;
   timeout?: number;
   validateParams?: boolean;
+  validationEndpoint?: string; // Override endpoint name for validation
 }
 
 class ClientAPIManager {
@@ -109,8 +110,8 @@ class ClientAPIManager {
 
       this.authToken = await response.json();
       console.log('Authentication successful:', { 
-        token: this.authToken.token ? 'present' : 'missing',
-        rateLimit: this.authToken.rateLimit 
+        token: this.authToken?.token ? 'present' : 'missing',
+        rateLimit: this.authToken?.rateLimit 
       });
       return true;
     } catch (error) {
@@ -259,7 +260,8 @@ class ClientAPIManager {
     }
 
     // Server-side validation (includes rate limiting, injection detection, etc.)
-    const validation = await this.validateWithServer(provider, endpoint, params);
+    const validationEndpoint = options.validationEndpoint || endpoint;
+    const validation = await this.validateWithServer(provider, validationEndpoint, params);
     if (!validation.valid) {
       throw new Error('Request validation failed');
     }
@@ -323,9 +325,14 @@ class ClientAPIManager {
         console.log(`Trying search with provider: ${provider}`);
         
         if (provider === 'dexscreener') {
-          return await this.call('dexscreener', '/latest/dex/search', { q: query });
+          // Use 'search' as the endpoint name for validation, but call the actual API endpoint
+          return await this.call('dexscreener', '/latest/dex/search', { q: query }, { 
+            validationEndpoint: 'search' 
+          });
         } else if (provider === 'geckoterminal') {
-          return await this.call('geckoterminal', '/search/pairs', { query });
+          return await this.call('geckoterminal', '/search/pairs', { query }, { 
+            validationEndpoint: 'search' 
+          });
         }
       } catch (error) {
         lastError = error as Error;

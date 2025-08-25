@@ -147,11 +147,14 @@ export const handler: Handler = async (event) => {
           const list = Array.isArray(gtData.data) ? gtData.data : [];
           const tradesGt = list.map((t: any) => {
             const attrs = t.attributes || {};
+            // Debug: Log raw volume_in_usd value
+            if (DEBUG && attrs.volume_in_usd) {
+              log('raw volume_in_usd:', attrs.volume_in_usd, typeof attrs.volume_in_usd);
+            }
             const ts = Math.floor(Date.parse(attrs.block_timestamp) / 1000);
             const side = String(attrs.kind).toLowerCase() === 'buy' ? 'buy' : 'sell';
             const toAddr = String(attrs.to_token_address || '').toLowerCase();
             const fromAddr = String(attrs.from_token_address || '').toLowerCase();
-            const volumeUSD = Number(attrs.volume_in_usd ?? 0); // Map volume_in_usd from GT API
             let price = 0;
             let amountBase = 0;
             let amountQuote = 0;
@@ -178,13 +181,18 @@ export const handler: Handler = async (event) => {
               src = 'from';
             }
             if (!priceSourceHeader) priceSourceHeader = src;
+            const parsedVolumeUSD = parseFloat(attrs.volume_in_usd || '0');
+            // Debug: Log parsed volume
+            if (DEBUG && attrs.volume_in_usd) {
+              log('parsed volumeUSD:', parsedVolumeUSD, 'from raw:', attrs.volume_in_usd);
+            }
             return {
               ts,
               side,
               price,
               amountBase,
               amountQuote,
-              volumeUSD: Number(attrs.volume_in_usd ?? 0), // Map volume_in_usd from GT API
+              volumeUSD: parsedVolumeUSD, // Parse volume_in_usd string from GT API
               txHash: attrs.tx_hash,
               wallet: attrs.tx_from_address,
             } as Trade;
@@ -195,6 +203,14 @@ export const handler: Handler = async (event) => {
           if (trades.length > 0) {
             provider = 'gt';
             log('gt trades', trades.length);
+            // Debug: Log sample volume data
+            if (DEBUG && trades.length > 0) {
+              log('sample volumes:', trades.slice(0, 2).map(t => ({ 
+                volumeUSD: t.volumeUSD, 
+                price: t.price, 
+                amountBase: t.amountBase 
+              })));
+            }
           }
         }
       } catch (err) {
@@ -309,7 +325,7 @@ export const handler: Handler = async (event) => {
               price,
               amountBase,
               amountQuote,
-              volumeUSD: Number(attrs.volume_in_usd ?? attrs.volumeUSD ?? attrs.volume_usd ?? 0), // Map volume from CG API
+              volumeUSD: parseFloat(attrs.volume_in_usd || attrs.volumeUSD || attrs.volume_usd || '0'), // Parse volume strings from CG API
               txHash: attrs.tx_hash || attrs.txHash,
               wallet: attrs.tx_from_address || attrs.wallet || attrs.address,
             } as Trade;

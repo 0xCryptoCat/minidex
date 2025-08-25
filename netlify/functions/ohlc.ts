@@ -324,7 +324,7 @@ export const handler: Handler = async (event) => {
                   attrs.amount_base_token ??
                   '0'
               ),
-              volumeUSD: parseFloat(attrs.volume_in_usd ?? '0'), // Map volume_in_usd from API
+              volumeUSD: parseFloat(attrs.volume_in_usd || '0'), // Parse volume_in_usd string from API
             } as Trade;
           });
         }
@@ -350,7 +350,7 @@ export const handler: Handler = async (event) => {
               amountBase: parseFloat(
                 attrs.to_token_amount ?? attrs.from_token_amount ?? '0'
               ),
-              volumeUSD: parseFloat(attrs.volume_in_usd ?? '0'), // Map volume_in_usd from GT API
+              volumeUSD: parseFloat(attrs.volume_in_usd || '0'), // Parse volume_in_usd string from GT API
             } as Trade;
           });
         }

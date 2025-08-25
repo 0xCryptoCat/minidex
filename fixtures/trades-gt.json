@@ -1,25 +1,39 @@
 {
-  "_note": "GT trade history sample - processed format for fixture",
-  "pairId": "uniswap_v2_abc_weth",
-  "trades": [
-    { 
-      "ts": 1712345600, 
-      "side": "buy", 
-      "price": 1.1, 
-      "amountBase": 500, 
-      "volumeUSD": 49.085007809281095,
-      "txHash": "0x111",
-      "wallet": "0xabc123def456789012345678901234567890abcd"
+  "_note": "GT API response format for fixture testing",
+  "data": [
+    {
+      "id": "trade_1",
+      "type": "trade",
+      "attributes": {
+        "block_timestamp": "2024-04-06T12:00:00Z",
+        "kind": "buy",
+        "volume_in_usd": "550.0",
+        "price_to_in_usd": "1.1",
+        "price_from_in_usd": "0.909",
+        "to_token_amount": "500.0",
+        "from_token_amount": "550.0",
+        "to_token_address": "0x1234567890123456789012345678901234567890",
+        "from_token_address": "0xA0b86a33E6441E936c45Bf6c91D1BfdA3A17E8d2",
+        "tx_hash": "0x111",
+        "tx_from_address": "0xabc123def456789012345678901234567890abcd"
+      }
     },
-    { 
-      "ts": 1712345620, 
-      "side": "sell", 
-      "price": 1.0, 
-      "amountBase": 200, 
-      "volumeUSD": 697.6067656178328,
-      "txHash": "0x222",
-      "wallet": "0xdef456abc789012345678901234567890abcd123"
+    {
+      "id": "trade_2", 
+      "type": "trade",
+      "attributes": {
+        "block_timestamp": "2024-04-06T12:00:20Z",
+        "kind": "sell",
+        "volume_in_usd": "200.0",
+        "price_to_in_usd": "1.0",
+        "price_from_in_usd": "1.0",
+        "to_token_amount": "200.0",
+        "from_token_amount": "200.0",
+        "to_token_address": "0xA0b86a33E6441E936c45Bf6c91D1BfdA3A17E8d2",
+        "from_token_address": "0x1234567890123456789012345678901234567890",
+        "tx_hash": "0x222",
+        "tx_from_address": "0xdef456abc789012345678901234567890abcd123"
+      }
     }
-  ],
-  "provider": "gt"
+  ]
 }

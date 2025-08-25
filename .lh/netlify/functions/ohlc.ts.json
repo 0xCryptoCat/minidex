@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1755456083080,
@@ -24,6 +24,10 @@
                 {
                     "date": 1756119230412,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -323,9 +323,9 @@\n                   attrs.amount_base ??\n                   attrs.amount_base_token ??\n                   '0'\n               ),\n-              volumeUSD: parseFloat(attrs.volume_in_usd ?? '0'), // Map volume_in_usd from API\n+              volumeUSD: parseFloat(attrs.volume_in_usd || '0'), // Parse volume_in_usd string from API\n             } as Trade;\n           });\n         }\n       } catch (err) {\n@@ -349,9 +349,9 @@\n               price: parseFloat(attrs.price_to_in_usd ?? attrs.price_from_in_usd ?? '0'),\n               amountBase: parseFloat(\n                 attrs.to_token_amount ?? attrs.from_token_amount ?? '0'\n               ),\n-              volumeUSD: parseFloat(attrs.volume_in_usd ?? '0'), // Map volume_in_usd from GT API\n+              volumeUSD: parseFloat(attrs.volume_in_usd || '0'), // Parse volume_in_usd string from GT API\n             } as Trade;\n           });\n         }\n       } catch (err) {\n"
+                },
+                {
+                    "date": 1756119729753,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -308,21 +308,21 @@\n                 : Number(tsRaw);\n             return {\n               ts,\n               price: parseFloat(\n-                attrs.price_to_in_usd ??\n-                  attrs.price_from_in_usd ??\n-                  attrs.price_usd ??\n-                  attrs.priceUsd ??\n-                  attrs.price ??\n-                  attrs[1] ??\n+                attrs.price_to_in_usd ||\n+                  attrs.price_from_in_usd ||\n+                  attrs.price_usd ||\n+                  attrs.priceUsd ||\n+                  attrs.price ||\n+                  attrs[1] ||\n                   '0'\n               ),\n               amountBase: parseFloat(\n-                attrs.to_token_amount ??\n-                  attrs.from_token_amount ??\n-                  attrs.amount_base ??\n-                  attrs.amount_base_token ??\n+                attrs.to_token_amount ||\n+                  attrs.from_token_amount ||\n+                  attrs.amount_base ||\n+                  attrs.amount_base_token ||\n                   '0'\n               ),\n               volumeUSD: parseFloat(attrs.volume_in_usd || '0'), // Parse volume_in_usd string from API\n             } as Trade;\n@@ -345,11 +345,11 @@\n           trades = list.map((t: any) => {\n             const attrs = t.attributes || {};\n             return {\n               ts: Math.floor(new Date(attrs.block_timestamp).getTime() / 1000),\n-              price: parseFloat(attrs.price_to_in_usd ?? attrs.price_from_in_usd ?? '0'),\n+              price: parseFloat(attrs.price_to_in_usd || attrs.price_from_in_usd || '0'),\n               amountBase: parseFloat(\n-                attrs.to_token_amount ?? attrs.from_token_amount ?? '0'\n+                attrs.to_token_amount || attrs.from_token_amount || '0'\n               ),\n               volumeUSD: parseFloat(attrs.volume_in_usd || '0'), // Parse volume_in_usd string from GT API\n             } as Trade;\n           });\n"
                 }
             ],
             "date": 1755456083080,

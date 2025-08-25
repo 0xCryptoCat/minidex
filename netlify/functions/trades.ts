@@ -56,10 +56,10 @@ function isValidTokenAddress(addr?: string, chain?: string): boolean {
   return isValidPoolAddress(addr, chain); // Same logic for now
 }
 
-async function readFixture(path: string): Promise<TradesResponse> {
+async function readFixture(path: string): Promise<any> {
   const url = new URL(path, import.meta.url);
   const data = await fs.readFile(url, 'utf8');
-  return JSON.parse(data) as TradesResponse;
+  return JSON.parse(data);
 }
 
 export const handler: Handler = async (event) => {
@@ -100,6 +100,12 @@ export const handler: Handler = async (event) => {
   }
 
   log('params', { pairId, chain, poolAddress, tokenOfInterest, forceProvider, limit, windowH, gtSupported, gtNetwork });
+  
+  let trades: Trade[] = [];
+  let provider: Provider | 'none' = 'none';
+  let priceSourceHeader: 'from' | 'to' | '' = '';
+  const cutoff = Date.now() - windowH * 3600 * 1000;
+
   try {
     if (!gtNetwork) {
       log('skip gt: invalid network', chain);
@@ -112,13 +118,81 @@ export const handler: Handler = async (event) => {
     if (USE_FIXTURES) {
       try {
         attempted.push('gt');
-        const gt = await readFixture(GT_FIXTURE);
-        gt.pairId = pairId;
+        const gtData = await readFixture(GT_FIXTURE);
+        const list = Array.isArray(gtData.data) ? gtData.data : [];
+        const tradesGt = list.map((t: any) => {
+          const attrs = t.attributes || {};
+          // Debug: Log raw volume_in_usd value
+          if (DEBUG && attrs.volume_in_usd) {
+            log('fixture raw volume_in_usd:', attrs.volume_in_usd, typeof attrs.volume_in_usd);
+          }
+          const ts = Math.floor(Date.parse(attrs.block_timestamp) / 1000);
+          const side = String(attrs.kind || '').toLowerCase() === 'buy' ? 'buy' : 'sell';
+          const toAddr = String(attrs.to_token_address || '').toLowerCase();
+          const fromAddr = String(attrs.from_token_address || '').toLowerCase();
+          let price = 0;
+          let amountBase = 0;
+          let amountQuote = 0;
+          let src: 'from' | 'to' = 'to';
+          if (tokenOfInterest && tokenOfInterest === toAddr) {
+            price = parseFloat(attrs.price_to_in_usd || '0');
+            amountBase = parseFloat(attrs.to_token_amount || '0');
+            amountQuote = parseFloat(attrs.from_token_amount || '0');
+            src = 'to';
+          } else if (tokenOfInterest && tokenOfInterest === fromAddr) {
+            price = parseFloat(attrs.price_from_in_usd || '0');
+            amountBase = parseFloat(attrs.from_token_amount || '0');
+            amountQuote = parseFloat(attrs.to_token_amount || '0');
+            src = 'from';
+          } else if (attrs.price_to_in_usd) {
+            price = parseFloat(attrs.price_to_in_usd || '0');
+            amountBase = parseFloat(attrs.to_token_amount || '0');
+            amountQuote = parseFloat(attrs.from_token_amount || '0');
+            src = 'to';
+          } else {
+            price = parseFloat(attrs.price_from_in_usd || '0');
+            amountBase = parseFloat(attrs.from_token_amount || '0');
+            amountQuote = parseFloat(attrs.to_token_amount || '0');
+            src = 'from';
+          }
+          if (!priceSourceHeader) priceSourceHeader = src;
+          const parsedVolumeUSD = parseFloat(attrs.volume_in_usd || '0');
+          // Debug: Log parsed volume
+          if (DEBUG && attrs.volume_in_usd) {
+            log('fixture parsed volumeUSD:', parsedVolumeUSD, 'from raw:', attrs.volume_in_usd);
+          }
+          return {
+            ts,
+            side,
+            price,
+            amountBase,
+            amountQuote,
+            volumeUSD: parsedVolumeUSD,
+            txHash: attrs.tx_hash || '',
+            wallet: attrs.tx_from_address || '',
+          } as Trade;
+        });
+        trades = sanitizeTrades(
+          tradesGt.filter((t) => t.ts * 1000 >= cutoff).slice(0, limit)
+        );
+        if (trades.length > 0) {
+          provider = 'gt';
+          log('fixture gt trades', trades.length);
+          // Debug: Log sample volume data
+          if (DEBUG && trades.length > 0) {
+            log('fixture sample volumes:', trades.slice(0, 2).map(t => ({ 
+              volumeUSD: t.volumeUSD, 
+              price: t.price, 
+              amountBase: t.amountBase 
+            })));
+          }
+        }
+        const bodyRes: TradesResponse = { pairId, trades, provider: provider as Provider };
         headers['x-provider'] = 'gt';
         headers['x-fallbacks-tried'] = attempted.join(',');
-        headers['x-items'] = String(gt.trades.length);
-        log('response', event.rawUrl, 200, gt.trades.length, 'gt');
-        return { statusCode: 200, headers, body: JSON.stringify(gt) };
+        headers['x-items'] = String(trades.length);
+        log('response', event.rawUrl, 200, trades.length, 'gt');
+        return { statusCode: 200, headers, body: JSON.stringify(bodyRes) };
       } catch (err) {
         logError('fixture read failed', err);
         headers['x-fallbacks-tried'] = attempted.join(',');
@@ -127,11 +201,6 @@ export const handler: Handler = async (event) => {
         return { statusCode: 500, headers, body: JSON.stringify(body) };
       }
     }
-
-    let trades: Trade[] = [];
-    let provider: Provider | 'none' = 'none';
-    let priceSourceHeader: 'from' | 'to' | '' = '';
-    const cutoff = Date.now() - windowH * 3600 * 1000;
 
     if (
       (forceProvider === 'gt' || (!forceProvider && gtSupported)) &&

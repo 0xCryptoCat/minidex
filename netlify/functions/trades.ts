@@ -184,7 +184,7 @@ export const handler: Handler = async (event) => {
               price,
               amountBase,
               amountQuote,
-              volumeUSD, // Map volume_in_usd from GT API
+              volumeUSD: Number(attrs.volume_in_usd ?? 0), // Map volume_in_usd from GT API
               txHash: attrs.tx_hash,
               wallet: attrs.tx_from_address,
             } as Trade;

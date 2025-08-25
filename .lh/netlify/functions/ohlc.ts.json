@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1755456083080,
@@ -16,6 +16,10 @@
                 {
                     "date": 1756118507451,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -323,8 +323,9 @@\n                   attrs.amount_base ??\n                   attrs.amount_base_token ??\n                   '0'\n               ),\n+              volumeUSD: parseFloat(attrs.volume_in_usd ?? '0'), // Map volume_in_usd from API\n             } as Trade;\n           });\n         }\n       } catch (err) {\n"
+                },
+                {
+                    "date": 1756118813074,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -349,8 +349,9 @@\n               price: parseFloat(attrs.price_to_in_usd ?? attrs.price_from_in_usd ?? '0'),\n               amountBase: parseFloat(\n                 attrs.to_token_amount ?? attrs.from_token_amount ?? '0'\n               ),\n+              volumeUSD: parseFloat(attrs.volume_in_usd ?? '0'), // Map volume_in_usd from GT API\n             } as Trade;\n           });\n         }\n       } catch (err) {\n"
                 }
             ],
             "date": 1755456083080,

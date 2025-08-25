@@ -152,7 +152,7 @@ export const handler: Handler = async (event) => {
               log('raw volume_in_usd:', attrs.volume_in_usd, typeof attrs.volume_in_usd);
             }
             const ts = Math.floor(Date.parse(attrs.block_timestamp) / 1000);
-            const side = String(attrs.kind).toLowerCase() === 'buy' ? 'buy' : 'sell';
+            const side = String(attrs.kind || '').toLowerCase() === 'buy' ? 'buy' : 'sell';
             const toAddr = String(attrs.to_token_address || '').toLowerCase();
             const fromAddr = String(attrs.from_token_address || '').toLowerCase();
             let price = 0;
@@ -160,24 +160,24 @@ export const handler: Handler = async (event) => {
             let amountQuote = 0;
             let src: 'from' | 'to' = 'to';
             if (tokenOfInterest && tokenOfInterest === toAddr) {
-              price = Number(attrs.price_to_in_usd ?? 0);
-              amountBase = Number(attrs.to_token_amount ?? 0);
-              amountQuote = Number(attrs.from_token_amount ?? 0);
+              price = parseFloat(attrs.price_to_in_usd || '0');
+              amountBase = parseFloat(attrs.to_token_amount || '0');
+              amountQuote = parseFloat(attrs.from_token_amount || '0');
               src = 'to';
             } else if (tokenOfInterest && tokenOfInterest === fromAddr) {
-              price = Number(attrs.price_from_in_usd ?? 0);
-              amountBase = Number(attrs.from_token_amount ?? 0);
-              amountQuote = Number(attrs.to_token_amount ?? 0);
+              price = parseFloat(attrs.price_from_in_usd || '0');
+              amountBase = parseFloat(attrs.from_token_amount || '0');
+              amountQuote = parseFloat(attrs.to_token_amount || '0');
               src = 'from';
-            } else if (attrs.price_to_in_usd !== undefined) {
-              price = Number(attrs.price_to_in_usd ?? 0);
-              amountBase = Number(attrs.to_token_amount ?? 0);
-              amountQuote = Number(attrs.from_token_amount ?? 0);
+            } else if (attrs.price_to_in_usd) {
+              price = parseFloat(attrs.price_to_in_usd || '0');
+              amountBase = parseFloat(attrs.to_token_amount || '0');
+              amountQuote = parseFloat(attrs.from_token_amount || '0');
               src = 'to';
             } else {
-              price = Number(attrs.price_from_in_usd ?? 0);
-              amountBase = Number(attrs.from_token_amount ?? 0);
-              amountQuote = Number(attrs.to_token_amount ?? 0);
+              price = parseFloat(attrs.price_from_in_usd || '0');
+              amountBase = parseFloat(attrs.from_token_amount || '0');
+              amountQuote = parseFloat(attrs.to_token_amount || '0');
               src = 'from';
             }
             if (!priceSourceHeader) priceSourceHeader = src;
@@ -193,8 +193,8 @@ export const handler: Handler = async (event) => {
               amountBase,
               amountQuote,
               volumeUSD: parsedVolumeUSD, // Parse volume_in_usd string from GT API
-              txHash: attrs.tx_hash,
-              wallet: attrs.tx_from_address,
+              txHash: attrs.tx_hash || '',
+              wallet: attrs.tx_from_address || '',
             } as Trade;
           });
           trades = sanitizeTrades(
@@ -254,67 +254,67 @@ export const handler: Handler = async (event) => {
             let amountQuote = 0;
             let src: 'from' | 'to' = 'to';
             if (tokenOfInterest && tokenOfInterest === toAddr) {
-              price = Number(
-                attrs.price_to_in_usd ??
-                  attrs.price_usd ??
-                  attrs.priceUsd ??
-                  attrs.price ??
-                  attrs[1] ??
-                  0
+              price = parseFloat(
+                attrs.price_to_in_usd ||
+                  attrs.price_usd ||
+                  attrs.priceUsd ||
+                  attrs.price ||
+                  attrs[1] ||
+                  '0'
               );
-              amountBase = Number(
-                attrs.to_token_amount ?? attrs.amount_base ?? attrs.amount_base_token ?? 0
+              amountBase = parseFloat(
+                attrs.to_token_amount || attrs.amount_base || attrs.amount_base_token || '0'
               );
-              amountQuote = Number(
-                attrs.from_token_amount ?? attrs.amount_quote ?? attrs.amount_quote_token ?? 0
+              amountQuote = parseFloat(
+                attrs.from_token_amount || attrs.amount_quote || attrs.amount_quote_token || '0'
               );
               src = 'to';
             } else if (tokenOfInterest && tokenOfInterest === fromAddr) {
-              price = Number(
-                attrs.price_from_in_usd ??
-                  attrs.price_usd ??
-                  attrs.priceUsd ??
-                  attrs.price ??
-                  attrs[1] ??
-                  0
+              price = parseFloat(
+                attrs.price_from_in_usd ||
+                  attrs.price_usd ||
+                  attrs.priceUsd ||
+                  attrs.price ||
+                  attrs[1] ||
+                  '0'
               );
-              amountBase = Number(
-                attrs.from_token_amount ?? attrs.amount_base ?? attrs.amount_base_token ?? 0
+              amountBase = parseFloat(
+                attrs.from_token_amount || attrs.amount_base || attrs.amount_base_token || '0'
               );
-              amountQuote = Number(
-                attrs.to_token_amount ?? attrs.amount_quote ?? attrs.amount_quote_token ?? 0
+              amountQuote = parseFloat(
+                attrs.to_token_amount || attrs.amount_quote || attrs.amount_quote_token || '0'
               );
               src = 'from';
-            } else if (attrs.price_to_in_usd !== undefined) {
-              price = Number(
-                attrs.price_to_in_usd ??
-                  attrs.price_usd ??
-                  attrs.priceUsd ??
-                  attrs.price ??
-                  attrs[1] ??
-                  0
+            } else if (attrs.price_to_in_usd) {
+              price = parseFloat(
+                attrs.price_to_in_usd ||
+                  attrs.price_usd ||
+                  attrs.priceUsd ||
+                  attrs.price ||
+                  attrs[1] ||
+                  '0'
               );
-              amountBase = Number(
-                attrs.to_token_amount ?? attrs.amount_base ?? attrs.amount_base_token ?? 0
+              amountBase = parseFloat(
+                attrs.to_token_amount || attrs.amount_base || attrs.amount_base_token || '0'
               );
-              amountQuote = Number(
-                attrs.from_token_amount ?? attrs.amount_quote ?? attrs.amount_quote_token ?? 0
+              amountQuote = parseFloat(
+                attrs.from_token_amount || attrs.amount_quote || attrs.amount_quote_token || '0'
               );
               src = 'to';
             } else {
-              price = Number(
-                attrs.price_from_in_usd ??
-                  attrs.price_usd ??
-                  attrs.priceUsd ??
-                  attrs.price ??
-                  attrs[1] ??
-                  0
+              price = parseFloat(
+                attrs.price_from_in_usd ||
+                  attrs.price_usd ||
+                  attrs.priceUsd ||
+                  attrs.price ||
+                  attrs[1] ||
+                  '0'
               );
-              amountBase = Number(
-                attrs.from_token_amount ?? attrs.amount_base ?? attrs.amount_base_token ?? 0
+              amountBase = parseFloat(
+                attrs.from_token_amount || attrs.amount_base || attrs.amount_base_token || '0'
               );
-              amountQuote = Number(
-                attrs.to_token_amount ?? attrs.amount_quote ?? attrs.amount_quote_token ?? 0
+              amountQuote = parseFloat(
+                attrs.to_token_amount || attrs.amount_quote || attrs.amount_quote_token || '0'
               );
               src = 'from';
             }

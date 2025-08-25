@@ -309,19 +309,19 @@ export const handler: Handler = async (event) => {
             return {
               ts,
               price: parseFloat(
-                attrs.price_to_in_usd ??
-                  attrs.price_from_in_usd ??
-                  attrs.price_usd ??
-                  attrs.priceUsd ??
-                  attrs.price ??
-                  attrs[1] ??
+                attrs.price_to_in_usd ||
+                  attrs.price_from_in_usd ||
+                  attrs.price_usd ||
+                  attrs.priceUsd ||
+                  attrs.price ||
+                  attrs[1] ||
                   '0'
               ),
               amountBase: parseFloat(
-                attrs.to_token_amount ??
-                  attrs.from_token_amount ??
-                  attrs.amount_base ??
-                  attrs.amount_base_token ??
+                attrs.to_token_amount ||
+                  attrs.from_token_amount ||
+                  attrs.amount_base ||
+                  attrs.amount_base_token ||
                   '0'
               ),
               volumeUSD: parseFloat(attrs.volume_in_usd || '0'), // Parse volume_in_usd string from API
@@ -346,9 +346,9 @@ export const handler: Handler = async (event) => {
             const attrs = t.attributes || {};
             return {
               ts: Math.floor(new Date(attrs.block_timestamp).getTime() / 1000),
-              price: parseFloat(attrs.price_to_in_usd ?? attrs.price_from_in_usd ?? '0'),
+              price: parseFloat(attrs.price_to_in_usd || attrs.price_from_in_usd || '0'),
               amountBase: parseFloat(
-                attrs.to_token_amount ?? attrs.from_token_amount ?? '0'
+                attrs.to_token_amount || attrs.from_token_amount || '0'
               ),
               volumeUSD: parseFloat(attrs.volume_in_usd || '0'), // Parse volume_in_usd string from GT API
             } as Trade;

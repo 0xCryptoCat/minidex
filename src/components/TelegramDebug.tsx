@@ -41,7 +41,11 @@ export default function TelegramDebug() {
             </div>
           )}
           <div style={{ marginTop: 'var(--space-1)' }}>
-            WebApp Available: {typeof window !== 'undefined' && window.Telegram?.WebApp ? 'Yes' : 'No'}
+            <div>WebApp Available: {typeof window !== 'undefined' && window.Telegram?.WebApp ? 'Yes' : 'No'}</div>
+            <div>Window.Telegram: {typeof window !== 'undefined' && window.Telegram ? 'Yes' : 'No'}</div>
+            <div>User Agent: {navigator.userAgent.includes('Telegram') ? 'Telegram' : 'Other'}</div>
+            <div>Environment: {import.meta.env.DEV ? 'Development' : 'Production'}</div>
+            <div>Allow Non-Telegram: {import.meta.env.VITE_ALLOW_NON_TELEGRAM ? 'Yes' : 'No'}</div>
           </div>
         </div>
       </details>

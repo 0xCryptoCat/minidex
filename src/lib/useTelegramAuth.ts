@@ -57,10 +57,46 @@ export function useTelegramAuth(): TelegramAuthState {
   useEffect(() => {
     const checkTelegramAuth = async () => {
       try {
-        // Check if we're in Telegram WebApp environment
-        const telegram = window.Telegram?.WebApp;
-        
-        if (!telegram) {
+        // Wait for Telegram WebApp to be available (with timeout)
+        const waitForTelegram = (): Promise<any> => {
+          return new Promise((resolve, reject) => {
+            let attempts = 0;
+            const maxAttempts = 100; // 10 seconds max wait
+            
+            const check = () => {
+              attempts++;
+              
+              // Check multiple ways to detect Telegram
+              const hasTelegramWebApp = window.Telegram?.WebApp;
+              const hasTelegramInUA = navigator.userAgent.includes('Telegram');
+              const isInTelegramFrame = window.parent !== window;
+              
+              if (hasTelegramWebApp) {
+                console.log('Telegram WebApp found after', attempts * 100, 'ms');
+                resolve(hasTelegramWebApp);
+                return;
+              }
+              
+              if (attempts >= maxAttempts) {
+                console.log('Telegram detection failed. UA:', navigator.userAgent);
+                console.log('Has Telegram object:', !!window.Telegram);
+                console.log('Has WebApp:', !!window.Telegram?.WebApp);
+                console.log('In frame:', isInTelegramFrame);
+                reject(new Error('Telegram WebApp not found'));
+                return;
+              }
+              
+              setTimeout(check, 100); // Check every 100ms
+            };
+            
+            check();
+          });
+        };
+
+        let telegram;
+        try {
+          telegram = await waitForTelegram();
+        } catch {
           // Not in Telegram environment - check if we're in development
           const isDev = import.meta.env.DEV || import.meta.env.VITE_ALLOW_NON_TELEGRAM;
           

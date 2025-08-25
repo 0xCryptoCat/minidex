@@ -3,6 +3,19 @@
   publish = "dist"
   functions = "netlify/functions"
 
+# Edge Functions Configuration
+[[edge_functions]]
+  function = "honeypot"
+  path = "/api/honeypot"
+
+[[edge_functions]]
+  function = "security"
+  path = "/api/security"
+
+[[edge_functions]]
+  function = "tweets"
+  path = "/api/tweets"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

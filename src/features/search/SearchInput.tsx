@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ContentPaste as PasteIcon } from '@mui/icons-material';
-import { search as apiSearch } from '../../lib/api';
+import { apiManager } from '../../lib/client-api';
 import type { SearchTokenSummary, PoolSummary } from '../../lib/types';
 import { getChainIcon, getDexIcon } from '../../lib/icons';
 import { formatUsd, formatCompact } from '../../lib/format';
@@ -48,31 +48,118 @@ export default function SearchInput({ autoFocus, large }: Props) {
     const controller = new AbortController();
     abortRef.current = controller;
     
-    apiSearch(q, undefined, controller.signal)
-      .then(({ data }) => {
+    // Use the new client-side API manager
+    apiManager.search(q)
+      .then((data) => {
         if (controller.signal.aborted) return;
         
-        if ('results' in data) {
-          const searchResults = Array.isArray(data.results) ? data.results : [];
-          setResults(searchResults);
+        // Transform the response to match the expected format
+        let searchResults: SearchTokenSummary[] = [];
+        
+        if (data && Array.isArray(data.pairs)) {
+          // Transform DexScreener/GeckoTerminal response to our format
+          const tokenMap = new Map<string, SearchTokenSummary>();
           
-          // Only show error if this was a forced search (Enter pressed) and no results
-          // color errors red and small font size
-          if (searchResults.length === 0 && q.length > 0 && force) {
-            setHasError(true);
-            setErrorMessage(isAddress(q) ? 'Token address not found' : 'No tokens found matching your search');
-          }
-        } else {
-          setResults([]);
+          data.pairs.forEach((pair: any) => {
+            const baseToken = pair.baseToken || pair.token;
+            if (!baseToken?.address) return;
+            
+            const address = baseToken.address.toLowerCase();
+            
+            if (!tokenMap.has(address)) {
+              tokenMap.set(address, {
+                address: baseToken.address,
+                symbol: baseToken.symbol || 'UNKNOWN',
+                name: baseToken.name || 'Unknown Token',
+                icon: baseToken.icon || pair.info?.imageUrl,
+                priceUsd: pair.priceUsd || 0,
+                priceChange24h: pair.priceChange?.h24,
+                pools: [],
+                chainIcons: [],
+                chainCount: 0,
+                liqUsd: 0,
+                vol24hUsd: 0,
+                poolCount: 0,
+                gtSupported: false,
+                provider: 'ds' as const, // Default provider
+              });
+            }
+            
+            const token = tokenMap.get(address)!;
+            
+            // Add pool information
+            if (pair.chainId || pair.chain) {
+              const chain = pair.chainId || pair.chain;
+              token.pools!.push({
+                pairId: pair.pairId || pair.id,
+                dex: pair.dexId || pair.dex,
+                version: pair.version,
+                base: baseToken.symbol || 'UNKNOWN',
+                quote: pair.quoteToken?.symbol || pair.quote || 'UNKNOWN',
+                chain: chain,
+                poolAddress: pair.pairAddress || pair.poolAddress,
+                liqUsd: pair.liquidity?.usd || pair.liqUsd,
+                gtSupported: true, // Assume supported since we got data
+                baseToken: {
+                  address: baseToken.address,
+                  symbol: baseToken.symbol || 'UNKNOWN',
+                  name: baseToken.name || 'Unknown Token',
+                },
+                quoteToken: {
+                  address: pair.quoteToken?.address || '',
+                  symbol: pair.quoteToken?.symbol || pair.quote || 'UNKNOWN',
+                  name: pair.quoteToken?.name || 'Unknown Token',
+                },
+              });
+              
+              if (!token.chainIcons!.includes(chain)) {
+                token.chainIcons!.push(chain);
+              }
+              
+              token.gtSupported = true; // At least one pool is supported
+              token.poolCount++;
+            }
+            
+            // Aggregate liquidity and volume
+            if (pair.liquidity?.usd) {
+              token.liqUsd! += pair.liquidity.usd;
+            }
+            if (pair.volume?.h24) {
+              token.vol24hUsd! += pair.volume.h24;
+            }
+          });
+          
+          searchResults = Array.from(tokenMap.values());
+          searchResults.forEach(token => {
+            token.chainCount = token.chainIcons!.length;
+          });
+        }
+        
+        setResults(searchResults);
+        
+        // Only show error if this was a forced search (Enter pressed) and no results
+        if (searchResults.length === 0 && q.length > 0 && force) {
           setHasError(true);
-          setErrorMessage('Search failed. Please try again.');
+          setErrorMessage(isAddress(q) ? 'Token address not found' : 'No tokens found matching your search');
         }
       })
       .catch((err) => {
         if (err.name !== 'AbortError' && !controller.signal.aborted) {
           setResults([]);
           setHasError(true);
-          setErrorMessage('Search error. Please check your connection.');
+          
+          // Provide more specific error messages based on the error
+          if (err.message.includes('Authentication')) {
+            setErrorMessage('Authentication required. Please reload the page.');
+          } else if (err.message.includes('Rate limit')) {
+            setErrorMessage('Too many requests. Please wait a moment.');
+          } else if (err.message.includes('validation')) {
+            setErrorMessage('Invalid search query. Please try a different term.');
+          } else {
+            setErrorMessage('Search error. Please check your connection and try again.');
+          }
+          
+          console.error('Search error:', err);
         }
       })
       .finally(() => {

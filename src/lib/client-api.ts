@@ -64,15 +64,17 @@ class ClientAPIManager {
    */
   async authenticate(): Promise<boolean> {
     try {
-      // Get Telegram WebApp data
+      // Check if we're in development mode and allow non-Telegram access
+      const allowNonTelegram = import.meta.env.VITE_ALLOW_NON_TELEGRAM === 'true';
+      
+      let telegramData = null;
+      
+      // Try to get Telegram WebApp data
       const telegram = (window as any).Telegram?.WebApp;
-      if (!telegram) {
-        throw new Error('Telegram WebApp not available');
-      }
-
-      const initData = telegram.initData;
-      if (!initData) {
-        throw new Error('No Telegram init data');
+      if (telegram?.initData) {
+        telegramData = telegram.initData;
+      } else if (!allowNonTelegram) {
+        throw new Error('Telegram WebApp not available and non-Telegram access is disabled');
       }
 
       // Request JWT token from our auth endpoint
@@ -82,9 +84,10 @@ class ClientAPIManager {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          telegramData: initData,
+          telegramData: telegramData,
           userAgent: navigator.userAgent,
           timestamp: Date.now(),
+          developmentMode: allowNonTelegram && !telegramData,
         }),
       });
 

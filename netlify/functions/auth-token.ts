@@ -3,13 +3,14 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
 interface AuthRequest {
-  telegramData: string;
+  telegramData?: string;
   userAgent: string;
   timestamp: number;
+  developmentMode?: boolean;
 }
 
 interface JWTPayload {
-  userId: number;
+  userId: string | number;
   username?: string;
   iat: number;
   exp: number;
@@ -76,7 +77,7 @@ export const handler: Handler = async (event) => {
   }
 
   try {
-    const { telegramData, userAgent, timestamp }: AuthRequest = JSON.parse(event.body || '{}');
+    const { telegramData, userAgent, timestamp, developmentMode }: AuthRequest = JSON.parse(event.body || '{}');
     
     // Validate request timing (prevent replay attacks)
     const now = Date.now();
@@ -88,33 +89,45 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    // Verify Telegram data integrity
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    if (!botToken || !verifyTelegramData(telegramData, botToken)) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Invalid Telegram authentication' }),
-      };
-    }
+    let userId: string;
+    let username: string;
+    let isPremium = false;
 
-    // Parse Telegram user data
-    const params = new URLSearchParams(telegramData);
-    const userDataStr = params.get('user');
-    if (!userDataStr) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({ error: 'Missing user data' }),
-      };
-    }
+    // Handle development mode (bypass Telegram validation)
+    if (developmentMode && process.env.NODE_ENV !== 'production') {
+      console.log('Development mode: bypassing Telegram authentication');
+      userId = 'dev_user_' + Math.random().toString(36).substr(2, 9);
+      username = 'dev_user';
+      isPremium = false;
+    } else {
+      // Verify Telegram data integrity
+      const botToken = process.env.TELEGRAM_BOT_TOKEN;
+      if (!botToken || !telegramData || !verifyTelegramData(telegramData, botToken)) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Invalid Telegram authentication' }),
+        };
+      }
 
-    const userData = JSON.parse(userDataStr);
-    const userId = userData.id;
-    const username = userData.username;
+      // Parse Telegram user data
+      const params = new URLSearchParams(telegramData);
+      const userDataStr = params.get('user');
+      if (!userDataStr) {
+        return {
+          statusCode: 401,
+          headers,
+          body: JSON.stringify({ error: 'Missing user data' }),
+        };
+      }
+
+      const userData = JSON.parse(userDataStr);
+      userId = userData.id;
+      username = userData.username;
+      isPremium = userData.is_premium || false;
+    }
 
     // Determine user permissions and rate limits
-    const isPremium = userData.is_premium || false;
     const rateLimit = isPremium ? RATE_LIMITS.premium : RATE_LIMITS.basic;
 
     // Create JWT payload

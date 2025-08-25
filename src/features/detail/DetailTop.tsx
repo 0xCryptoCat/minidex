@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ExpandMore as ExpandMoreIcon, KeyboardArrowDown as ArrowDownIcon, RocketLaunch } from '@mui/icons-material';
 import type { PoolSummary, TokenResponse } from '../../lib/types';
 import { formatShortAddr, formatCompact } from '../../lib/format';
-import { getChainIcon } from '../../lib/chain-icons';
+import { getChainIcon } from '../../lib/icons';
 import { getDexIcon } from '../../lib/icons';
 
 interface Props {

@@ -165,7 +165,7 @@ export default function ChartOnlyView({
   if (tfLoading) {
     return (
       <div style={{ 
-        height: '400px', 
+        height: '500px', 
         width: '100%', 
         position: 'relative', 
         display: 'flex', 
@@ -176,7 +176,7 @@ export default function ChartOnlyView({
         borderRadius: 'var(--radius)',
         margin: '16px'
       }}>
-        <ChartLoader message="Loading timeframes..." />
+        <ChartLoader message="Loading prices..." />
       </div>
     );
   }

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 16,
+            "activePatchIndex": 17,
             "patches": [
                 {
                     "date": 1755347748705,
@@ -72,6 +72,10 @@
                 {
                     "date": 1756122247026,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -140,9 +140,9 @@\n     currentPool && token ? resolvePairSymbols(token.symbol, currentPool) : null;\n \n   return (\n     <div className=\"chart-page\">\n-      {loading && <div className=\"loading-state\"><ChartLoader></div>}\n+      {loading && <div className=\"loading-state\"><ChartLoader /></div>}\n \n       {unsupported && (\n         <div className=\"error-state\">Network not supported (yet)</div>\n       )}\n"
+                },
+                {
+                    "date": 1756127090336,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -140,9 +140,14 @@\n     currentPool && token ? resolvePairSymbols(token.symbol, currentPool) : null;\n \n   return (\n     <div className=\"chart-page\">\n-      {loading && <div className=\"loading-state\"><ChartLoader /></div>}\n+      {/* Show loading animation for initial page load */}\n+      {loading && (\n+        <div className=\"loading-state\">\n+          <ChartLoader message=\"Loading token data...\" />\n+        </div>\n+      )}\n \n       {unsupported && (\n         <div className=\"error-state\">Network not supported (yet)</div>\n       )}\n@@ -172,9 +177,9 @@\n \n           {/* Show loading skeleton if detail is still loading */}\n           {detailLoading && (\n             <div className=\"detail-top-skeleton\">\n-              <ChartLoader />\n+              <ChartLoader message=\"Loading pool details...\" />\n             </div>\n           )}\n \n           {/* View-specific content */}\n"
                 }
             ],
             "date": 1755347748705,

@@ -8,7 +8,7 @@ import { TokenKPIs, OwnerMetrics } from '../../components/TokenKPIs';
 import { useGoSecurity } from '../../lib/useGoSecurity';
 import { useHoneypotSecurity } from '../../lib/useHoneypotSecurity';
 import { addressUrl } from '../../lib/explorer';
-import { getChainIcon, getSocialIcon } from '../../lib/chain-icons';
+import { getChainIcon, getSocialIcon } from '../../lib/icons';
 import { 
   Language as WebsiteIcon,
   Description as DocsIcon,

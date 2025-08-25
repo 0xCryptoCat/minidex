@@ -45,16 +45,21 @@ export default function SearchResultItem({ result }: Props) {
       .filter(Boolean)
   )).slice(0, 3);
 
+  // First, try to find a GT-supported pool with highest liquidity
   const supportedPool = (pools || []).reduce<PoolSummary | undefined>((acc, p) => {
     if (p.gtSupported) {
       if (!acc || (p.liqUsd || 0) > (acc.liqUsd || 0)) return p;
     }
     return acc;
   }, undefined);
+  
+  // If no GT-supported pool, find pool with highest liquidity regardless of support
   const fallbackPool = (pools || []).reduce<PoolSummary | undefined>((acc, p) => {
     if (!acc || (p.liqUsd || 0) > (acc.liqUsd || 0)) return p;
     return acc;
   }, undefined);
+  
+  // Use the highest liquidity pool as the target (GT-supported preferred, but fallback to highest liquidity)
   const targetPool = supportedPool || fallbackPool;
   const isSupported = pools?.some((p) => p.gtSupported);
 

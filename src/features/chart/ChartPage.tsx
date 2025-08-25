@@ -141,7 +141,12 @@ export default function ChartPage() {
 
   return (
     <div className="chart-page">
-      {loading && <div className="loading-state"><ChartLoader /></div>}
+      {/* Show loading animation for initial page load */}
+      {loading && (
+        <div className="loading-state">
+          <ChartLoader message="Loading token data..." />
+        </div>
+      )}
 
       {unsupported && (
         <div className="error-state">Network not supported (yet)</div>
@@ -173,7 +178,7 @@ export default function ChartPage() {
           {/* Show loading skeleton if detail is still loading */}
           {detailLoading && (
             <div className="detail-top-skeleton">
-              <ChartLoader />
+              <ChartLoader message="Loading pool details..." />
             </div>
           )}
 

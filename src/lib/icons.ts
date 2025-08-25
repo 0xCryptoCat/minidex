@@ -62,6 +62,25 @@ export function getProviderIcon(provider: string): string {
   return PROVIDER_ICONS[provider.toLowerCase()] || '❓';
 }
 
+// Social icons mapping
+export const SOCIAL_ICONS: Record<string, string> = {
+  website: '🌐',
+  twitter: '𝕏',
+  telegram: '✈️', 
+  discord: '💬',
+  github: '🐙',
+  medium: '📝',
+  linkedin: '💼',
+  facebook: '📘',
+  youtube: '📺',
+  instagram: '📷',
+  reddit: '🔴',
+};
+
+export function getSocialIcon(type: string): string {
+  return SOCIAL_ICONS[type.toLowerCase()] || '🔗';
+}
+
 // Icon component props helpers
 export interface IconProps {
   src: string;
